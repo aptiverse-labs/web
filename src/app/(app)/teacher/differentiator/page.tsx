@@ -10,19 +10,21 @@ import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
-import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
-import { PageHeader } from "@/components/common/PageHeader";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import { PageHeader } from "@/components/common/PageHeader";
+import { QueryStates } from "@/components/common/QueryStates";
+import { useDifferentiation, type DifferentiationTier } from "@/lib/api/queries";
 
-const TIERS = [
-  { label: "Foundation", color: "warning.main", count: 6, sample: ["Solve dy/dx for y = 3x²", "Find slope at x = 1", "Why does the chain rule exist?"] },
-  { label: "Core", color: "primary.main", count: 18, sample: ["Differentiate y = (3x² + 2)⁴", "If f(x) = sin(2x), find f'(π/4)", "Show that d/dx of e^(2x) = 2e^(2x)"] },
-  { label: "Challenge", color: "secondary.main", count: 4, sample: ["Implicit differentiation of x² + y³ = 5xy", "Optimisation problem", "Prove the chain rule from first principles"] },
-];
+const TIER_COLOR: Record<string, string> = {
+  Foundation: "warning.main",
+  Core: "primary.main",
+  Challenge: "secondary.main",
+};
 
 export default function DifferentiatorPage() {
   const [topic, setTopic] = useState("Calculus chain rule");
+  const query = useDifferentiation();
 
   return (
     <>
@@ -49,42 +51,53 @@ export default function DifferentiatorPage() {
         </CardContent>
       </Card>
 
-      <Grid container spacing={3}>
-        {TIERS.map((t) => (
-          <Grid key={t.label} size={{ xs: 12, md: 4 }}>
-            <Card>
-              <CardContent sx={{ p: 3 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-                  <Box>
-                    <Typography variant="overline" sx={{ color: t.color, fontWeight: 700 }}>
-                      {t.label}
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                      {t.count} learners
-                    </Typography>
-                  </Box>
-                  <Chip label="6 questions" size="small" />
-                </Stack>
-                <Stack spacing={1}>
-                  {t.sample.map((q, i) => (
-                    <Box key={i} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: "action.hover" }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Q{i + 1}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontFamily: "ui-monospace, monospace" }}>
-                        {q}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
-                <Button variant="outlined" sx={{ mt: 2 }} fullWidth>
-                  Preview & assign
-                </Button>
-              </CardContent>
-            </Card>
+      <QueryStates
+        query={query}
+        empty={{
+          icon: <AutoAwesomeIcon />,
+          title: "Pick a topic and generate",
+          description: "We split the class into Foundation / Core / Challenge tiers based on each learner's mastery, then suggest a starting point.",
+        }}
+      >
+        {(tiers) => (
+          <Grid container spacing={3}>
+            {tiers.map((t) => (
+              <Grid key={t.label} size={{ xs: 12, md: 4 }}>
+                <TierCard tier={t} />
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+        )}
+      </QueryStates>
     </>
+  );
+}
+
+function TierCard({ tier: t }: { tier: DifferentiationTier }) {
+  return (
+    <Card>
+      <CardContent sx={{ p: 3 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          <Box>
+            <Typography variant="overline" sx={{ color: TIER_COLOR[t.label] ?? "text.secondary", fontWeight: 700 }}>
+              {t.label}
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              {t.count} learners
+            </Typography>
+          </Box>
+          <Chip label="6 questions" size="small" />
+        </Stack>
+        <Box sx={{ p: 1.5, borderRadius: 1.5, bgcolor: "action.hover" }}>
+          <Typography variant="caption" color="text.secondary">
+            Suggested approach
+          </Typography>
+          <Typography variant="body2">{t.suggestion}</Typography>
+        </Box>
+        <Button variant="outlined" sx={{ mt: 2 }} fullWidth>
+          Preview & assign
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

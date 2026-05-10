@@ -44,6 +44,38 @@ export type Counsellor = {
   avatarColor: string;
 };
 
+export type LiveActivity = {
+  id: string;
+  studentId: string;
+  student: string;
+  action: string;
+  subject?: string;
+  detail?: string;
+  ts: string;
+};
+
+export type Gap = {
+  topic: string;
+  className: string;
+  strugglingPct: number;
+  sample: number;
+};
+
+export type DifferentiationTier = {
+  label: string;
+  count: number;
+  suggestion: string;
+};
+
+export type Verification = {
+  id: string;
+  student: string;
+  goal: string;
+  value: string;
+  date: string;
+  reward: string;
+};
+
 // Mock fetch with delay so loading states render properly. Used only by
 // hooks that haven't been wired to the real API yet — convert per page.
 const fakeFetch = <T>(value: T, ms = 350): Promise<T> =>
@@ -71,6 +103,10 @@ export const queryKeys = {
   rewards: () => ["rewards"] as const,
   careers: () => ["careers"] as const,
   studyGroups: () => ["study-groups"] as const,
+  liveActivity: () => ["live-activity"] as const,
+  gaps: () => ["gaps"] as const,
+  differentiation: () => ["differentiation"] as const,
+  verifications: () => ["verifications"] as const,
 };
 
 export const useSubjects = () =>
@@ -195,4 +231,28 @@ export const useStudyGroups = () =>
   useQuery<StudyGroup[]>({
     queryKey: queryKeys.studyGroups(),
     queryFn: () => apiClient.get<StudyGroup[]>("/api/study-groups"),
+  });
+
+export const useLiveActivity = (take = 30) =>
+  useQuery<LiveActivity[]>({
+    queryKey: [...queryKeys.liveActivity(), take],
+    queryFn: () => apiClient.get<LiveActivity[]>(`/api/insights/live-activity?take=${take}`),
+  });
+
+export const useGaps = () =>
+  useQuery<Gap[]>({
+    queryKey: queryKeys.gaps(),
+    queryFn: () => apiClient.get<Gap[]>("/api/insights/gaps"),
+  });
+
+export const useDifferentiation = () =>
+  useQuery<DifferentiationTier[]>({
+    queryKey: queryKeys.differentiation(),
+    queryFn: () => apiClient.get<DifferentiationTier[]>("/api/insights/differentiation"),
+  });
+
+export const useVerifications = () =>
+  useQuery<Verification[]>({
+    queryKey: queryKeys.verifications(),
+    queryFn: () => apiClient.get<Verification[]>("/api/goals/verifications"),
   });
