@@ -174,7 +174,10 @@ export const useBursaries = () =>
   });
 
 export const useChildren = () =>
-  useQuery<Child[]>({ queryKey: queryKeys.children(), queryFn: () => fakeFetch(CHILDREN) });
+  useQuery<Child[]>({
+    queryKey: queryKeys.children(),
+    queryFn: () => apiClient.get<Child[]>("/api/entitlements/children"),
+  });
 
 export const useClasses = () =>
   useQuery<ClassRecord[]>({ queryKey: queryKeys.classes(), queryFn: () => fakeFetch(CLASSES) });
