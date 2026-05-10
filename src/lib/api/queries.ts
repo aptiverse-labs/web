@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/fetcher";
 import {
-  COURSES,
   BURSARIES,
   CHILDREN,
   CLASSES,
@@ -19,6 +18,16 @@ import {
   type ClassRecord,
   type Notification,
 } from "@/lib/mockData";
+
+export type PastPaper = {
+  id: string;
+  year: number;
+  subject: string;
+  paper: string;
+  board: string;
+  topic: string;
+  solved: boolean;
+};
 
 // Mock fetch with delay so loading states render properly. Used only by
 // hooks that haven't been wired to the real API yet — convert per page.
@@ -37,6 +46,7 @@ export const queryKeys = {
   children: () => ["children"] as const,
   classes: () => ["classes"] as const,
   notifications: () => ["notifications"] as const,
+  pastPapers: () => ["past-papers"] as const,
 };
 
 export const useSubjects = () =>
@@ -77,7 +87,16 @@ export const useTutors = () =>
   });
 
 export const useCourses = () =>
-  useQuery<Course[]>({ queryKey: queryKeys.courses(), queryFn: () => fakeFetch(COURSES) });
+  useQuery<Course[]>({
+    queryKey: queryKeys.courses(),
+    queryFn: () => apiClient.get<Course[]>("/api/marketplace/courses"),
+  });
+
+export const usePastPapers = () =>
+  useQuery<PastPaper[]>({
+    queryKey: queryKeys.pastPapers(),
+    queryFn: () => apiClient.get<PastPaper[]>("/api/practice/past-papers"),
+  });
 
 export const useBursaries = () =>
   useQuery<Bursary[]>({ queryKey: queryKeys.bursaries(), queryFn: () => fakeFetch(BURSARIES) });

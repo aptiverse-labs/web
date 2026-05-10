@@ -10,14 +10,15 @@ import LinearProgress from "@mui/material/LinearProgress";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { PageHeader } from "@/components/common/PageHeader";
-import { SUBJECTS } from "@/lib/mockData";
+import { QueryStates } from "@/components/common/QueryStates";
 import { StatCard } from "@/components/common/StatCard";
+import { useSubjects } from "@/lib/api/queries";
+import type { Subject } from "@/lib/mockData";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import InsightsIcon from "@mui/icons-material/InsightsOutlined";
 
 export default function MasteryPage() {
-  const allTopics = SUBJECTS.flatMap((s) => s.topics.map((t) => ({ ...t, subject: s.name })));
-  const weakest = [...allTopics].sort((a, b) => a.mastery - b.mastery).slice(0, 5);
-  const strongest = [...allTopics].sort((a, b) => b.mastery - a.mastery).slice(0, 5);
+  const query = useSubjects();
 
   return (
     <>
@@ -27,18 +28,43 @@ export default function MasteryPage() {
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Mastery" }]}
       />
 
+      <QueryStates
+        query={query}
+        empty={{
+          icon: <InsightsIcon />,
+          title: "No mastery data yet",
+          description: "Add your matric subjects so we can show topic-by-topic mastery and predicted next-term marks.",
+        }}
+      >
+        {(subjects) => <MasteryView subjects={subjects} />}
+      </QueryStates>
+    </>
+  );
+}
+
+function MasteryView({ subjects }: { subjects: Subject[] }) {
+  const allTopics = subjects.flatMap((s) => s.topics.map((t) => ({ ...t, subject: s.name })));
+  const weakest = [...allTopics].sort((a, b) => a.mastery - b.mastery).slice(0, 5);
+  const strongest = [...allTopics].sort((a, b) => b.mastery - a.mastery).slice(0, 5);
+  const overall =
+    allTopics.length > 0
+      ? Math.round(allTopics.reduce((s, t) => s + t.mastery, 0) / allTopics.length)
+      : 0;
+
+  return (
+    <>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Overall mastery" value="68%" delta={6} icon={<TrendingUpIcon />} color="primary" />
+          <StatCard label="Overall mastery" value={`${overall}%`} icon={<TrendingUpIcon />} color="primary" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Strongest topic" value={`${strongest[0]?.mastery}%`} hint={strongest[0]?.name} color="success" />
+          <StatCard label="Strongest topic" value={`${strongest[0]?.mastery ?? 0}%`} hint={strongest[0]?.name ?? "—"} color="success" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Weakest topic" value={`${weakest[0]?.mastery}%`} hint={weakest[0]?.name} color="warning" />
+          <StatCard label="Weakest topic" value={`${weakest[0]?.mastery ?? 0}%`} hint={weakest[0]?.name ?? "—"} color="warning" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Term lift" value="+5pp" hint="vs T3" color="info" />
+          <StatCard label="Subjects tracked" value={subjects.length} color="info" />
         </Grid>
       </Grid>
 
@@ -52,7 +78,7 @@ export default function MasteryPage() {
               <LineChart
                 height={360}
                 xAxis={[{ data: ["T1", "T2", "T3", "T4"], scaleType: "point" }]}
-                series={SUBJECTS.map((s) => ({
+                series={subjects.map((s) => ({
                   data: s.termAverages.map((t) => t.mark),
                   label: s.name,
                   curve: "monotoneX",
@@ -129,10 +155,10 @@ export default function MasteryPage() {
               </Typography>
               <BarChart
                 height={320}
-                xAxis={[{ data: SUBJECTS.map((s) => s.code), scaleType: "band" }]}
+                xAxis={[{ data: subjects.map((s) => s.code), scaleType: "band" }]}
                 series={[
-                  { data: SUBJECTS.map((s) => s.currentAverage), label: "Current term", color: "#0F6963" },
-                  { data: SUBJECTS.map((s) => s.predictedNextTerm), label: "Predicted next", color: "#F25C2E" },
+                  { data: subjects.map((s) => s.currentAverage), label: "Current term", color: "#0F6963" },
+                  { data: subjects.map((s) => s.predictedNextTerm), label: "Predicted next", color: "#F25C2E" },
                 ]}
                 margin={{ top: 16, right: 24, bottom: 32, left: 40 }}
                 grid={{ horizontal: true }}
