@@ -17,6 +17,7 @@ import {
   type Child,
   type ClassRecord,
   type Notification,
+  type DiaryEntry,
 } from "@/lib/mockData";
 
 export type PastPaper = {
@@ -27,6 +28,16 @@ export type PastPaper = {
   board: string;
   topic: string;
   solved: boolean;
+};
+
+export type Counsellor = {
+  id: string;
+  name: string;
+  title: string;
+  specialisation: string;
+  rating: number;
+  online: boolean;
+  avatarColor: string;
 };
 
 // Mock fetch with delay so loading states render properly. Used only by
@@ -47,6 +58,8 @@ export const queryKeys = {
   classes: () => ["classes"] as const,
   notifications: () => ["notifications"] as const,
   pastPapers: () => ["past-papers"] as const,
+  diary: () => ["diary"] as const,
+  counsellors: () => ["counsellors"] as const,
 };
 
 export const useSubjects = () =>
@@ -96,6 +109,18 @@ export const usePastPapers = () =>
   useQuery<PastPaper[]>({
     queryKey: queryKeys.pastPapers(),
     queryFn: () => apiClient.get<PastPaper[]>("/api/practice/past-papers"),
+  });
+
+export const useDiaryEntries = () =>
+  useQuery<DiaryEntry[]>({
+    queryKey: queryKeys.diary(),
+    queryFn: () => apiClient.get<DiaryEntry[]>("/api/wellbeing/diary"),
+  });
+
+export const useCounsellors = () =>
+  useQuery<Counsellor[]>({
+    queryKey: queryKeys.counsellors(),
+    queryFn: () => apiClient.get<Counsellor[]>("/api/wellbeing/counsellors"),
   });
 
 export const useBursaries = () =>
