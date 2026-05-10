@@ -14,6 +14,7 @@ import { QueryStates } from "@/components/common/QueryStates";
 import { useAssessments, useSubjects } from "@/lib/api/queries";
 import type { Assessment, Subject } from "@/lib/mockData";
 import { formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 import dayjs from "dayjs";
 
 export default function CalendarPage() {
@@ -111,7 +112,7 @@ function UpcomingList({ assessments, subjects }: { assessments: Assessment[]; su
                 {a.title}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {subject?.name} · {formatRelative(a.dueDate)}
+                {subject?.name} · <RelativeTime iso={a.dueDate} />
               </Typography>
             </Box>
             <Chip label={a.type} size="small" />

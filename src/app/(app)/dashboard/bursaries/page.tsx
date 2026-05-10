@@ -16,6 +16,7 @@ import { QueryStates } from "@/components/common/QueryStates";
 import { useBursaries } from "@/lib/api/queries";
 import type { Bursary } from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 
 export default function BursariesDashboardPage() {
   const query = useBursaries();
@@ -123,7 +124,7 @@ function BursariesList({ bursaries }: { bursaries: Bursary[] }) {
                   {b.field} · {b.amount}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-                  Deadline {formatDate(b.deadline)} ({formatRelative(b.deadline)})
+                  Deadline {formatDate(b.deadline)} (<RelativeTime iso={b.deadline} />)
                 </Typography>
                 <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
                   {b.requirements.map((r) => (

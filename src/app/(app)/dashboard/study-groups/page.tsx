@@ -14,6 +14,7 @@ import LockIcon from "@mui/icons-material/LockOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { STUDY_GROUPS, SUBJECTS } from "@/lib/mockData";
 import { formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 
 export default function StudyGroupsPage() {
   return (
@@ -62,7 +63,7 @@ export default function StudyGroupsPage() {
                         Next session
                       </Typography>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {formatRelative(g.nextSession)}
+                        <RelativeTime iso={g.nextSession} />
                       </Typography>
                     </Box>
                   )}

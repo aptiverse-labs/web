@@ -14,6 +14,7 @@ import { Section } from "@/components/common/Section";
 import { StatusChip } from "@/components/common/StatusChip";
 import { BURSARIES } from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivismOutlined";
 
 
@@ -72,7 +73,7 @@ export default function Page() {
                   <Stack spacing={0.5} sx={{ mt: 1.5 }}>
                     <Typography variant="caption" color="text.secondary">Deadline</Typography>
                     <Typography variant="body2">
-                      {formatDate(b.deadline)} ({formatRelative(b.deadline)})
+                      {formatDate(b.deadline)} (<RelativeTime iso={b.deadline} />)
                     </Typography>
                   </Stack>
                   <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 2 }}>

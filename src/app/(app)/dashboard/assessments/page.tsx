@@ -16,6 +16,7 @@ import { QueryStates } from "@/components/common/QueryStates";
 import { useAssessments, useSubjects } from "@/lib/api/queries";
 import type { Assessment, Subject } from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 import dayjs from "dayjs";
 import Link from "next/link";
 
@@ -122,7 +123,7 @@ function AssessmentsList({ assessments, subjects }: { assessments: Assessment[];
             <Stack>
               <Typography variant="body2">{formatDate(r.dueDate)}</Typography>
               <Typography variant="caption" color={dayjs(r.dueDate).diff(dayjs(), "day") < 7 ? "warning.main" : "text.secondary"}>
-                {formatRelative(r.dueDate)}
+                <RelativeTime iso={r.dueDate} />
               </Typography>
             </Stack>
           ),

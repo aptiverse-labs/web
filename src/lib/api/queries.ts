@@ -52,10 +52,14 @@ export const queryKeys = {
   subjects: () => ["subjects"] as const,
   subject: (id: string) => ["subject", id] as const,
   assessments: () => ["assessments"] as const,
+  assessment: (id: string) => ["assessment", id] as const,
   goals: () => ["goals"] as const,
   practiceTests: () => ["practice-tests"] as const,
+  practiceTest: (id: string) => ["practice-test", id] as const,
   tutors: () => ["tutors"] as const,
+  tutor: (id: string) => ["tutor", id] as const,
   courses: () => ["courses"] as const,
+  course: (id: string) => ["course", id] as const,
   bursaries: () => ["bursaries"] as const,
   children: () => ["children"] as const,
   classes: () => ["classes"] as const,
@@ -65,6 +69,7 @@ export const queryKeys = {
   counsellors: () => ["counsellors"] as const,
   rewards: () => ["rewards"] as const,
   careers: () => ["careers"] as const,
+  studyGroups: () => ["study-groups"] as const,
 };
 
 export const useSubjects = () =>
@@ -86,6 +91,13 @@ export const useAssessments = () =>
     queryFn: () => apiClient.get<Assessment[]>("/api/academic-planning/assessments"),
   });
 
+export const useAssessment = (id: string) =>
+  useQuery<Assessment>({
+    queryKey: queryKeys.assessment(id),
+    queryFn: () => apiClient.get<Assessment>(`/api/academic-planning/assessments/${id}`),
+    enabled: !!id,
+  });
+
 export const useGoals = () =>
   useQuery<Goal[]>({
     queryKey: queryKeys.goals(),
@@ -98,10 +110,24 @@ export const usePracticeTests = () =>
     queryFn: () => apiClient.get<PracticeTest[]>("/api/practice/tests"),
   });
 
+export const usePracticeTest = (id: string) =>
+  useQuery<PracticeTest>({
+    queryKey: queryKeys.practiceTest(id),
+    queryFn: () => apiClient.get<PracticeTest>(`/api/practice/tests/${id}`),
+    enabled: !!id,
+  });
+
 export const useTutors = () =>
   useQuery<Tutor[]>({
     queryKey: queryKeys.tutors(),
     queryFn: () => apiClient.get<Tutor[]>("/api/marketplace/tutors"),
+  });
+
+export const useTutor = (id: string) =>
+  useQuery<Tutor>({
+    queryKey: queryKeys.tutor(id),
+    queryFn: () => apiClient.get<Tutor>(`/api/marketplace/tutors/${id}`),
+    enabled: !!id,
   });
 
 export const useCourses = () =>
@@ -134,16 +160,17 @@ export const useRewards = () =>
     queryFn: () => apiClient.get<Reward[]>("/api/goals/rewards"),
   });
 
-// No backend module for careers yet — keep the fake fetch so the page
-// gets state coverage; swap to apiClient.get when the module lands.
 export const useCareers = () =>
   useQuery<Career[]>({
     queryKey: queryKeys.careers(),
-    queryFn: () => fakeFetch(CAREERS),
+    queryFn: () => apiClient.get<Career[]>("/api/careers"),
   });
 
 export const useBursaries = () =>
-  useQuery<Bursary[]>({ queryKey: queryKeys.bursaries(), queryFn: () => fakeFetch(BURSARIES) });
+  useQuery<Bursary[]>({
+    queryKey: queryKeys.bursaries(),
+    queryFn: () => apiClient.get<Bursary[]>("/api/bursaries"),
+  });
 
 export const useChildren = () =>
   useQuery<Child[]>({ queryKey: queryKeys.children(), queryFn: () => fakeFetch(CHILDREN) });
@@ -152,4 +179,22 @@ export const useClasses = () =>
   useQuery<ClassRecord[]>({ queryKey: queryKeys.classes(), queryFn: () => fakeFetch(CLASSES) });
 
 export const useNotifications = () =>
-  useQuery<Notification[]>({ queryKey: queryKeys.notifications(), queryFn: () => fakeFetch(NOTIFICATIONS) });
+  useQuery<Notification[]>({
+    queryKey: queryKeys.notifications(),
+    queryFn: () => apiClient.get<Notification[]>("/api/notifications"),
+  });
+
+export type StudyGroup = {
+  id: string;
+  name: string;
+  subject: string;
+  memberCount: number;
+  isOnline: boolean;
+  description: string;
+};
+
+export const useStudyGroups = () =>
+  useQuery<StudyGroup[]>({
+    queryKey: queryKeys.studyGroups(),
+    queryFn: () => apiClient.get<StudyGroup[]>("/api/study-groups"),
+  });

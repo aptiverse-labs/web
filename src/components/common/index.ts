@@ -16,3 +16,4 @@ export * from "./QueryStates";
 export * from "./AptiverseBarChart";
 export * from "./AptiverseLineChart";
 export * from "./PieChartArcLabel";
+export * from "./RelativeTime";

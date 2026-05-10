@@ -23,6 +23,7 @@ import { QueryStates } from "@/components/common/QueryStates";
 import { useGoals, useSubjects } from "@/lib/api/queries";
 import type { Goal, Subject } from "@/lib/mockData";
 import { formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 
 const TABS = ["Active", "At risk", "Completed", "Verified"] as const;
 type TabValue = (typeof TABS)[number];
@@ -156,7 +157,7 @@ function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
               sx={{ textTransform: "capitalize" }}
             />
             <Typography variant="caption" color="text.secondary">
-              Due {formatRelative(goal.dueDate)}
+              Due <RelativeTime iso={goal.dueDate} />
             </Typography>
           </Stack>
 

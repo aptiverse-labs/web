@@ -16,6 +16,7 @@ import { StatCard } from "@/components/common/StatCard";
 import { StatusChip } from "@/components/common/StatusChip";
 import { ASSESSMENTS, SUBJECTS } from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 import Link from "next/link";
 
 export default function AssessmentDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -49,7 +50,7 @@ export default function AssessmentDetail({ params }: { params: Promise<{ id: str
               label={a.status.replace("_", " ")}
               sx={{ textTransform: "capitalize" }}
             />
-            <Chip label={`Due ${formatRelative(a.dueDate)} · ${formatDate(a.dueDate)}`} size="small" variant="outlined" />
+            <Chip label={`Due ${formatDate(a.dueDate)}`} size="small" variant="outlined" />
           </Stack>
         }
       />

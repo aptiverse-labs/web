@@ -28,6 +28,7 @@ import { ProgressRing } from "@/components/common/ProgressRing";
 import { StatusChip } from "@/components/common/StatusChip";
 import { ASSESSMENTS, GOALS, SUBJECTS, NOTIFICATIONS, APS_SCORE } from "@/lib/mockData";
 import { formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 
 export default function StudentDashboardPage() {
   const upcoming = ASSESSMENTS.filter((a) => a.status !== "graded")
@@ -259,7 +260,7 @@ export default function StudentDashboardPage() {
                           {n.title}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {formatRelative(n.time)}
+                          <RelativeTime iso={n.time} />
                         </Typography>
                       </Box>
                     </Stack>

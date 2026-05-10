@@ -10,6 +10,7 @@ import Avatar from "@mui/material/Avatar";
 import Rating from "@mui/material/Rating";
 import { PageHeader } from "@/components/common/PageHeader";
 import { initials, formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 import dayjs from "dayjs";
 
 const REVIEWS = [
@@ -40,7 +41,7 @@ export default function TutorReviewsPage() {
                         {r.student}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {formatRelative(r.when)}
+                        <RelativeTime iso={r.when} />
                       </Typography>
                     </Stack>
                     <Rating value={r.rating} readOnly size="small" />

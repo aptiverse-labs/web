@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { DataList } from "@/components/data/DataList";
 import { ASSESSMENTS, SUBJECTS } from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 import AddIcon from "@mui/icons-material/Add";
 import { StatusChip } from "@/components/common/StatusChip";
 
@@ -28,7 +29,7 @@ export default function TeacherAssignments() {
           { key: "subjectId", header: "Subject", render: (r) => SUBJECTS.find((s) => s.id === r.subjectId)?.name },
           { key: "type", header: "Type" },
           { key: "weight", header: "Weight", align: "right", render: (r) => `${r.weight}%` },
-          { key: "dueDate", header: "Due", render: (r) => `${formatDate(r.dueDate)} (${formatRelative(r.dueDate)})` },
+          { key: "dueDate", header: "Due", render: (r) => formatDate(r.dueDate) },
           {
             key: "status",
             header: "Status",

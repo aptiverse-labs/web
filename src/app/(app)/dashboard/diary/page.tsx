@@ -15,6 +15,7 @@ import { QueryStates } from "@/components/common/QueryStates";
 import { useDiaryEntries } from "@/lib/api/queries";
 import type { DiaryEntry } from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 
 const MOOD_EMOJI: Record<number, { emoji: string; label: string; color: string }> = {
   1: { emoji: "😞", label: "Really tough", color: "#D14B4B" },
@@ -142,7 +143,7 @@ function EntriesList({ entries }: { entries: DiaryEntry[] }) {
                   <Typography sx={{ fontSize: "1.75rem" }}>{m.emoji}</Typography>
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {formatDate(e.date)} · {formatRelative(e.date)}
+                      {formatDate(e.date)} · <RelativeTime iso={e.date} />
                     </Typography>
                     <Typography variant="caption" sx={{ color: m.color, fontWeight: 600 }}>
                       {m.label}

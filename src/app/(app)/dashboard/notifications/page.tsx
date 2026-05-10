@@ -14,6 +14,7 @@ import { QueryStates } from "@/components/common/QueryStates";
 import { useNotifications } from "@/lib/api/queries";
 import type { Notification } from "@/lib/mockData";
 import { formatRelative } from "@/lib/format";
+import { RelativeTime } from "@/components/common/RelativeTime";
 
 const KIND_AVATAR: Record<string, { emoji: string; color: string }> = {
   celebration: { emoji: "🎉", color: "secondary.main" },
@@ -69,7 +70,7 @@ function NotificationsList({ notifications }: { notifications: Notification[] })
                     {n.body}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-                    {formatRelative(n.time)}
+                    <RelativeTime iso={n.time} />
                   </Typography>
                 </Box>
                 <Button size="small">View</Button>
