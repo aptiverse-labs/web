@@ -28,7 +28,6 @@ import { ROLES, useRoleStore } from "@/providers/RoleProvider";
 import { initials } from "@/lib/format";
 import { NOTIFICATIONS } from "@/lib/mockData";
 import Link from "next/link";
-import { SIDEBAR_WIDTH } from "./Sidebar";
 
 type Props = {
   onMobileMenuClick: () => void;
@@ -44,13 +43,7 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
   const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
 
   return (
-    <AppBar
-      position="sticky"
-      sx={{
-        ml: { md: `${SIDEBAR_WIDTH}px` },
-        width: { md: `calc(100% - ${SIDEBAR_WIDTH}px)` },
-      }}
-    >
+    <AppBar position="sticky">
       <Toolbar sx={{ minHeight: { xs: 64, md: 68 }, px: { xs: 2, md: 3 } }}>
         <IconButton
           color="inherit"
