@@ -7,6 +7,7 @@ import Typography from "@mui/material/Typography";
 import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarChart";
 import { PieChart } from "@mui/x-charts/PieChart";
+import { PieChartArcLabel } from "@/components/common/PieChartArcLabel";
 import { PageHeader } from "@/components/common/PageHeader";
 
 export default function SchoolAnalyticsPage() {
@@ -53,9 +54,14 @@ export default function SchoolAnalyticsPage() {
                       { id: 2, value: 10, label: "Stretch" },
                     ],
                     arcLabel: (d) => `${d.value}%`,
+                    arcLabelMinAngle: 18,
+                    arcLabelRadius: "100%",
                     innerRadius: 50,
+                    highlightScope: { fade: "global" },
                   },
                 ]}
+                slots={{ pieArcLabel: PieChartArcLabel }}
+                slotProps={{ legend: { hidden: true } }}
               />
             </CardContent>
           </Card>

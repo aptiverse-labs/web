@@ -9,6 +9,7 @@ import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
 import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { PieChart } from "@mui/x-charts/PieChart";
+import { PieChartArcLabel } from "@/components/common/PieChartArcLabel";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { DataList } from "@/components/data/DataList";
@@ -82,8 +83,14 @@ export default function SubscriptionsPage() {
                       { id: 3, value: 96, label: "Free → conv" },
                     ],
                     innerRadius: 50,
+                    arcLabel: (item) => `${Math.round((item.value / 2842) * 100)}%`,
+                    arcLabelMinAngle: 18,
+                    arcLabelRadius: "100%",
+                    highlightScope: { fade: "global" },
                   },
                 ]}
+                slots={{ pieArcLabel: PieChartArcLabel }}
+                slotProps={{ legend: { hidden: true } }}
               />
             </CardContent>
           </Card>

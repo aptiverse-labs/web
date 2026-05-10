@@ -18,3 +18,5 @@ export * from "./AptiverseLineChart";
 export * from "./PieChartArcLabel";
 export * from "./RelativeTime";
 export * from "./RoleGuard";
+export * from "./SortableList";
+export * from "./EditWithTabs";
