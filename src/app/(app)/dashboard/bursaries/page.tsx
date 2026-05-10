@@ -9,12 +9,17 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
 import Grid from "@mui/material/Grid";
 import Chip from "@mui/material/Chip";
+import AccountBalanceIcon from "@mui/icons-material/AccountBalanceOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
-import { BURSARIES } from "@/lib/mockData";
+import { QueryStates } from "@/components/common/QueryStates";
+import { useBursaries } from "@/lib/api/queries";
+import type { Bursary } from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
 
 export default function BursariesDashboardPage() {
+  const query = useBursaries();
+
   return (
     <>
       <PageHeader
@@ -26,42 +31,18 @@ export default function BursariesDashboardPage() {
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 8 }}>
-          <Stack spacing={2}>
-            {BURSARIES.map((b) => (
-              <Card key={b.id}>
-                <CardContent sx={{ p: 3 }}>
-                  <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between" alignItems={{ md: "center" }}>
-                    <Box sx={{ flex: 1 }}>
-                      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                          {b.name}
-                        </Typography>
-                        <StatusChip
-                          kind={b.status === "open" ? "success" : b.status === "closing_soon" ? "warning" : "neutral"}
-                          label={b.status === "open" ? "Open" : b.status === "closing_soon" ? "Closing soon" : "Closed"}
-                        />
-                      </Stack>
-                      <Typography variant="body2" color="text.secondary">
-                        {b.field} · {b.amount}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-                        Deadline {formatDate(b.deadline)} ({formatRelative(b.deadline)})
-                      </Typography>
-                      <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
-                        {b.requirements.map((r) => (
-                          <Chip key={r} label={r} size="small" variant="outlined" />
-                        ))}
-                      </Stack>
-                    </Box>
-                    <Stack spacing={1}>
-                      <Button variant="contained">Track application</Button>
-                      <Button variant="outlined">View details</Button>
-                    </Stack>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
-          </Stack>
+          <QueryStates
+            query={query}
+            empty={{
+              icon: <AccountBalanceIcon />,
+              title: "No bursaries to show yet",
+              description:
+                "We're still curating opportunities that match your profile. Complete your subjects and grade to see matches.",
+              action: <Button variant="contained">Update profile</Button>,
+            }}
+          >
+            {(bursaries) => <BursariesList bursaries={bursaries} />}
+          </QueryStates>
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <Card sx={{ position: "sticky", top: 88 }}>
@@ -81,12 +62,14 @@ export default function BursariesDashboardPage() {
                   { label: "Consent forms signed", done: false },
                 ].map((c) => (
                   <Stack key={c.label} direction="row" alignItems="center" justifyContent="space-between">
-                    <Typography variant="body2" color={c.done ? "text.disabled" : "text.primary"} sx={{ textDecoration: c.done ? "line-through" : "none" }}>
+                    <Typography
+                      variant="body2"
+                      color={c.done ? "text.disabled" : "text.primary"}
+                      sx={{ textDecoration: c.done ? "line-through" : "none" }}
+                    >
                       {c.label}
                     </Typography>
-                    {!c.done && (
-                      <Button size="small">Upload</Button>
-                    )}
+                    {!c.done && <Button size="small">Upload</Button>}
                   </Stack>
                 ))}
               </Stack>
@@ -99,5 +82,63 @@ export default function BursariesDashboardPage() {
         </Grid>
       </Grid>
     </>
+  );
+}
+
+function BursariesList({ bursaries }: { bursaries: Bursary[] }) {
+  return (
+    <Stack spacing={2}>
+      {bursaries.map((b) => (
+        <Card key={b.id}>
+          <CardContent sx={{ p: 3 }}>
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={2}
+              justifyContent="space-between"
+              alignItems={{ md: "center" }}
+            >
+              <Box sx={{ flex: 1 }}>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    {b.name}
+                  </Typography>
+                  <StatusChip
+                    kind={
+                      b.status === "open"
+                        ? "success"
+                        : b.status === "closing_soon"
+                        ? "warning"
+                        : "neutral"
+                    }
+                    label={
+                      b.status === "open"
+                        ? "Open"
+                        : b.status === "closing_soon"
+                        ? "Closing soon"
+                        : "Closed"
+                    }
+                  />
+                </Stack>
+                <Typography variant="body2" color="text.secondary">
+                  {b.field} · {b.amount}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                  Deadline {formatDate(b.deadline)} ({formatRelative(b.deadline)})
+                </Typography>
+                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
+                  {b.requirements.map((r) => (
+                    <Chip key={r} label={r} size="small" variant="outlined" />
+                  ))}
+                </Stack>
+              </Box>
+              <Stack spacing={1}>
+                <Button variant="contained">Track application</Button>
+                <Button variant="outlined">View details</Button>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+      ))}
+    </Stack>
   );
 }
