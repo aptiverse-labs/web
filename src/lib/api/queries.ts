@@ -21,6 +21,7 @@ import {
   type DiaryEntry,
   type Reward,
   type Career,
+  type StudyGroup,
 } from "@/lib/mockData";
 
 export type PastPaper = {
@@ -183,15 +184,6 @@ export const useNotifications = () =>
     queryKey: queryKeys.notifications(),
     queryFn: () => apiClient.get<Notification[]>("/api/notifications"),
   });
-
-export type StudyGroup = {
-  id: string;
-  name: string;
-  subject: string;
-  memberCount: number;
-  isOnline: boolean;
-  description: string;
-};
 
 export const useStudyGroups = () =>
   useQuery<StudyGroup[]>({
