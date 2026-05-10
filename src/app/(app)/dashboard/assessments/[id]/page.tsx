@@ -1,7 +1,6 @@
 "use client";
 
 import { use } from "react";
-import { notFound } from "next/navigation";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -11,29 +10,36 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import LinearProgress from "@mui/material/LinearProgress";
 import Chip from "@mui/material/Chip";
+import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { StatusChip } from "@/components/common/StatusChip";
-import { ASSESSMENTS, SUBJECTS } from "@/lib/mockData";
-import { formatDate, formatRelative } from "@/lib/format";
-import { RelativeTime } from "@/components/common/RelativeTime";
+import { QueryStates } from "@/components/common/QueryStates";
+import { useAssessment, useSubjects } from "@/lib/api/queries";
+import type { Assessment, Subject } from "@/lib/mockData";
+import { formatDate } from "@/lib/format";
 import Link from "next/link";
 
 export default function AssessmentDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const a = ASSESSMENTS.find((x) => x.id === id);
-  if (!a) notFound();
-  const subject = SUBJECTS.find((s) => s.id === a.subjectId);
+  const assessmentQuery = useAssessment(id);
+  const subjectsQuery = useSubjects();
+
+  const subject = (subjectsQuery.data ?? []).find((s) => s.id === assessmentQuery.data?.subjectId);
 
   return (
     <>
       <PageHeader
-        title={a.title}
-        description={`${subject?.name} · ${a.type} · weighting ${a.weight}%`}
+        title={assessmentQuery.data?.title ?? "Assessment"}
+        description={
+          assessmentQuery.data
+            ? `${subject?.name ?? ""} · ${assessmentQuery.data.type} · weighting ${assessmentQuery.data.weight}%`
+            : undefined
+        }
         breadcrumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Assessments", href: "/dashboard/assessments" },
-          { label: a.title },
+          { label: assessmentQuery.data?.title ?? "Assessment" },
         ]}
         actions={
           <>
@@ -44,17 +50,52 @@ export default function AssessmentDetail({ params }: { params: Promise<{ id: str
           </>
         }
         meta={
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <StatusChip
-              kind={a.status === "graded" ? "success" : a.status === "in_progress" ? "info" : a.status === "submitted" ? "primary" : "neutral"}
-              label={a.status.replace("_", " ")}
-              sx={{ textTransform: "capitalize" }}
-            />
-            <Chip label={`Due ${formatDate(a.dueDate)}`} size="small" variant="outlined" />
-          </Stack>
+          assessmentQuery.data ? (
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <StatusChip
+                kind={
+                  assessmentQuery.data.status === "graded"
+                    ? "success"
+                    : assessmentQuery.data.status === "in_progress"
+                    ? "info"
+                    : assessmentQuery.data.status === "submitted"
+                    ? "primary"
+                    : "neutral"
+                }
+                label={assessmentQuery.data.status.replace("_", " ")}
+                sx={{ textTransform: "capitalize" }}
+              />
+              <Chip label={`Due ${formatDate(assessmentQuery.data.dueDate)}`} size="small" variant="outlined" />
+            </Stack>
+          ) : null
         }
       />
 
+      <QueryStates
+        query={assessmentQuery}
+        isEmpty={() => false}
+        empty={{
+          icon: <AssignmentIcon />,
+          title: "Assessment not found",
+          description: "This SBA doesn't exist or has been removed.",
+          action: (
+            <Button variant="outlined" href="/dashboard/assessments">
+              All assessments
+            </Button>
+          ),
+        }}
+      >
+        {(a) => <AssessmentBody assessment={a} />}
+      </QueryStates>
+    </>
+  );
+}
+
+function AssessmentBody({ assessment: a }: { assessment: Assessment }) {
+  const daysLeft = Math.max(0, Math.ceil((+new Date(a.dueDate) - Date.now()) / 86400000));
+
+  return (
+    <>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard label="Predicted" value={a.predictedMark != null ? `${a.predictedMark}%` : "—"} hint="AI estimate" color="primary" />
@@ -63,7 +104,7 @@ export default function AssessmentDetail({ params }: { params: Promise<{ id: str
           <StatCard label="Weight" value={`${a.weight}%`} hint="of term grade" color="info" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Days left" value={Math.max(0, Math.ceil((+new Date(a.dueDate) - Date.now()) / 86400000))} color="warning" />
+          <StatCard label="Days left" value={daysLeft} color="warning" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard label="Readiness" value="70%" hint="based on practice" color="success" />

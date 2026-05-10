@@ -1,7 +1,6 @@
 "use client";
 
 import { use, useState } from "react";
-import { notFound } from "next/navigation";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -14,11 +13,16 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
-import { PageHeader } from "@/components/common/PageHeader";
-import { PRACTICE_TESTS, SUBJECTS } from "@/lib/mockData";
+import QuizIcon from "@mui/icons-material/QuizOutlined";
 import FlagIcon from "@mui/icons-material/FlagOutlined";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import { PageHeader } from "@/components/common/PageHeader";
+import { QueryStates } from "@/components/common/QueryStates";
+import { usePracticeTest, useSubjects } from "@/lib/api/queries";
+import type { PracticeTest, Subject } from "@/lib/mockData";
 
+// Sample question bank — real questions will load via
+// GET /api/practice/tests/{id}/questions in a future pass.
 const SAMPLE_QUESTIONS = [
   {
     q: "Differentiate y = (3x² + 2)⁴ with respect to x.",
@@ -44,10 +48,58 @@ const SAMPLE_QUESTIONS = [
 
 export default function PracticeAttempt({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const test = PRACTICE_TESTS.find((p) => p.id === id);
-  if (!test) notFound();
-  const subject = SUBJECTS.find((s) => s.id === test.subjectId);
+  const testQuery = usePracticeTest(id);
+  const subjectsQuery = useSubjects();
 
+  const subject = (subjectsQuery.data ?? []).find((s) => s.id === testQuery.data?.subjectId);
+
+  return (
+    <>
+      <PageHeader
+        title={testQuery.data?.title ?? "Practice test"}
+        description={
+          testQuery.data
+            ? `${subject?.name ?? ""} · ${testQuery.data.questionCount} questions · ${testQuery.data.durationMinutes} min`
+            : undefined
+        }
+        breadcrumbs={[
+          { label: "Dashboard", href: "/dashboard" },
+          { label: "Practice", href: "/dashboard/practice" },
+          { label: testQuery.data?.title ?? "Test" },
+        ]}
+        actions={
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Typography variant="caption" color="text.secondary">
+              Time
+            </Typography>
+            <Typography variant="h6" sx={{ fontVariantNumeric: "tabular-nums" }}>
+              23:42
+            </Typography>
+          </Stack>
+        }
+      />
+
+      <QueryStates
+        query={testQuery}
+        isEmpty={() => false}
+        empty={{
+          icon: <QuizIcon />,
+          title: "Practice test not found",
+          description: "This test doesn't exist or has been removed.",
+          action: (
+            <Button variant="outlined" href="/dashboard/practice">
+              All practice tests
+            </Button>
+          ),
+        }}
+      >
+        {(test) => <PracticeRunner test={test} />}
+      </QueryStates>
+    </>
+  );
+}
+
+function PracticeRunner({ test: _ }: { test: PracticeTest }) {
   const [qIdx, setQIdx] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const total = SAMPLE_QUESTIONS.length;
@@ -66,26 +118,6 @@ export default function PracticeAttempt({ params }: { params: Promise<{ id: stri
 
   return (
     <>
-      <PageHeader
-        title={test.title}
-        description={`${subject?.name} · ${test.questionCount} questions · ${test.durationMinutes} min`}
-        breadcrumbs={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Practice", href: "/dashboard/practice" },
-          { label: test.title },
-        ]}
-        actions={
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Typography variant="caption" color="text.secondary">
-              Time
-            </Typography>
-            <Typography variant="h6" sx={{ fontVariantNumeric: "tabular-nums" }}>
-              23:42
-            </Typography>
-          </Stack>
-        }
-      />
-
       <LinearProgress variant="determinate" value={progress} sx={{ mb: 3 }} />
 
       <Card>

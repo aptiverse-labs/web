@@ -1,7 +1,6 @@
 "use client";
 
 import { use } from "react";
-import { notFound } from "next/navigation";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -10,35 +9,82 @@ import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import SchoolIcon from "@mui/icons-material/SchoolOutlined";
 import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
-import { SUBJECTS, ASSESSMENTS, PRACTICE_TESTS } from "@/lib/mockData";
+import { QueryStates } from "@/components/common/QueryStates";
+import { useSubject, useAssessments, usePracticeTests } from "@/lib/api/queries";
+import type { Subject, Assessment, PracticeTest } from "@/lib/mockData";
 import { DataList } from "@/components/data/DataList";
 import { StatusChip } from "@/components/common/StatusChip";
 import { formatDate } from "@/lib/format";
 
 export default function SubjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const subject = SUBJECTS.find((s) => s.id === id);
-  if (!subject) notFound();
-
-  const subjectAssessments = ASSESSMENTS.filter((a) => a.subjectId === subject.id);
-  const subjectPractice = PRACTICE_TESTS.filter((p) => p.subjectId === subject.id);
+  const subjectQuery = useSubject(id);
+  const assessmentsQuery = useAssessments();
+  const practiceQuery = usePracticeTests();
 
   return (
     <>
       <PageHeader
-        title={subject.name}
-        description={`Teacher: ${subject.teacher}${subject.paper ? " · " + subject.paper : ""}`}
+        title={subjectQuery.data?.name ?? "Subject"}
+        description={
+          subjectQuery.data
+            ? `Teacher: ${subjectQuery.data.teacher}${subjectQuery.data.paper ? " · " + subjectQuery.data.paper : ""}`
+            : undefined
+        }
         breadcrumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Subjects", href: "/dashboard/subjects" },
-          { label: subject.name },
+          { label: subjectQuery.data?.name ?? "Subject" },
         ]}
         actions={<Button variant="contained">Generate practice</Button>}
       />
 
+      <QueryStates
+        query={subjectQuery}
+        isEmpty={() => false}
+        empty={{
+          icon: <SchoolIcon />,
+          title: "Subject not found",
+          description: "This subject doesn't exist or isn't on your timetable.",
+          action: (
+            <Button variant="outlined" href="/dashboard/subjects">
+              All subjects
+            </Button>
+          ),
+        }}
+      >
+        {(subject) => (
+          <SubjectView
+            subject={subject}
+            assessments={(assessmentsQuery.data ?? []).filter((a) => a.subjectId === subject.id)}
+            practiceTests={(practiceQuery.data ?? []).filter((p) => p.subjectId === subject.id)}
+          />
+        )}
+      </QueryStates>
+    </>
+  );
+}
+
+function SubjectView({
+  subject,
+  assessments,
+  practiceTests,
+}: {
+  subject: Subject;
+  assessments: Assessment[];
+  practiceTests: PracticeTest[];
+}) {
+  const masteryAvg =
+    subject.topics.length > 0
+      ? Math.round(subject.topics.reduce((s, t) => s + t.mastery, 0) / subject.topics.length)
+      : 0;
+
+  return (
+    <>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard label="Current average" value={`${subject.currentAverage}%`} delta={3} deltaLabel="vs last term" color="primary" />
@@ -50,7 +96,7 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
           <StatCard label="Upcoming SBAs" value={subject.upcomingSBA} hint="this term" color="warning" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Mastery" value={`${Math.round(subject.topics.reduce((s, t) => s + t.mastery, 0) / subject.topics.length)}%`} hint="across topics" color="success" />
+          <StatCard label="Mastery" value={`${masteryAvg}%`} hint="across topics" color="success" />
         </Grid>
       </Grid>
 
@@ -64,37 +110,46 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
               <LineChart
                 height={260}
                 xAxis={[{ data: subject.termAverages.map((t) => t.term), scaleType: "point" }]}
-                series={[{ data: subject.termAverages.map((t) => t.mark), label: "Average", curve: "monotoneX", color: "#0F6963" }]}
-                grid={{ horizontal: true }}
+                series={[{ data: subject.termAverages.map((t) => t.mark), label: "Average", color: "#0F6963" }]}
                 margin={{ top: 16, right: 24, bottom: 24, left: 40 }}
               />
             </CardContent>
           </Card>
 
-          <DataList
-            title="Assessments"
-            description="All scheduled and graded SBAs for this subject"
-            rows={subjectAssessments}
-            rowKey={(r) => r.id}
-            columns={[
-              { key: "title", header: "Title", sortable: true, render: (r) => <Typography sx={{ fontWeight: 500 }}>{r.title}</Typography> },
-              { key: "type", header: "Type", sortable: true },
-              { key: "weight", header: "Weight", sortable: true, render: (r) => `${r.weight}%`, align: "right" },
-              { key: "dueDate", header: "Due", sortable: true, render: (r) => formatDate(r.dueDate) },
-              {
-                key: "status",
-                header: "Status",
-                render: (r) => (
-                  <StatusChip
-                    kind={r.status === "graded" ? "success" : r.status === "in_progress" ? "info" : r.status === "submitted" ? "primary" : "neutral"}
-                    label={r.status.replace("_", " ")}
-                    sx={{ textTransform: "capitalize" }}
-                  />
-                ),
-              },
-            ]}
-            pageSize={5}
-          />
+          {assessments.length === 0 ? (
+            <Card>
+              <CardContent sx={{ py: 6, textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  No assessments yet for {subject.name}.
+                </Typography>
+              </CardContent>
+            </Card>
+          ) : (
+            <DataList
+              title="Assessments"
+              description="All scheduled and graded SBAs for this subject"
+              rows={assessments}
+              rowKey={(r) => r.id}
+              columns={[
+                { key: "title", header: "Title", sortable: true, render: (r) => <Typography sx={{ fontWeight: 500 }}>{r.title}</Typography> },
+                { key: "type", header: "Type", sortable: true },
+                { key: "weight", header: "Weight", sortable: true, render: (r) => `${r.weight}%`, align: "right" },
+                { key: "dueDate", header: "Due", sortable: true, render: (r) => formatDate(r.dueDate) },
+                {
+                  key: "status",
+                  header: "Status",
+                  render: (r) => (
+                    <StatusChip
+                      kind={r.status === "graded" ? "success" : r.status === "in_progress" ? "info" : r.status === "submitted" ? "primary" : "neutral"}
+                      label={r.status.replace("_", " ")}
+                      sx={{ textTransform: "capitalize" }}
+                    />
+                  ),
+                },
+              ]}
+              pageSize={5}
+            />
+          )}
         </Grid>
 
         <Grid size={{ xs: 12, lg: 4 }}>
@@ -127,31 +182,37 @@ export default function SubjectDetailPage({ params }: { params: Promise<{ id: st
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
-                Practice tests ({subjectPractice.length})
+                Practice tests ({practiceTests.length})
               </Typography>
-              <Stack spacing={1.25}>
-                {subjectPractice.slice(0, 5).map((p) => (
-                  <Stack
-                    key={p.id}
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    sx={{ p: 1.5, border: 1, borderColor: "divider", borderRadius: 1.5 }}
-                  >
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {p.title}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {p.questionCount} qs · {p.durationMinutes}m
-                      </Typography>
-                    </Box>
-                    <Button size="small" variant="outlined">
-                      Start
-                    </Button>
-                  </Stack>
-                ))}
-              </Stack>
+              {practiceTests.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  No practice tests yet — generate one from your weakest topics.
+                </Typography>
+              ) : (
+                <Stack spacing={1.25}>
+                  {practiceTests.slice(0, 5).map((p) => (
+                    <Stack
+                      key={p.id}
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ p: 1.5, border: 1, borderColor: "divider", borderRadius: 1.5 }}
+                    >
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {p.title}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {p.questionCount} qs · {p.durationMinutes}m
+                        </Typography>
+                      </Box>
+                      <Button size="small" variant="outlined">
+                        Start
+                      </Button>
+                    </Stack>
+                  ))}
+                </Stack>
+              )}
             </CardContent>
           </Card>
         </Grid>
