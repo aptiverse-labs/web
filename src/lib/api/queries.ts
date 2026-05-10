@@ -1,10 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api/fetcher";
 import {
   ASSESSMENTS,
-  GOALS,
-  SUBJECTS,
   PRACTICE_TESTS,
   TUTORS,
   COURSES,
@@ -24,7 +23,8 @@ import {
   type Notification,
 } from "@/lib/mockData";
 
-// Mock fetch with delay so loading states render properly
+// Mock fetch with delay so loading states render properly. Used only by
+// hooks that haven't been wired to the real API yet — convert per page.
 const fakeFetch = <T>(value: T, ms = 350): Promise<T> =>
   new Promise((res) => setTimeout(() => res(value), ms));
 
@@ -43,12 +43,15 @@ export const queryKeys = {
 };
 
 export const useSubjects = () =>
-  useQuery<Subject[]>({ queryKey: queryKeys.subjects(), queryFn: () => fakeFetch(SUBJECTS) });
+  useQuery<Subject[]>({
+    queryKey: queryKeys.subjects(),
+    queryFn: () => apiClient.get<Subject[]>("/api/academic-planning/subjects"),
+  });
 
 export const useSubject = (id: string) =>
-  useQuery<Subject | undefined>({
+  useQuery<Subject>({
     queryKey: queryKeys.subject(id),
-    queryFn: () => fakeFetch(SUBJECTS.find((s) => s.id === id)),
+    queryFn: () => apiClient.get<Subject>(`/api/academic-planning/subjects/${id}`),
     enabled: !!id,
   });
 
@@ -56,7 +59,10 @@ export const useAssessments = () =>
   useQuery<Assessment[]>({ queryKey: queryKeys.assessments(), queryFn: () => fakeFetch(ASSESSMENTS) });
 
 export const useGoals = () =>
-  useQuery<Goal[]>({ queryKey: queryKeys.goals(), queryFn: () => fakeFetch(GOALS) });
+  useQuery<Goal[]>({
+    queryKey: queryKeys.goals(),
+    queryFn: () => apiClient.get<Goal[]>("/api/goals"),
+  });
 
 export const usePracticeTests = () =>
   useQuery<PracticeTest[]>({ queryKey: queryKeys.practiceTests(), queryFn: () => fakeFetch(PRACTICE_TESTS) });
