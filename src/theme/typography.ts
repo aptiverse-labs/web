@@ -1,8 +1,12 @@
 import type { TypographyVariantsOptions } from "@mui/material/styles";
 
-// Roboto matches Euphoria.v4's typographic conventions
+// Roboto matches Euphoria.v4's typographic conventions. The body element
+// already has next/font/google's Roboto applied via className in
+// app/layout.tsx; this fontFamily is the explicit MUI override so emotion
+// emits font-family on every typography variant (avoiding any chance of
+// downstream cascade weirdness).
 const fontFamily =
-  'var(--font-sans), "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+  '"Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
 
 export const typography: TypographyVariantsOptions = {
   fontFamily,

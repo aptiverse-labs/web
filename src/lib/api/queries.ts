@@ -180,7 +180,10 @@ export const useChildren = () =>
   });
 
 export const useClasses = () =>
-  useQuery<ClassRecord[]>({ queryKey: queryKeys.classes(), queryFn: () => fakeFetch(CLASSES) });
+  useQuery<ClassRecord[]>({
+    queryKey: queryKeys.classes(),
+    queryFn: () => apiClient.get<ClassRecord[]>("/api/academic-planning/classes"),
+  });
 
 export const useNotifications = () =>
   useQuery<Notification[]>({

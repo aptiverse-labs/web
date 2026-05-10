@@ -3,11 +3,12 @@ import { Roboto } from "next/font/google";
 import { AppProviders } from "@/providers/AppProviders";
 import "./globals.css";
 
-// Match Euphoria.v4's typography
+// Match Euphoria.v4's typography. Applied directly via className so the
+// font-family lands on <body> immediately and inherits down without
+// CSS-variable indirection.
 const roboto = Roboto({
   subsets: ["latin"],
   weight: ["300", "400", "500", "700"],
-  variable: "--font-sans",
   display: "swap",
 });
 
@@ -49,7 +50,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={roboto.variable}>
+      <body className={roboto.className}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

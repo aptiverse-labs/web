@@ -9,19 +9,23 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
-import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarChart";
-import { PageHeader } from "@/components/common/PageHeader";
-import { StatCard } from "@/components/common/StatCard";
-import { LiveActivityFeed } from "@/components/dashboard/LiveActivityFeed";
-import { CLASSES } from "@/lib/mockData";
 import GroupsIcon from "@mui/icons-material/GroupsOutlined";
 import SchoolIcon from "@mui/icons-material/SchoolOutlined";
 import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
 import VerifiedIcon from "@mui/icons-material/VerifiedOutlined";
-import Link from "next/link";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarChart";
+import { PageHeader } from "@/components/common/PageHeader";
+import { StatCard } from "@/components/common/StatCard";
+import { QueryStates } from "@/components/common/QueryStates";
+import { LiveActivityFeed } from "@/components/dashboard/LiveActivityFeed";
+import { useClasses } from "@/lib/api/queries";
+import type { ClassRecord } from "@/lib/mockData";
+import Link from "next/link";
 
 export default function TeacherDashboard() {
+  const query = useClasses();
+
   return (
     <>
       <PageHeader
@@ -40,12 +44,31 @@ export default function TeacherDashboard() {
         }
       />
 
+      <QueryStates
+        query={query}
+        empty={{
+          icon: <GroupsIcon />,
+          title: "No classes assigned yet",
+          description: "Once your school admin assigns you to a class, this dashboard will fill in automatically.",
+        }}
+      >
+        {(classes) => <TeacherOverview classes={classes} />}
+      </QueryStates>
+    </>
+  );
+}
+
+function TeacherOverview({ classes }: { classes: ClassRecord[] }) {
+  const totalStudents = classes.reduce((s, c) => s + c.studentCount, 0);
+
+  return (
+    <>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Classes" value={CLASSES.length} icon={<GroupsIcon />} color="primary" />
+          <StatCard label="Classes" value={classes.length} icon={<GroupsIcon />} color="primary" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Students" value={CLASSES.reduce((s, c) => s + c.studentCount, 0)} icon={<SchoolIcon />} color="info" />
+          <StatCard label="Students" value={totalStudents} icon={<SchoolIcon />} color="info" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard label="SBAs to mark" value={12} icon={<AssignmentIcon />} color="warning" />
@@ -67,10 +90,9 @@ export default function TeacherDashboard() {
               </Stack>
               <BarChart
                 height={300}
-                xAxis={[{ data: CLASSES.map((c) => c.name), scaleType: "band" }]}
+                xAxis={[{ data: classes.map((c) => c.name), scaleType: "band" }]}
                 yAxis={[{ min: 0, max: 100 }]}
-                series={[{ data: CLASSES.map((c) => c.averageMastery), label: "Average mastery", color: "#0F6963" }]}
-                grid={{ horizontal: true }}
+                series={[{ data: classes.map((c) => c.averageMastery), label: "Average mastery", color: "#0F6963" }]}
               />
             </CardContent>
           </Card>
@@ -81,45 +103,8 @@ export default function TeacherDashboard() {
                 Your classes
               </Typography>
               <Stack spacing={2}>
-                {CLASSES.map((c) => (
-                  <Box key={c.id} sx={{ p: 2, borderRadius: 2, border: 1, borderColor: "divider" }}>
-                    <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
-                      <Box sx={{ flex: 1 }}>
-                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            {c.name}
-                          </Typography>
-                          <Chip label={`${c.studentCount} learners`} size="small" />
-                          <Chip
-                            icon={<TrendingUpIcon sx={{ fontSize: 14 }} />}
-                            label={`+${c.trend}pp`}
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                          />
-                        </Stack>
-                        <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-                          {c.strugglingTopics.map((t) => (
-                            <Chip key={t} label={t} size="small" color="warning" variant="outlined" />
-                          ))}
-                        </Stack>
-                      </Box>
-                      <Box sx={{ minWidth: 200 }}>
-                        <Typography variant="caption" color="text.secondary">
-                          Average mastery
-                        </Typography>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <LinearProgress variant="determinate" value={c.averageMastery} sx={{ flex: 1, height: 8, borderRadius: 999 }} />
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {c.averageMastery}%
-                          </Typography>
-                        </Stack>
-                      </Box>
-                      <Button component={Link} href={`/teacher/classes/${c.id}`} variant="outlined" size="small">
-                        Open class
-                      </Button>
-                    </Stack>
-                  </Box>
+                {classes.map((c) => (
+                  <ClassRow key={c.id} record={c} />
                 ))}
               </Stack>
             </CardContent>
@@ -134,5 +119,48 @@ export default function TeacherDashboard() {
         </Grid>
       </Grid>
     </>
+  );
+}
+
+function ClassRow({ record: c }: { record: ClassRecord }) {
+  return (
+    <Box sx={{ p: 2, borderRadius: 2, border: 1, borderColor: "divider" }}>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
+        <Box sx={{ flex: 1 }}>
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+              {c.name}
+            </Typography>
+            <Chip label={`${c.studentCount} learners`} size="small" />
+            <Chip
+              icon={<TrendingUpIcon sx={{ fontSize: 14 }} />}
+              label={`+${c.trend}pp`}
+              size="small"
+              color="success"
+              variant="outlined"
+            />
+          </Stack>
+          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+            {c.strugglingTopics.map((t) => (
+              <Chip key={t} label={t} size="small" color="warning" variant="outlined" />
+            ))}
+          </Stack>
+        </Box>
+        <Box sx={{ minWidth: 200 }}>
+          <Typography variant="caption" color="text.secondary">
+            Average mastery
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <LinearProgress variant="determinate" value={c.averageMastery} sx={{ flex: 1, height: 8, borderRadius: 999 }} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {c.averageMastery}%
+            </Typography>
+          </Stack>
+        </Box>
+        <Button component={Link} href={`/teacher/classes/${c.id}`} variant="outlined" size="small">
+          Open class
+        </Button>
+      </Stack>
+    </Box>
   );
 }
