@@ -1,7 +1,8 @@
 import type { TypographyVariantsOptions } from "@mui/material/styles";
 
+// Roboto matches Euphoria.v4's typographic conventions
 const fontFamily =
-  'var(--font-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+  'var(--font-sans), "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
 
 export const typography: TypographyVariantsOptions = {
   fontFamily,

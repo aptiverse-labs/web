@@ -13,3 +13,6 @@ export * from "./LoadingScreen";
 export * from "./ComingSoon";
 export * from "./PermissionGuard";
 export * from "./QueryStates";
+export * from "./AptiverseBarChart";
+export * from "./AptiverseLineChart";
+export * from "./PieChartArcLabel";
