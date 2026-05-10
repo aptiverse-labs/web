@@ -3,9 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/fetcher";
 import {
-  ASSESSMENTS,
-  PRACTICE_TESTS,
-  TUTORS,
   COURSES,
   BURSARIES,
   CHILDREN,
@@ -56,7 +53,10 @@ export const useSubject = (id: string) =>
   });
 
 export const useAssessments = () =>
-  useQuery<Assessment[]>({ queryKey: queryKeys.assessments(), queryFn: () => fakeFetch(ASSESSMENTS) });
+  useQuery<Assessment[]>({
+    queryKey: queryKeys.assessments(),
+    queryFn: () => apiClient.get<Assessment[]>("/api/academic-planning/assessments"),
+  });
 
 export const useGoals = () =>
   useQuery<Goal[]>({
@@ -65,10 +65,16 @@ export const useGoals = () =>
   });
 
 export const usePracticeTests = () =>
-  useQuery<PracticeTest[]>({ queryKey: queryKeys.practiceTests(), queryFn: () => fakeFetch(PRACTICE_TESTS) });
+  useQuery<PracticeTest[]>({
+    queryKey: queryKeys.practiceTests(),
+    queryFn: () => apiClient.get<PracticeTest[]>("/api/practice/tests"),
+  });
 
 export const useTutors = () =>
-  useQuery<Tutor[]>({ queryKey: queryKeys.tutors(), queryFn: () => fakeFetch(TUTORS) });
+  useQuery<Tutor[]>({
+    queryKey: queryKeys.tutors(),
+    queryFn: () => apiClient.get<Tutor[]>("/api/marketplace/tutors"),
+  });
 
 export const useCourses = () =>
   useQuery<Course[]>({ queryKey: queryKeys.courses(), queryFn: () => fakeFetch(COURSES) });
