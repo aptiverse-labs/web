@@ -27,6 +27,7 @@ type Plan = {
   features: string[];
   cta: { label: string; href: string };
   audience: string;
+  comingSoon?: boolean;
 };
 
 const PLANS: Plan[] = [
@@ -63,6 +64,7 @@ const PLANS: Plan[] = [
       "Priority support",
     ],
     cta: { label: "Start 14-day trial", href: "/register?plan=student" },
+    comingSoon: true,
   },
   {
     name: "Family",
@@ -79,6 +81,7 @@ const PLANS: Plan[] = [
       "1 free counselling session / quarter",
     ],
     cta: { label: "Choose Family", href: "/register?plan=family" },
+    comingSoon: true,
   },
   {
     name: "School",
@@ -210,14 +213,24 @@ function PlanCard({ plan }: { plan: Plan }) {
         </List>
 
         <Box sx={{ flex: 1 }} />
-        <Button
-          component={Link}
-          href={plan.cta.href}
-          variant={plan.highlight ? "contained" : "outlined"}
-          fullWidth
-        >
-          {plan.cta.label}
-        </Button>
+        {plan.comingSoon ? (
+          <Button
+            variant={plan.highlight ? "contained" : "outlined"}
+            fullWidth
+            disabled
+          >
+            Coming soon
+          </Button>
+        ) : (
+          <Button
+            component={Link}
+            href={plan.cta.href}
+            variant={plan.highlight ? "contained" : "outlined"}
+            fullWidth
+          >
+            {plan.cta.label}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );

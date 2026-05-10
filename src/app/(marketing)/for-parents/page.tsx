@@ -15,8 +15,8 @@ export default function Page() {
       eyebrow="For parents & guardians"
       title="Support without surveillance."
       description="See how your child is really doing — academically and emotionally — and get plain-language suggestions for how to help, not hover."
-      primaryCta={{ label: "Choose Family plan", href: "/register?plan=family" }}
-      secondaryCta={{ label: "Pricing", href: "/pricing" }}
+      primaryCta={{ label: "Family plan — coming soon", disabled: true }}
+      secondaryCta={{ label: "See pricing", href: "/pricing" }}
       features={[
         { icon: <LightbulbIcon />, title: "How can I help? dashboard", description: "Actionable suggestions: 'Your child is stuck on Equilibrium — here are 3 things you can do at home.'", accent: "primary" },
         { icon: <CelebrationIcon />, title: "Celebration alerts", description: "Streaks, completed goals, kind reviews from peers — never just bad news.", accent: "secondary" },

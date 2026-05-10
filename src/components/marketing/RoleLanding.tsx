@@ -12,12 +12,14 @@ import { GradientBackdrop } from "@/components/common/GradientBackdrop";
 import { FeatureCard } from "@/components/common/FeatureCard";
 import type { FeatureCardProps } from "@/components/common/FeatureCard";
 
+type Cta = { label: string; href?: string; disabled?: boolean };
+
 export type RoleLandingProps = {
   eyebrow: string;
   title: React.ReactNode;
   description: string;
-  primaryCta: { label: string; href: string };
-  secondaryCta?: { label: string; href: string };
+  primaryCta: Cta;
+  secondaryCta?: Cta;
   features: FeatureCardProps[];
   outcomeTitle: string;
   outcomes: { stat: string; label: string }[];
@@ -37,13 +39,25 @@ export function RoleLanding(p: RoleLandingProps) {
               {p.description}
             </Typography>
             <Stack direction="row" spacing={1.5} sx={{ pt: 2 }} flexWrap="wrap" useFlexGap>
-              <Button component={Link} href={p.primaryCta.href} variant="contained" size="large">
-                {p.primaryCta.label}
-              </Button>
-              {p.secondaryCta && (
-                <Button component={Link} href={p.secondaryCta.href} variant="outlined" size="large">
-                  {p.secondaryCta.label}
+              {p.primaryCta.disabled ? (
+                <Button variant="contained" size="large" disabled>
+                  {p.primaryCta.label}
                 </Button>
+              ) : (
+                <Button component={Link} href={p.primaryCta.href!} variant="contained" size="large">
+                  {p.primaryCta.label}
+                </Button>
+              )}
+              {p.secondaryCta && (
+                p.secondaryCta.disabled ? (
+                  <Button variant="outlined" size="large" disabled>
+                    {p.secondaryCta.label}
+                  </Button>
+                ) : (
+                  <Button component={Link} href={p.secondaryCta.href!} variant="outlined" size="large">
+                    {p.secondaryCta.label}
+                  </Button>
+                )
               )}
             </Stack>
           </Stack>
