@@ -12,7 +12,6 @@ import Typography from "@mui/material/Typography";
 import Chip from "@mui/material/Chip";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Logo } from "@/components/common/Logo";
 import { navForRole, type NavSection } from "./nav-config";
 import { useRoleStore } from "@/providers/RoleProvider";
 
@@ -77,11 +76,6 @@ function SidebarContent({
 
   return (
     <Stack sx={{ height: "100%" }}>
-      <Box sx={{ px: 2.5, py: 2.25, borderBottom: 1, borderColor: "divider" }}>
-        <Box component={Link} href="/" sx={{ display: "inline-flex" }}>
-          <Logo size={30} />
-        </Box>
-      </Box>
       <Box sx={{ flex: 1, overflowY: "auto", py: 1.5, px: 1.25 }}>
         {sections.map((s) => (
           <Box key={s.heading} sx={{ mb: 1 }}>

@@ -24,10 +24,12 @@ import SettingsIcon from "@mui/icons-material/SettingsOutlined";
 import HelpIcon from "@mui/icons-material/HelpOutline";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { ColorModeToggle } from "@/components/common/ColorModeToggle";
+import { Logo } from "@/components/common/Logo";
 import { ROLES, useRoleStore } from "@/providers/RoleProvider";
 import { initials } from "@/lib/format";
 import { NOTIFICATIONS } from "@/lib/mockData";
 import Link from "next/link";
+import { SIDEBAR_WIDTH } from "./Sidebar";
 
 type Props = {
   onMobileMenuClick: () => void;
@@ -44,16 +46,29 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
 
   return (
     <AppBar position="sticky">
-      <Toolbar sx={{ minHeight: { xs: 64, md: 68 }, px: { xs: 2, md: 3 } }}>
+      <Toolbar sx={{ minHeight: { xs: 64, md: 68 }, px: { xs: 2, md: 3 }, gap: 1.5 }}>
         <IconButton
           color="inherit"
           edge="start"
           onClick={onMobileMenuClick}
-          sx={{ mr: 1.5, display: { md: "none" } }}
+          sx={{ display: { md: "none" } }}
           aria-label="Open menu"
         >
           <MenuIcon />
         </IconButton>
+
+        <Box
+          component={Link}
+          href="/"
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            width: { md: SIDEBAR_WIDTH - 24 },
+            flexShrink: 0,
+          }}
+        >
+          <Logo size={30} />
+        </Box>
 
         <Box
           sx={{
