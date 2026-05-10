@@ -7,6 +7,7 @@ import { ColorModeProvider } from "./ColorModeProvider";
 import { QueryProvider } from "./QueryProvider";
 import { AuthProvider } from "./AuthProvider";
 import { SnackbarProvider } from "./SnackbarProvider";
+import { SessionRoleSync } from "./SessionRoleSync";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -15,6 +16,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
           <SnackbarProvider>
             <AuthProvider>
+              <SessionRoleSync />
               <QueryProvider>{children}</QueryProvider>
             </AuthProvider>
           </SnackbarProvider>

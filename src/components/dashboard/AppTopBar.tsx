@@ -22,10 +22,8 @@ import NotificationsIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import LogoutIcon from "@mui/icons-material/LogoutOutlined";
 import SettingsIcon from "@mui/icons-material/SettingsOutlined";
 import HelpIcon from "@mui/icons-material/HelpOutline";
-import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { ColorModeToggle } from "@/components/common/ColorModeToggle";
 import { Logo } from "@/components/common/Logo";
-import { ROLES, useRoleStore } from "@/providers/RoleProvider";
 import { initials } from "@/lib/format";
 import { NOTIFICATIONS } from "@/lib/mockData";
 import Link from "next/link";
@@ -36,11 +34,8 @@ type Props = {
 };
 
 export function AppTopBar({ onMobileMenuClick }: Props) {
-  const role = useRoleStore((s) => s.role);
-  const setRole = useRoleStore((s) => s.setRole);
   const [profileEl, setProfileEl] = useState<null | HTMLElement>(null);
   const [notifEl, setNotifEl] = useState<null | HTMLElement>(null);
-  const [roleEl, setRoleEl] = useState<null | HTMLElement>(null);
 
   const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
 
@@ -116,44 +111,6 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
         <Box sx={{ flex: 1 }} />
 
         <Stack direction="row" spacing={0.75} alignItems="center">
-          <Tooltip title="Switch role (demo)">
-            <IconButton onClick={(e) => setRoleEl(e.currentTarget)} color="inherit">
-              <SwapHorizIcon />
-            </IconButton>
-          </Tooltip>
-          <Menu open={!!roleEl} anchorEl={roleEl} onClose={() => setRoleEl(null)}>
-            <Box sx={{ px: 2, pt: 1, pb: 0.5 }}>
-              <Typography variant="caption" color="text.secondary">
-                Switch role (demo)
-              </Typography>
-            </Box>
-            <Divider sx={{ my: 1 }} />
-            {ROLES.map((r) => (
-              <MenuItem
-                key={r.value}
-                selected={role === r.value}
-                onClick={() => {
-                  setRole(r.value);
-                  setRoleEl(null);
-                  // route map for first page
-                  const target =
-                    r.value === "student"
-                      ? "/dashboard"
-                      : r.value === "teacher"
-                        ? "/teacher"
-                        : r.value === "parent"
-                          ? "/parent"
-                          : r.value === "school_admin"
-                            ? "/school-admin"
-                            : "/tutor";
-                  window.location.href = target;
-                }}
-              >
-                <ListItemText primary={r.label} secondary={r.description} />
-              </MenuItem>
-            ))}
-          </Menu>
-
           <ColorModeToggle />
 
           <Tooltip title="Notifications">
