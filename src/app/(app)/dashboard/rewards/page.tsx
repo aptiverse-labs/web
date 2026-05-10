@@ -8,13 +8,17 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
-import { PageHeader } from "@/components/common/PageHeader";
-import { REWARDS } from "@/lib/mockData";
-import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEventsOutlined";
+import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
+import CardGiftcardIcon from "@mui/icons-material/CardGiftcardOutlined";
+import { PageHeader } from "@/components/common/PageHeader";
+import { QueryStates } from "@/components/common/QueryStates";
+import { useRewards } from "@/lib/api/queries";
+import type { Reward } from "@/lib/mockData";
 
 export default function RewardsPage() {
-  const points = 1840;
+  const points = 1840; // TODO: replace with useStudentPoints(currentUserId) once auth surfaces the id
+  const query = useRewards();
 
   return (
     <>
@@ -65,37 +69,53 @@ export default function RewardsPage() {
       <Typography variant="h5" sx={{ mb: 2 }}>
         Redeem rewards
       </Typography>
-      <Grid container spacing={3}>
-        {REWARDS.map((r) => {
-          const affordable = points >= r.cost;
-          return (
-            <Grid key={r.id} size={{ xs: 12, sm: 6, lg: 4 }}>
-              <Card sx={{ height: "100%", opacity: r.available ? 1 : 0.5 }}>
-                <Box sx={{ height: 80, bgcolor: r.imageColor, p: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Chip label={r.category} size="small" sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "white" }} />
-                  {r.cost === 0 && <Chip label="Free" size="small" color="secondary" />}
-                </Box>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    {r.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
-                    {r.description}
-                  </Typography>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
-                    <Typography variant="h6" sx={{ fontWeight: 700, color: "primary.main" }}>
-                      {r.cost === 0 ? "Free" : `${r.cost} pts`}
-                    </Typography>
-                    <Button variant={affordable ? "contained" : "outlined"} disabled={!r.available || !affordable}>
-                      {!r.available ? "Locked" : affordable ? "Redeem" : `Need ${r.cost - points} more`}
-                    </Button>
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          );
-        })}
-      </Grid>
+
+      <QueryStates
+        query={query}
+        empty={{
+          icon: <CardGiftcardIcon />,
+          title: "No rewards available yet",
+          description: "Rewards unlock as you earn points and your school adds local perks. Keep at it.",
+        }}
+      >
+        {(rewards) => (
+          <Grid container spacing={3}>
+            {rewards.map((r) => (
+              <Grid key={r.id} size={{ xs: 12, sm: 6, lg: 4 }}>
+                <RewardCard reward={r} points={points} />
+              </Grid>
+            ))}
+          </Grid>
+        )}
+      </QueryStates>
     </>
+  );
+}
+
+function RewardCard({ reward: r, points }: { reward: Reward; points: number }) {
+  const affordable = points >= r.cost;
+  return (
+    <Card sx={{ height: "100%", opacity: r.available ? 1 : 0.5 }}>
+      <Box sx={{ height: 80, bgcolor: r.imageColor, p: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Chip label={r.category} size="small" sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "white" }} />
+        {r.cost === 0 && <Chip label="Free" size="small" color="secondary" />}
+      </Box>
+      <CardContent sx={{ p: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          {r.title}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
+          {r.description}
+        </Typography>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Typography variant="h6" sx={{ fontWeight: 700, color: "primary.main" }}>
+            {r.cost === 0 ? "Free" : `${r.cost} pts`}
+          </Typography>
+          <Button variant={affordable ? "contained" : "outlined"} disabled={!r.available || !affordable}>
+            {!r.available ? "Locked" : affordable ? "Redeem" : `Need ${r.cost - points} more`}
+          </Button>
+        </Stack>
+      </CardContent>
+    </Card>
   );
 }

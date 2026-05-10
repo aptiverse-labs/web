@@ -9,11 +9,17 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutlineOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
-import { CAREERS, APS_SCORE } from "@/lib/mockData";
+import { QueryStates } from "@/components/common/QueryStates";
+import { useCareers } from "@/lib/api/queries";
+import { APS_SCORE } from "@/lib/mockData";
+import type { Career } from "@/lib/mockData";
 import Link from "next/link";
 
 export default function CareerPage() {
+  const query = useCareers();
+
   return (
     <>
       <PageHeader
@@ -61,35 +67,17 @@ export default function CareerPage() {
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Career matches based on your profile
               </Typography>
-              <Stack spacing={2}>
-                {CAREERS.map((c) => (
-                  <Box key={c.id} sx={{ p: 2, border: 1, borderColor: "divider", borderRadius: 2 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
-                      <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                          {c.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {c.field} · {c.averageSalary}
-                        </Typography>
-                      </Box>
-                      <Stack alignItems="flex-end">
-                        <Typography variant="h6" sx={{ color: "primary.main", fontWeight: 700 }}>
-                          {c.matchScore}%
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          match
-                        </Typography>
-                      </Stack>
-                    </Stack>
-                    <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-                      {c.requirements.map((r) => (
-                        <Chip key={r} label={r} size="small" variant="outlined" />
-                      ))}
-                    </Stack>
-                  </Box>
-                ))}
-              </Stack>
+              <QueryStates
+                query={query}
+                empty={{
+                  icon: <WorkOutlineIcon />,
+                  title: "No career matches yet",
+                  description: "Complete your subjects and interests so we can match you with careers that fit.",
+                  size: "compact",
+                }}
+              >
+                {(careers) => <CareerList careers={careers} />}
+              </QueryStates>
             </CardContent>
           </Card>
         </Grid>
@@ -143,5 +131,39 @@ export default function CareerPage() {
         </Grid>
       </Grid>
     </>
+  );
+}
+
+function CareerList({ careers }: { careers: Career[] }) {
+  return (
+    <Stack spacing={2}>
+      {careers.map((c) => (
+        <Box key={c.id} sx={{ p: 2, border: 1, borderColor: "divider", borderRadius: 2 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                {c.title}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {c.field} · {c.averageSalary}
+              </Typography>
+            </Box>
+            <Stack alignItems="flex-end">
+              <Typography variant="h6" sx={{ color: "primary.main", fontWeight: 700 }}>
+                {c.matchScore}%
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                match
+              </Typography>
+            </Stack>
+          </Stack>
+          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+            {c.requirements.map((r) => (
+              <Chip key={r} label={r} size="small" variant="outlined" />
+            ))}
+          </Stack>
+        </Box>
+      ))}
+    </Stack>
   );
 }

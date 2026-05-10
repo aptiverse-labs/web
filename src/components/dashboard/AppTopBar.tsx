@@ -46,12 +46,14 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
 
   return (
     <AppBar position="sticky">
-      <Toolbar sx={{ minHeight: { xs: 64, md: 68 }, px: { xs: 2, md: 3 }, gap: 1.5 }}>
+      <Toolbar
+        disableGutters
+        sx={{ minHeight: { xs: 64, md: 68 }, pr: { xs: 2, md: 3 }, gap: 1.5 }}
+      >
         <IconButton
           color="inherit"
-          edge="start"
           onClick={onMobileMenuClick}
-          sx={{ display: { md: "none" } }}
+          sx={{ ml: 2, display: { md: "none" } }}
           aria-label="Open menu"
         >
           <MenuIcon />
@@ -61,10 +63,17 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
           component={Link}
           href="/"
           sx={{
-            display: "inline-flex",
+            display: "flex",
             alignItems: "center",
-            width: { md: SIDEBAR_WIDTH - 24 },
+            width: { md: SIDEBAR_WIDTH },
+            height: "100%",
+            pl: { xs: 0, md: 3 },
+            pr: { xs: 0, md: 2 },
+            borderRight: { md: 1 },
+            borderColor: "divider",
             flexShrink: 0,
+            color: "text.primary",
+            textDecoration: "none",
           }}
         >
           <Logo size={30} />

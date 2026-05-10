@@ -7,6 +7,7 @@ import {
   CHILDREN,
   CLASSES,
   NOTIFICATIONS,
+  CAREERS,
   type Assessment,
   type Goal,
   type Subject,
@@ -18,6 +19,8 @@ import {
   type ClassRecord,
   type Notification,
   type DiaryEntry,
+  type Reward,
+  type Career,
 } from "@/lib/mockData";
 
 export type PastPaper = {
@@ -60,6 +63,8 @@ export const queryKeys = {
   pastPapers: () => ["past-papers"] as const,
   diary: () => ["diary"] as const,
   counsellors: () => ["counsellors"] as const,
+  rewards: () => ["rewards"] as const,
+  careers: () => ["careers"] as const,
 };
 
 export const useSubjects = () =>
@@ -121,6 +126,20 @@ export const useCounsellors = () =>
   useQuery<Counsellor[]>({
     queryKey: queryKeys.counsellors(),
     queryFn: () => apiClient.get<Counsellor[]>("/api/wellbeing/counsellors"),
+  });
+
+export const useRewards = () =>
+  useQuery<Reward[]>({
+    queryKey: queryKeys.rewards(),
+    queryFn: () => apiClient.get<Reward[]>("/api/goals/rewards"),
+  });
+
+// No backend module for careers yet — keep the fake fetch so the page
+// gets state coverage; swap to apiClient.get when the module lands.
+export const useCareers = () =>
+  useQuery<Career[]>({
+    queryKey: queryKeys.careers(),
+    queryFn: () => fakeFetch(CAREERS),
   });
 
 export const useBursaries = () =>

@@ -8,15 +8,17 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonthOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
-import { ASSESSMENTS, SUBJECTS } from "@/lib/mockData";
-import { formatDate, formatRelative } from "@/lib/format";
+import { QueryStates } from "@/components/common/QueryStates";
+import { useAssessments, useSubjects } from "@/lib/api/queries";
+import type { Assessment, Subject } from "@/lib/mockData";
+import { formatRelative } from "@/lib/format";
 import dayjs from "dayjs";
 
 export default function CalendarPage() {
-  const upcoming = ASSESSMENTS.filter((a) => a.status !== "graded")
-    .sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))
-    .slice(0, 8);
+  const assessmentsQuery = useAssessments();
+  const subjectsQuery = useSubjects();
 
   return (
     <>
@@ -47,46 +49,75 @@ export default function CalendarPage() {
             <Typography variant="h6" sx={{ mb: 2 }}>
               Upcoming
             </Typography>
-            <Stack spacing={1.5}>
-              {upcoming.map((a) => {
-                const subject = SUBJECTS.find((s) => s.id === a.subjectId);
-                const daysLeft = dayjs(a.dueDate).diff(dayjs(), "day");
-                const urgent = daysLeft <= 3;
-                return (
-                  <Box key={a.id} sx={{ p: 2, borderRadius: 2, border: 1, borderColor: "divider", display: "flex", gap: 2, alignItems: "center" }}>
-                    <Box
-                      sx={{
-                        width: 56,
-                        textAlign: "center",
-                        py: 0.5,
-                        borderRadius: 1.5,
-                        bgcolor: urgent ? "warning.main" : "primary.main",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                        {dayjs(a.dueDate).format("MMM").toUpperCase()}
-                      </Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1 }}>
-                        {dayjs(a.dueDate).format("DD")}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {a.title}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {subject?.name} · {formatRelative(a.dueDate)}
-                      </Typography>
-                    </Box>
-                    <Chip label={a.type} size="small" />
-                  </Box>
-                );
-              })}
-            </Stack>
+            <QueryStates
+              query={assessmentsQuery}
+              empty={{
+                icon: <CalendarMonthIcon />,
+                title: "Nothing scheduled",
+                description: "Add an assessment or sync your school calendar to see deadlines here.",
+                size: "compact",
+              }}
+            >
+              {(assessments) => <UpcomingList assessments={assessments} subjects={subjectsQuery.data ?? []} />}
+            </QueryStates>
           </CardContent>
         </Card>
       </Stack>
     </>
+  );
+}
+
+function UpcomingList({ assessments, subjects }: { assessments: Assessment[]; subjects: Subject[] }) {
+  const upcoming = assessments
+    .filter((a) => a.status !== "graded")
+    .sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))
+    .slice(0, 8);
+
+  if (upcoming.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+        No upcoming assessments — you're caught up.
+      </Typography>
+    );
+  }
+
+  return (
+    <Stack spacing={1.5}>
+      {upcoming.map((a) => {
+        const subject = subjects.find((s) => s.id === a.subjectId);
+        const daysLeft = dayjs(a.dueDate).diff(dayjs(), "day");
+        const urgent = daysLeft <= 3;
+        return (
+          <Box key={a.id} sx={{ p: 2, borderRadius: 2, border: 1, borderColor: "divider", display: "flex", gap: 2, alignItems: "center" }}>
+            <Box
+              sx={{
+                width: 56,
+                textAlign: "center",
+                py: 0.5,
+                borderRadius: 1.5,
+                bgcolor: urgent ? "warning.main" : "primary.main",
+                color: "primary.contrastText",
+              }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                {dayjs(a.dueDate).format("MMM").toUpperCase()}
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1 }}>
+                {dayjs(a.dueDate).format("DD")}
+              </Typography>
+            </Box>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {a.title}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {subject?.name} · {formatRelative(a.dueDate)}
+              </Typography>
+            </Box>
+            <Chip label={a.type} size="small" />
+          </Box>
+        );
+      })}
+    </Stack>
   );
 }
