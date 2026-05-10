@@ -11,7 +11,7 @@ import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import { BarChart } from "@mui/x-charts/BarChart";
+import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarChart";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { CLASSES } from "@/lib/mockData";

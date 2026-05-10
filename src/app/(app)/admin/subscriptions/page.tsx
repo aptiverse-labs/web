@@ -7,7 +7,7 @@ import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
-import { LineChart } from "@mui/x-charts/LineChart";
+import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";

@@ -8,7 +8,7 @@ import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
-import { LineChart } from "@mui/x-charts/LineChart";
+import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { PageHeader } from "@/components/common/PageHeader";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
 import { Dot } from "@/components/common/Dot";

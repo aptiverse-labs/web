@@ -10,7 +10,7 @@ import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import { LineChart } from "@mui/x-charts/LineChart";
+import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatCard } from "@/components/common/StatCard";
 import { SUBJECTS, ASSESSMENTS, PRACTICE_TESTS } from "@/lib/mockData";

@@ -4,8 +4,8 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { LineChart } from "@mui/x-charts/LineChart";
-import { BarChart } from "@mui/x-charts/BarChart";
+import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
+import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarChart";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { PageHeader } from "@/components/common/PageHeader";
 

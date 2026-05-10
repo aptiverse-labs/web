@@ -9,7 +9,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
-import { BarChart } from "@mui/x-charts/BarChart";
+import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarChart";
 import { PageHeader } from "@/components/common/PageHeader";
 
 const GAPS = [

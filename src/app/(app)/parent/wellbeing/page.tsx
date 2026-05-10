@@ -4,7 +4,7 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
-import { LineChart } from "@mui/x-charts/LineChart";
+import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CHILDREN } from "@/lib/mockData";
 

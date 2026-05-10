@@ -10,7 +10,7 @@ import Box from "@mui/material/Box";
 import LinearProgress from "@mui/material/LinearProgress";
 import Avatar from "@mui/material/Avatar";
 import Chip from "@mui/material/Chip";
-import { LineChart } from "@mui/x-charts/LineChart";
+import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { PageHeader } from "@/components/common/PageHeader";
 import { LiveActivityFeed } from "@/components/dashboard/LiveActivityFeed";
 import { Dot } from "@/components/common/Dot";
