@@ -13,9 +13,14 @@ export function PieChartArcLabel(props: PieArcLabelProps) {
     return null;
   }
 
-  const start = startAngle.get();
-  const end = endAngle.get();
-  const radius = arcLabelRadius.get();
+  // v8 of @mui/x-charts passes these as plain numbers; v7 wrapped them
+  // in framer-motion MotionValues. Read defensively so the same component
+  // works against either.
+  const read = (v: unknown): number =>
+    typeof v === "number" ? v : (v as { get: () => number }).get();
+  const start = read(startAngle);
+  const end = read(endAngle);
+  const radius = read(arcLabelRadius);
   const midAngle = (start + end) / 2;
   const adjustedAngle = midAngle - Math.PI / 2;
   const x = radius * Math.cos(adjustedAngle);
