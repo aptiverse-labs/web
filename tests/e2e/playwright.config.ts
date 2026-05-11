@@ -1,10 +1,13 @@
 // Playwright + Cucumber (BDD) configuration for Aptiverse end-to-end tests.
 //
 // Per-role projects:
-//   - setup project signs in each test account and saves its session to
-//     .auth/<role>.json
-//   - one main project per role, each loading its own storageState and
-//     grep-filtering scenarios by @<role> tag.
+//   - one setup project per role (student/parent/teacher/tutor), each
+//     signs in and saves its session to .auth/<role>.json
+//   - one main project per role, depending ONLY on that role's setup
+//     and grep-filtering scenarios by @<role> tag
+//
+// Isolation: a failed parent setup doesn't block the student / teacher /
+// tutor suites from running.
 //
 // Tests run against your local dev stack:
 //   - Next.js UI on  http://localhost:3000
@@ -24,6 +27,25 @@ const testDir = defineBddConfig({
 });
 
 const auth = (role: string) => path.resolve(__dirname, `.auth/${role}.json`);
+const setupDir = path.resolve(__dirname, "setup");
+
+function setupProject(role: string) {
+  return {
+    name: `setup-${role}`,
+    testDir: setupDir,
+    testMatch: new RegExp(`${role}\\.setup\\.ts$`),
+    use: { ...devices["Desktop Chrome"] },
+  };
+}
+
+function roleProject(role: string) {
+  return {
+    name: role,
+    use: { ...devices["Desktop Chrome"], storageState: auth(role) },
+    dependencies: [`setup-${role}`],
+    grep: new RegExp(`@${role}`),
+  };
+}
 
 export default defineConfig({
   testDir,
@@ -43,35 +65,13 @@ export default defineConfig({
   },
 
   projects: [
-    {
-      name: "setup",
-      testDir: path.resolve(__dirname, "setup"),
-      testMatch: /.*\.setup\.ts/,
-      use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "student",
-      use: { ...devices["Desktop Chrome"], storageState: auth("student") },
-      dependencies: ["setup"],
-      grep: /@student/,
-    },
-    {
-      name: "parent",
-      use: { ...devices["Desktop Chrome"], storageState: auth("parent") },
-      dependencies: ["setup"],
-      grep: /@parent/,
-    },
-    {
-      name: "teacher",
-      use: { ...devices["Desktop Chrome"], storageState: auth("teacher") },
-      dependencies: ["setup"],
-      grep: /@teacher/,
-    },
-    {
-      name: "tutor",
-      use: { ...devices["Desktop Chrome"], storageState: auth("tutor") },
-      dependencies: ["setup"],
-      grep: /@tutor/,
-    },
+    setupProject("student"),
+    setupProject("parent"),
+    setupProject("teacher"),
+    setupProject("tutor"),
+    roleProject("student"),
+    roleProject("parent"),
+    roleProject("teacher"),
+    roleProject("tutor"),
   ],
 });
