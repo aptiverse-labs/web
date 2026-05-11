@@ -1,13 +1,13 @@
 // Playwright + Cucumber (BDD) configuration for Aptiverse end-to-end tests.
 //
 // Per-role projects:
-//   - one setup project per role (student/parent/teacher/tutor), each
-//     signs in and saves its session to .auth/<role>.json
+//   - one setup project per role (student/parent/teacher/tutor/admin/
+//     school-admin), each signs in and saves its session to
+//     .auth/<role>.json
 //   - one main project per role, depending ONLY on that role's setup
 //     and grep-filtering scenarios by @<role> tag
 //
-// Isolation: a failed parent setup doesn't block the student / teacher /
-// tutor suites from running.
+// Isolation: a failed setup for one role doesn't block the other suites.
 //
 // Tests run against your local dev stack:
 //   - Next.js UI on  http://localhost:3000
@@ -43,9 +43,11 @@ function roleProject(role: string) {
     name: role,
     use: { ...devices["Desktop Chrome"], storageState: auth(role) },
     dependencies: [`setup-${role}`],
-    grep: new RegExp(`@${role}`),
+    grep: new RegExp(`@${role}\\b`),
   };
 }
+
+const ROLES = ["student", "parent", "teacher", "tutor", "admin", "school-admin"];
 
 export default defineConfig({
   testDir,
@@ -65,13 +67,7 @@ export default defineConfig({
   },
 
   projects: [
-    setupProject("student"),
-    setupProject("parent"),
-    setupProject("teacher"),
-    setupProject("tutor"),
-    roleProject("student"),
-    roleProject("parent"),
-    roleProject("teacher"),
-    roleProject("tutor"),
+    ...ROLES.map(setupProject),
+    ...ROLES.map(roleProject),
   ],
 });

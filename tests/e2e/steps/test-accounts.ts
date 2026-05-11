@@ -2,7 +2,7 @@
 //
 // Resolution order per role:
 //   1. E2E_<ROLE>_EMAIL env var          (explicit, wins always)
-//   2. role-specific default (where defined — parent/teacher/tutor)
+//   2. role-specific default             (parent/teacher/tutor/admin/school-admin)
 //   3. E2E_TEST_EMAIL env var            (legacy single-account fallback,
 //                                         only useful for the student role)
 //
@@ -12,17 +12,25 @@
 //
 // The default emails are conventions for our shared test accounts.
 // They are not secrets — the password still has to come from .env.
+// Hyphens in role names (school-admin) are converted to underscores for
+// env-var lookup, since shells don't allow hyphens in identifiers.
 
-export type Role = "student" | "parent" | "teacher" | "tutor";
+export type Role = "student" | "parent" | "teacher" | "tutor" | "admin" | "school-admin";
 
 const DEFAULT_EMAILS: Partial<Record<Role, string>> = {
   parent: "parent.test@gmail.com",
   teacher: "teacher.test@gmail.com",
   tutor: "tutor.test@gmail.com",
+  admin: "admin.test@gmail.com",
+  "school-admin": "schooladmin.test@gmail.com",
 };
 
+function envKey(role: Role): string {
+  return `E2E_${role.toUpperCase().replace(/-/g, "_")}_EMAIL`;
+}
+
 export function emailFor(role: Role): string {
-  const explicit = process.env[`E2E_${role.toUpperCase()}_EMAIL`];
+  const explicit = process.env[envKey(role)];
   if (explicit) return explicit;
 
   if (role === "student" && process.env.E2E_TEST_EMAIL) {
@@ -33,7 +41,7 @@ export function emailFor(role: Role): string {
   if (fallback) return fallback;
 
   throw new Error(
-    `No email configured for role "${role}". Set E2E_${role.toUpperCase()}_EMAIL in tests/e2e/.env.`,
+    `No email configured for role "${role}". Set ${envKey(role)} in tests/e2e/.env.`,
   );
 }
 
