@@ -61,7 +61,7 @@ export default function SchoolAnalyticsPage() {
                   },
                 ]}
                 slots={{ pieArcLabel: PieChartArcLabel }}
-                slotProps={{ legend: { hidden: true } }}
+                hideLegend
               />
             </CardContent>
           </Card>

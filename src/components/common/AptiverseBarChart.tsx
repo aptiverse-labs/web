@@ -18,12 +18,9 @@ export function AptiverseBarChart(props: BarChartProps) {
   return (
     <Box sx={{ position: "relative" }}>
       <BarChart
+        hideLegend
         {...props}
         series={seriesWithGradient}
-        slotProps={{
-          legend: { hidden: true },
-          ...(props.slotProps ?? {}),
-        }}
         xAxis={(props.xAxis ?? []).map((a) => ({
           ...a,
           disableLine: true,

@@ -90,7 +90,7 @@ export default function SubscriptionsPage() {
                   },
                 ]}
                 slots={{ pieArcLabel: PieChartArcLabel }}
-                slotProps={{ legend: { hidden: true } }}
+                hideLegend
               />
             </CardContent>
           </Card>

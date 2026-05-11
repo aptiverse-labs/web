@@ -10,11 +10,8 @@ export function AptiverseLineChart(props: LineChartProps) {
 
   return (
     <LineChart
+      hideLegend
       {...props}
-      slotProps={{
-        legend: { hidden: true, ...(props.slotProps?.legend ?? {}) },
-        ...(props.slotProps ?? {}),
-      }}
       xAxis={(props.xAxis ?? []).map((a) => ({
         ...a,
         disableLine: true,
