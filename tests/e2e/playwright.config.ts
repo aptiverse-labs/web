@@ -33,7 +33,9 @@ function setupProject(role: string) {
   return {
     name: `setup-${role}`,
     testDir: setupDir,
-    testMatch: new RegExp(`${role}\\.setup\\.ts$`),
+    // Anchor on a path separator (or start-of-string) so `setup-admin`
+    // doesn't also match `school-admin.setup.ts`.
+    testMatch: new RegExp(`(?:^|[\\\\/])${role}\\.setup\\.ts$`),
     use: { ...devices["Desktop Chrome"] },
   };
 }

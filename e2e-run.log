@@ -1,0 +1,211 @@
+
+> aptiverse-ui@0.2.0 e2e
+> bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts
+
+◇ injected env (7) from tests\e2e\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+◇ injected env (7) from tests\e2e\.env // tip: ⌘ suppress logs { quiet: true }
+
+Running 94 tests using 1 worker
+
+◇ injected env (0) from tests\e2e\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  ✓   1 [setup-school-admin] › tests\e2e\setup\school-admin.setup.ts:4:6 › school-admin auth (39.6s)
+◇ injected env (0) from tests\e2e\.env // tip: ◈ encrypted .env [www.dotenvx.com]
+  ✓   2 [setup-admin] › tests\e2e\setup\admin.setup.ts:4:6 › admin auth (6.4s)
+  ✓   3 [setup-admin] › tests\e2e\setup\school-admin.setup.ts:4:6 › school-admin auth (10.5s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+  ✓   4 [setup-tutor] › tests\e2e\setup\tutor.setup.ts:4:6 › tutor auth (19.9s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ suppress logs { quiet: true }
+  ✓   5 [setup-teacher] › tests\e2e\setup\teacher.setup.ts:4:6 › teacher auth (14.6s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ suppress logs { quiet: true }
+  ✓   6 [setup-parent] › tests\e2e\setup\parent.setup.ts:4:6 › parent auth (8.4s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ suppress logs { quiet: true }
+  ✓   7 [setup-student] › tests\e2e\setup\student.setup.ts:4:6 › student auth (13.0s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ enable debugging { debug: true }
+  ✓   8 [student] › tests\e2e\.features-gen\features\assessments.feature.spec.js:6:7 › Assessments › Student logs a Maths SBA test @student (18.4s)
+  ✓   9 [student] › tests\e2e\.features-gen\features\assessments.feature.spec.js:12:7 › Assessments › Cannot reach New assessment form without subjects @student (10.7s)
+  ✓  10 [student] › tests\e2e\.features-gen\features\goals.feature.spec.js:6:7 › Goals › Empty goals page shows the add-first-goal CTA @student (9.1s)
+  ✓  11 [student] › tests\e2e\.features-gen\features\goals.feature.spec.js:12:7 › Goals › Create an academic goal via the dialog @student (12.9s)
+  ✓  12 [student] › tests\e2e\.features-gen\features\goals.feature.spec.js:19:7 › Goals › Academic-profile reset does not touch goals @student (4.1s)
+  ✓  13 [student] › tests\e2e\.features-gen\features\static_pages.feature.spec.js:6:7 › Static link pages › Past papers page points to the DBE archive with subject tips @student (12.5s)
+  ✓  14 [student] › tests\e2e\.features-gen\features\static_pages.feature.spec.js:13:7 › Static link pages › Bursaries page surfaces NSFAS, ZA Bursaries, and Study Trust @student (10.7s)
+  ✓  15 [student] › tests\e2e\.features-gen\features\static_pages.feature.spec.js:20:7 › Static link pages › Universities page lists the major SA universities @student (13.5s)
+  ✓  16 [student] › tests\e2e\.features-gen\features\static_pages.feature.spec.js:27:7 › Static link pages › Career page shows the empty dream-course state by default @student (8.8s)
+  ✓  17 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:8:9 › Student page smoke tests › <name> page loads › dashboard home page loads @student (13.6s)
+  ✓  18 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:13:9 › Student page smoke tests › <name> page loads › mastery page loads @student (13.4s)
+  ✓  19 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:18:9 › Student page smoke tests › <name> page loads › journey page loads @student (13.6s)
+  ✓  20 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:23:9 › Student page smoke tests › <name> page loads › practice page loads @student (6.4s)
+  ✓  21 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:28:9 › Student page smoke tests › <name> page loads › diary page loads @student (5.7s)
+  ✓  22 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:33:9 › Student page smoke tests › <name> page loads › wellbeing page loads @student (10.4s)
+  ✓  23 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:38:9 › Student page smoke tests › <name> page loads › psychologist page loads @student (11.5s)
+  ✓  24 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:43:9 › Student page smoke tests › <name> page loads › calendar page loads @student (9.6s)
+  ✓  25 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:48:9 › Student page smoke tests › <name> page loads › tutors page loads @student (15.8s)
+  ✓  26 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:53:9 › Student page smoke tests › <name> page loads › courses page loads @student (7.4s)
+  ✓  27 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:58:9 › Student page smoke tests › <name> page loads › study-groups page loads @student (10.5s)
+  ✓  28 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:63:9 › Student page smoke tests › <name> page loads › rewards page loads @student (10.2s)
+  ✓  29 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:68:9 › Student page smoke tests › <name> page loads › notifications page loads @student (15.6s)
+  ✓  30 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:73:9 › Student page smoke tests › <name> page loads › settings page loads @student (7.8s)
+  ✓  31 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:78:9 › Student page smoke tests › <name> page loads › help page loads @student (10.3s)
+  ✓  32 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:83:9 › Student page smoke tests › <name> page loads › chatbot page loads @student (10.3s)
+  ✓  33 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:88:9 › Student page smoke tests › <name> page loads › workspace page loads @student (13.4s)
+  ✓  34 [student] › tests\e2e\.features-gen\features\student_smoke.feature.spec.js:95:7 › Student page smoke tests › No page renders the wrong-role gate for a student @student (12.7s)
+  ✓  35 [student] › tests\e2e\.features-gen\features\subjects.feature.spec.js:6:7 › Subjects › First-time student picks NSC and adds Mathematics @student (25.9s)
+  ✓  36 [student] › tests\e2e\.features-gen\features\subjects.feature.spec.js:15:7 › Subjects › IEB student adds Advanced Programme Mathematics @student (22.6s)
+  ✓  37 [student] › tests\e2e\.features-gen\features\subjects.feature.spec.js:22:7 › Subjects › Removing a non-compulsory subject @student (12.0s)
+  ✓  38 [student] › tests\e2e\.features-gen\features\subjects.feature.spec.js:29:7 › Subjects › Compulsory subjects cannot be removed from the catalog dialog @student (6.8s)
+  ✓  39 [student] › tests\e2e\.features-gen\features\subjects.feature.spec.js:36:7 › Subjects › A teacher entered per-subject persists @student (18.3s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ enable debugging { debug: true }
+  ✓  40 [parent] › tests\e2e\.features-gen\features\parent_smoke.feature.spec.js:6:7 › Parent page smoke tests › Signed-in parent lands on the parent dashboard @parent (8.8s)
+  ✓  41 [parent] › tests\e2e\.features-gen\features\parent_smoke.feature.spec.js:14:9 › Parent page smoke tests › <name> page loads › dashboard home page loads @parent (11.7s)
+  ✓  42 [parent] › tests\e2e\.features-gen\features\parent_smoke.feature.spec.js:20:9 › Parent page smoke tests › <name> page loads › children page loads @parent (9.1s)
+  ✓  43 [parent] › tests\e2e\.features-gen\features\parent_smoke.feature.spec.js:26:9 › Parent page smoke tests › <name> page loads › celebrations page loads @parent (7.8s)
+  ✓  44 [parent] › tests\e2e\.features-gen\features\parent_smoke.feature.spec.js:32:9 › Parent page smoke tests › <name> page loads › wellbeing page loads @parent (8.1s)
+  ✓  45 [parent] › tests\e2e\.features-gen\features\parent_smoke.feature.spec.js:38:9 › Parent page smoke tests › <name> page loads › live page loads @parent (12.0s)
+  ✓  46 [parent] › tests\e2e\.features-gen\features\parent_smoke.feature.spec.js:44:9 › Parent page smoke tests › <name> page loads › billing page loads @parent (10.4s)
+  ✓  47 [parent] › tests\e2e\.features-gen\features\parent_smoke.feature.spec.js:50:9 › Parent page smoke tests › <name> page loads › help page loads @parent (20.3s)
+  ✓  48 [parent] › tests\e2e\.features-gen\features\parent_smoke.feature.spec.js:56:9 › Parent page smoke tests › <name> page loads › settings page loads @parent (4.7s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ override existing { override: true }
+  ✓  49 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:6:7 › Teacher page smoke tests › Signed-in teacher lands on the teacher dashboard @teacher (5.5s)
+  ✓  50 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:14:9 › Teacher page smoke tests › <name> page loads › dashboard home page loads @teacher (4.4s)
+  ✓  51 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:20:9 › Teacher page smoke tests › <name> page loads › students page loads @teacher (5.8s)
+  ✓  52 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:26:9 › Teacher page smoke tests › <name> page loads › classes page loads @teacher (5.5s)
+  ✓  53 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:32:9 › Teacher page smoke tests › <name> page loads › assignments page loads @teacher (5.2s)
+  ✓  54 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:38:9 › Teacher page smoke tests › <name> page loads › verifications page loads @teacher (5.7s)
+  ✓  55 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:44:9 › Teacher page smoke tests › <name> page loads › analytics page loads @teacher (6.2s)
+  ✓  56 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:50:9 › Teacher page smoke tests › <name> page loads › gap analysis page loads @teacher (7.6s)
+  ✓  57 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:56:9 › Teacher page smoke tests › <name> page loads › differentiator page loads @teacher (8.1s)
+  ✓  58 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:62:9 › Teacher page smoke tests › <name> page loads › live page loads @teacher (8.3s)
+  ✓  59 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:68:9 › Teacher page smoke tests › <name> page loads › calendar page loads @teacher (5.2s)
+  ✓  60 [teacher] › tests\e2e\.features-gen\features\teacher_smoke.feature.spec.js:74:9 › Teacher page smoke tests › <name> page loads › settings page loads @teacher (5.8s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ override existing { override: true }
+  ✓  61 [tutor] › tests\e2e\.features-gen\features\tutor_smoke.feature.spec.js:6:7 › Tutor page smoke tests › Signed-in tutor lands on the tutor dashboard @tutor (5.7s)
+  ✓  62 [tutor] › tests\e2e\.features-gen\features\tutor_smoke.feature.spec.js:14:9 › Tutor page smoke tests › <name> page loads › dashboard home page loads @tutor (5.0s)
+  ✓  63 [tutor] › tests\e2e\.features-gen\features\tutor_smoke.feature.spec.js:20:9 › Tutor page smoke tests › <name> page loads › students page loads @tutor (5.1s)
+  ✓  64 [tutor] › tests\e2e\.features-gen\features\tutor_smoke.feature.spec.js:26:9 › Tutor page smoke tests › <name> page loads › sessions page loads @tutor (5.3s)
+  ✓  65 [tutor] › tests\e2e\.features-gen\features\tutor_smoke.feature.spec.js:32:9 › Tutor page smoke tests › <name> page loads › courses page loads @tutor (6.6s)
+  ✓  66 [tutor] › tests\e2e\.features-gen\features\tutor_smoke.feature.spec.js:38:9 › Tutor page smoke tests › <name> page loads › reviews page loads @tutor (8.7s)
+  ✓  67 [tutor] › tests\e2e\.features-gen\features\tutor_smoke.feature.spec.js:44:9 › Tutor page smoke tests › <name> page loads › earnings page loads @tutor (8.5s)
+  ✓  68 [tutor] › tests\e2e\.features-gen\features\tutor_smoke.feature.spec.js:50:9 › Tutor page smoke tests › <name> page loads › settings page loads @tutor (5.3s)
+◇ injected env (0) from tests\e2e\.env // tip: ◈ secrets for agents [www.dotenvx.com]
+  ✓  69 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:6:7 › Admin page smoke tests › Signed-in admin lands on the admin dashboard @admin (7.5s)
+  ✓  70 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:14:9 › Admin page smoke tests › <name> page loads › dashboard home page loads @admin (8.6s)
+  ✓  71 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:20:9 › Admin page smoke tests › <name> page loads › audit page loads @admin (6.3s)
+  ✓  72 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:26:9 › Admin page smoke tests › <name> page loads › bursaries page loads @admin (5.0s)
+  ✓  73 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:32:9 › Admin page smoke tests › <name> page loads › courses page loads @admin (5.6s)
+  ✓  74 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:38:9 › Admin page smoke tests › <name> page loads › flags page loads @admin (5.2s)
+  ✘  75 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:44:9 › Admin page smoke tests › <name> page loads › impersonate page loads @admin (29.4s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ override existing { override: true }
+  ✓  76 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:50:9 › Admin page smoke tests › <name> page loads › invoices page loads @admin (12.0s)
+  ✓  77 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:56:9 › Admin page smoke tests › <name> page loads › moderation page loads @admin (33.0s)
+  ✓  78 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:62:9 › Admin page smoke tests › <name> page loads › payments page loads @admin (28.0s)
+  ✓  79 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:68:9 › Admin page smoke tests › <name> page loads › schools page loads @admin (28.5s)
+  ✓  80 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:74:9 › Admin page smoke tests › <name> page loads › school enquiries page loads @admin (6.0s)
+  ✘  81 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:80:9 › Admin page smoke tests › <name> page loads › settings page loads @admin (17.6s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ suppress logs { quiet: true }
+  ✓  82 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:86:9 › Admin page smoke tests › <name> page loads › subscriptions page loads @admin (11.5s)
+  ✓  83 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:92:9 › Admin page smoke tests › <name> page loads › system page loads @admin (7.9s)
+  ✓  84 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:98:9 › Admin page smoke tests › <name> page loads › tutors page loads @admin (7.2s)
+  ✓  85 [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:104:9 › Admin page smoke tests › <name> page loads › users page loads @admin (8.1s)
+◇ injected env (0) from tests\e2e\.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+  ✓  86 [school-admin] › tests\e2e\.features-gen\features\school_admin_smoke.feature.spec.js:6:7 › School-admin page smoke tests › Signed-in school admin lands on the school dashboard @school-admin (6.4s)
+  ✓  87 [school-admin] › tests\e2e\.features-gen\features\school_admin_smoke.feature.spec.js:14:9 › School-admin page smoke tests › <name> page loads › dashboard home page loads @school-admin (5.2s)
+  ✓  88 [school-admin] › tests\e2e\.features-gen\features\school_admin_smoke.feature.spec.js:20:9 › School-admin page smoke tests › <name> page loads › analytics page loads @school-admin (5.4s)
+  ✓  89 [school-admin] › tests\e2e\.features-gen\features\school_admin_smoke.feature.spec.js:26:9 › School-admin page smoke tests › <name> page loads › bursary partners page loads @school-admin (4.4s)
+  ✓  90 [school-admin] › tests\e2e\.features-gen\features\school_admin_smoke.feature.spec.js:32:9 › School-admin page smoke tests › <name> page loads › classes page loads @school-admin (4.9s)
+  ✓  91 [school-admin] › tests\e2e\.features-gen\features\school_admin_smoke.feature.spec.js:38:9 › School-admin page smoke tests › <name> page loads › readiness page loads @school-admin (5.6s)
+  ✓  92 [school-admin] › tests\e2e\.features-gen\features\school_admin_smoke.feature.spec.js:44:9 › School-admin page smoke tests › <name> page loads › settings page loads @school-admin (6.2s)
+  ✓  93 [school-admin] › tests\e2e\.features-gen\features\school_admin_smoke.feature.spec.js:50:9 › School-admin page smoke tests › <name> page loads › students page loads @school-admin (4.8s)
+  ✓  94 [school-admin] › tests\e2e\.features-gen\features\school_admin_smoke.feature.spec.js:56:9 › School-admin page smoke tests › <name> page loads › teachers page loads @school-admin (5.4s)
+
+
+  1) [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:44:9 › Admin page smoke tests › <name> page loads › impersonate page loads @admin › Then I should see "Impersonate user" 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Impersonate user').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('Impersonate user').first()[22m
+
+
+       at ..\steps\common.steps.ts:28
+
+      26 |
+      27 | Then("I should see {string}", async ({ page }, text: string) => {
+    > 28 |   await expect(page.getByText(text, { exact: false }).first()).toBeVisible();
+         |                                                                ^
+      29 | });
+      30 |
+      31 | Then("I should not see {string}", async ({ page }, text: string) => {
+        at Object.<anonymous> (C:\Dev\aptiverse-labs\web\tests\e2e\steps\common.steps.ts:28:64)
+        at C:\Dev\aptiverse-labs\web\tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:46:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\features-admin_smoke.featu-54938-oads-impersonate-page-loads-admin\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\features-admin_smoke.featu-54938-oads-impersonate-page-loads-admin\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\features-admin_smoke.featu-54938-oads-impersonate-page-loads-admin\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\features-admin_smoke.featu-54938-oads-impersonate-page-loads-admin\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\features-admin_smoke.featu-54938-oads-impersonate-page-loads-admin\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:80:9 › Admin page smoke tests › <name> page loads › settings page loads @admin › Then I should see "Platform settings" 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('Platform settings').first()
+    Expected: visible
+    Timeout: 10000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 10000ms[22m
+    [2m  - waiting for getByText('Platform settings').first()[22m
+
+
+       at ..\steps\common.steps.ts:28
+
+      26 |
+      27 | Then("I should see {string}", async ({ page }, text: string) => {
+    > 28 |   await expect(page.getByText(text, { exact: false }).first()).toBeVisible();
+         |                                                                ^
+      29 | });
+      30 |
+      31 | Then("I should not see {string}", async ({ page }, text: string) => {
+        at Object.<anonymous> (C:\Dev\aptiverse-labs\web\tests\e2e\steps\common.steps.ts:28:64)
+        at C:\Dev\aptiverse-labs\web\tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:82:7
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\features-admin_smoke.featu-daa3f-e-loads-settings-page-loads-admin\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    test-results\features-admin_smoke.featu-daa3f-e-loads-settings-page-loads-admin\video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\features-admin_smoke.featu-daa3f-e-loads-settings-page-loads-admin\error-context.md
+
+    attachment #4: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\features-admin_smoke.featu-daa3f-e-loads-settings-page-loads-admin\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\features-admin_smoke.featu-daa3f-e-loads-settings-page-loads-admin\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:44:9 › Admin page smoke tests › <name> page loads › impersonate page loads @admin 
+    [admin] › tests\e2e\.features-gen\features\admin_smoke.feature.spec.js:80:9 › Admin page smoke tests › <name> page loads › settings page loads @admin 
+  92 passed (17.3m)
