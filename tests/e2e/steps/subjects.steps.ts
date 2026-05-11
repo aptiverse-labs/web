@@ -29,7 +29,29 @@ Given("I have picked the {word} curriculum", async ({ api }, code: string) => {
   });
 });
 
-When("I add the {string} subject", async ({ page }, subjectName: string) => {
+// Wait for the API to show a specific subject in the user's enrolled
+// list. Used after UI-driven add operations because the UI "Added" chip
+// races against TanStack Query refetch invalidation — the API is the
+// source of truth.
+async function waitForSubjectInApi(
+  api: { get: <T>(path: string) => Promise<T> },
+  slug: string,
+  shouldExist: boolean,
+  timeoutMs = 10_000,
+): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const subjects = await api.get<{ subjectId: string }[]>("/api/academic-planning/subjects");
+    const present = subjects.some((s) => s.subjectId === slug);
+    if (present === shouldExist) return;
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  throw new Error(
+    `Timed out waiting for subject "${slug}" to ${shouldExist ? "appear" : "disappear"} in API after ${timeoutMs}ms.`,
+  );
+}
+
+When("I add the {string} subject", async ({ page, api }, subjectName: string) => {
   const slug = slugFor(subjectName);
 
   await page.goto("/dashboard/subjects");
@@ -38,21 +60,21 @@ When("I add the {string} subject", async ({ page }, subjectName: string) => {
     .first()
     .click();
 
-  // Dialog opens — find the row by data-subject-slug and click its Add button.
   const row = page.locator(`[data-subject-slug="${slug}"]`).first();
   await row.waitFor({ state: "visible" });
+  await row.scrollIntoViewIfNeeded();
   await row.getByRole("button", { name: /^add$/i }).click();
 
-  // Wait for the row to flip to "Added" so we know the mutation completed.
-  await expect(row.getByText(/^added$/i)).toBeVisible();
+  // Poll the API for the new enrolment (more reliable than waiting for
+  // the UI's "Added" chip, which races with the query invalidation).
+  await waitForSubjectInApi(api, slug, true);
 
-  // Close the dialog
   await page.getByRole("button", { name: /^done$/i }).click();
 });
 
 When(
   "I add the {string} subject with teacher {string}",
-  async ({ page }, subjectName: string, teacher: string) => {
+  async ({ page, api }, subjectName: string, teacher: string) => {
     const slug = slugFor(subjectName);
 
     await page.goto("/dashboard/subjects");
@@ -63,21 +85,28 @@ When(
 
     const row = page.locator(`[data-subject-slug="${slug}"]`).first();
     await row.waitFor({ state: "visible" });
+    await row.scrollIntoViewIfNeeded();
     await row.getByPlaceholder(/teacher/i).fill(teacher);
     await row.getByRole("button", { name: /^add$/i }).click();
 
-    await expect(row.getByText(/^added$/i)).toBeVisible();
+    await waitForSubjectInApi(api, slug, true);
+
     await page.getByRole("button", { name: /^done$/i }).click();
   },
 );
 
-When("I remove the {string} subject", async ({ page }, subjectName: string) => {
+When("I remove the {string} subject", async ({ page, api }, subjectName: string) => {
+  const slug = slugFor(subjectName);
+
   // SubjectCard's remove icon button is labelled "Remove subject"
   const heading = page.getByRole("heading", { name: subjectName }).first();
   await heading.waitFor({ state: "visible" });
-  // Walk up to the card container, then find the Remove button
   const card = heading.locator("xpath=ancestor::*[contains(@class,'MuiCard-root')][1]");
   await card.getByRole("button", { name: /remove subject/i }).click();
+
+  // Poll API until the subject is actually gone before letting the
+  // Then-step assert.
+  await waitForSubjectInApi(api, slug, false);
 });
 
 Then("the API should report {int} subject(s)", async ({ api }, expected: number) => {
