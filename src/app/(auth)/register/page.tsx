@@ -19,19 +19,19 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SchoolIcon from "@mui/icons-material/School";
 import FavoriteIcon from "@mui/icons-material/FavoriteBorder";
-import GroupsIcon from "@mui/icons-material/GroupsOutlined";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettingsOutlined";
 import StorefrontIcon from "@mui/icons-material/StorefrontOutlined";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { useRoleStore, type Role } from "@/providers/RoleProvider";
 import { registerStep2Schema, type RegisterValues } from "@/lib/schemas";
 import { api } from "@/lib/api/client";
 
+// Self-signup is intentionally limited to roles a person can claim on
+// their own. School-side roles (Teacher, SchoolAdmin) are provisioned
+// through the school onboarding flow: a school contacts sales, gets a
+// SchoolAdmin seat, then invites its teachers from inside the dashboard.
 const ROLE_OPTIONS: { value: Role; label: string; description: string; icon: React.ReactNode }[] = [
   { value: "student", label: "Student", description: "I'm in Grade 11 or 12", icon: <SchoolIcon /> },
   { value: "parent", label: "Parent", description: "Supporting my child", icon: <FavoriteIcon /> },
-  { value: "teacher", label: "Teacher", description: "I teach in a school", icon: <GroupsIcon /> },
-  { value: "school_admin", label: "School Admin", description: "School leadership", icon: <AdminPanelSettingsIcon /> },
   { value: "tutor", label: "Tutor", description: "Independent educator", icon: <StorefrontIcon /> },
 ];
 
