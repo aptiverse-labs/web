@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "e2e": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts",
+    "e2e:headed": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts --headed",
+    "e2e:ui": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts --ui"
   },
   "dependencies": {
     "@emotion/cache": "^11.13.5",
@@ -39,11 +42,14 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "^16.2.4",
+    "playwright-bdd": "^8.5.0",
     "typescript": "^5"
   }
 }
