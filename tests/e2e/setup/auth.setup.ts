@@ -8,33 +8,14 @@
 
 import { test as setup, expect } from "@playwright/test";
 import path from "node:path";
-
-type Role = "student" | "parent" | "teacher" | "tutor";
-
-function emailFor(role: Role): string {
-  const v = process.env[`E2E_${role.toUpperCase()}_EMAIL`];
-  if (!v) {
-    throw new Error(
-      `E2E_${role.toUpperCase()}_EMAIL is not set. Copy tests/e2e/.env.example to tests/e2e/.env.`,
-    );
-  }
-  return v;
-}
-
-function password(): string {
-  const v = process.env.E2E_PASSWORD;
-  if (!v) {
-    throw new Error("E2E_PASSWORD is not set. Copy tests/e2e/.env.example to tests/e2e/.env.");
-  }
-  return v;
-}
+import { emailFor, passwordFor, type Role } from "../steps/test-accounts";
 
 async function authenticate(role: Role, page: import("@playwright/test").Page) {
   const authFile = path.resolve(__dirname, `../.auth/${role}.json`);
 
   await page.goto("/login");
   await page.getByLabel("Email").fill(emailFor(role));
-  await page.getByLabel("Password").fill(password());
+  await page.getByLabel("Password").fill(passwordFor(role));
   await page.getByRole("button", { name: /^sign in$/i }).click();
 
   // Each role lands on a different dashboard after login — wait for any

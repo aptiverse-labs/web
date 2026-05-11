@@ -10,6 +10,7 @@
 
 import { expect, type APIRequestContext } from "@playwright/test";
 import { test as base, createBdd } from "playwright-bdd";
+import { emailFor, passwordFor, type Role } from "./test-accounts";
 
 type ApiClient = {
   get: <T>(path: string) => Promise<T>;
@@ -28,17 +29,8 @@ function apiBaseUrl(): string {
 }
 
 function credentialsFor(projectName: string): { email: string; password: string } {
-  // Project names from playwright.config.ts: student, parent, teacher, tutor.
-  // Each maps to E2E_<ROLE>_EMAIL; password is shared.
-  const role = projectName.toLowerCase();
-  const email = process.env[`E2E_${role.toUpperCase()}_EMAIL`];
-  const password = process.env.E2E_PASSWORD;
-  if (!email || !password) {
-    throw new Error(
-      `Missing E2E_${role.toUpperCase()}_EMAIL or E2E_PASSWORD in tests/e2e/.env`,
-    );
-  }
-  return { email, password };
+  const role = projectName.toLowerCase() as Role;
+  return { email: emailFor(role), password: passwordFor(role) };
 }
 
 async function loginAndGetToken(
