@@ -8,10 +8,14 @@ import Chip from "@mui/material/Chip";
 import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartmentOutlined";
 import ScheduleIcon from "@mui/icons-material/ScheduleOutlined";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { GradientBackdrop } from "@/components/common/GradientBackdrop";
 import { STREAK_DAYS, TODAY_FOCUS_MINUTES } from "@/lib/mockData";
 
-export function WelcomeBanner({ name = "Thandi" }: { name?: string }) {
+export function WelcomeBanner({ name }: { name?: string }) {
+  const { data: session } = useSession();
+  const u = (session?.user ?? {}) as { name?: string | null; firstName?: string };
+  const resolved = name ?? u.firstName ?? u.name?.split(" ")[0] ?? "there";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
@@ -26,7 +30,7 @@ export function WelcomeBanner({ name = "Thandi" }: { name?: string }) {
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="overline" color="primary.main">
-            {greeting}, {name}
+            {greeting}, {resolved}
           </Typography>
           <Typography variant="h4" sx={{ mb: 1, fontWeight: 600 }}>
             You're 70% ready for your <Box component="span" sx={{ color: "primary.main" }}>English essay</Box>.

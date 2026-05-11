@@ -22,6 +22,7 @@ import NotificationsIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import LogoutIcon from "@mui/icons-material/LogoutOutlined";
 import SettingsIcon from "@mui/icons-material/SettingsOutlined";
 import HelpIcon from "@mui/icons-material/HelpOutline";
+import { signOut, useSession } from "next-auth/react";
 import { ColorModeToggle } from "@/components/common/ColorModeToggle";
 import { Logo } from "@/components/common/Logo";
 import { initials } from "@/lib/format";
@@ -36,6 +37,13 @@ type Props = {
 export function AppTopBar({ onMobileMenuClick }: Props) {
   const [profileEl, setProfileEl] = useState<null | HTMLElement>(null);
   const [notifEl, setNotifEl] = useState<null | HTMLElement>(null);
+  const { data: session } = useSession();
+  const u = (session?.user ?? {}) as { name?: string | null; email?: string | null; firstName?: string; lastName?: string };
+  const displayName =
+    (u.firstName || u.lastName)
+      ? `${u.firstName ?? ""} ${u.lastName ?? ""}`.trim()
+      : (u.name ?? u.email ?? "Aptiverse");
+  const subtitle = u.email ?? "";
 
   const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
 
@@ -154,18 +162,20 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
 
           <IconButton onClick={(e) => setProfileEl(e.currentTarget)} sx={{ ml: 0.5 }}>
             <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main", fontSize: "0.85rem", fontWeight: 700 }}>
-              {initials("Thandi M")}
+              {initials(displayName)}
             </Avatar>
           </IconButton>
 
           <Menu open={!!profileEl} anchorEl={profileEl} onClose={() => setProfileEl(null)}>
             <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Thandi Mokoena
+                {displayName}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Grade 12 · Crawford Pretoria
-              </Typography>
+              {subtitle && (
+                <Typography variant="caption" color="text.secondary">
+                  {subtitle}
+                </Typography>
+              )}
             </Box>
             <Divider />
             <MenuItem component={Link} href="/dashboard/settings" onClick={() => setProfileEl(null)}>
@@ -181,7 +191,12 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
               <ListItemText primary="Help & feedback" />
             </MenuItem>
             <Divider />
-            <MenuItem component={Link} href="/login" onClick={() => setProfileEl(null)}>
+            <MenuItem
+              onClick={() => {
+                setProfileEl(null);
+                signOut({ callbackUrl: "/login" });
+              }}
+            >
               <ListItemIcon>
                 <LogoutIcon fontSize="small" />
               </ListItemIcon>
