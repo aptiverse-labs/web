@@ -223,6 +223,7 @@ export const ADMIN_NAV: NavSection[] = [
     items: [
       { label: "Users", href: "/admin/users", icon: GroupsIcon },
       { label: "Schools", href: "/admin/schools", icon: SchoolIcon },
+      { label: "School enquiries", href: "/admin/school-enquiries", icon: VolunteerActivismIcon },
       { label: "Tutors", href: "/admin/tutors", icon: GroupsIcon },
       { label: "Impersonate", href: "/admin/impersonate", icon: SwapHorizIconNav },
     ],

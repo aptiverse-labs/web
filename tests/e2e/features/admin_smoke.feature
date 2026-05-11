@@ -14,19 +14,20 @@ Feature: Admin page smoke tests
     And I should not see "Wrong role for this area"
 
     Examples:
-      | name           | path                  | text                |
-      | dashboard home | /admin                | Admin               |
-      | audit          | /admin/audit          | Audit log           |
-      | bursaries      | /admin/bursaries      | Bursaries           |
-      | courses        | /admin/courses        | Courses             |
-      | flags          | /admin/flags          | Feature flags       |
-      | impersonate    | /admin/impersonate    | Impersonate user    |
-      | invoices       | /admin/invoices       | Invoices            |
-      | moderation     | /admin/moderation     | Moderation queue    |
-      | payments       | /admin/payments       | Payments & refunds  |
-      | schools        | /admin/schools        | Schools             |
-      | settings       | /admin/settings       | Platform settings   |
-      | subscriptions  | /admin/subscriptions  | Subscriptions       |
-      | system         | /admin/system         | System health       |
-      | tutors         | /admin/tutors         | Tutors              |
-      | users          | /admin/users          | Users               |
+      | name                | path                       | text                |
+      | dashboard home      | /admin                     | Admin               |
+      | audit               | /admin/audit               | Audit log           |
+      | bursaries           | /admin/bursaries           | Bursaries           |
+      | courses             | /admin/courses             | Courses             |
+      | flags               | /admin/flags               | Feature flags       |
+      | impersonate         | /admin/impersonate         | Impersonate user    |
+      | invoices            | /admin/invoices            | Invoices            |
+      | moderation          | /admin/moderation          | Moderation queue    |
+      | payments            | /admin/payments            | Payments & refunds  |
+      | schools             | /admin/schools             | Schools             |
+      | school enquiries    | /admin/school-enquiries    | School enquiries    |
+      | settings            | /admin/settings            | Platform settings   |
+      | subscriptions       | /admin/subscriptions       | Subscriptions       |
+      | system              | /admin/system              | System health       |
+      | tutors              | /admin/tutors              | Tutors              |
+      | users               | /admin/users               | Users               |

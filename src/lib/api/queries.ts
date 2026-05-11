@@ -117,6 +117,24 @@ export type FeatureFlag = {
   env: string;
 };
 
+export type SchoolEnquiry = {
+  id: string;
+  schoolName: string;
+  contactName: string;
+  contactRole?: string | null;
+  email: string;
+  phone?: string | null;
+  province?: string | null;
+  city?: string | null;
+  curricula?: string | null;     // CSV of nsc/ieb/cambridge
+  learnerCount?: string | null;
+  stage?: string | null;
+  notes?: string | null;
+  submittedAt: string;
+  contacted: boolean;
+  contactedAt?: string | null;
+};
+
 // Mock fetch with delay so loading states render properly. Used only by
 // hooks that haven't been wired to the real API yet — convert per page.
 const fakeFetch = <T>(value: T, ms = 350): Promise<T> =>
@@ -155,6 +173,10 @@ export const queryKeys = {
   curricula: () => ["curricula"] as const,
   curriculumSubjects: (curriculumId: string) => ["curriculum-subjects", curriculumId] as const,
   academicProfile: () => ["academic-profile"] as const,
+  schoolEnquiries: (contacted?: boolean) =>
+    contacted === undefined
+      ? (["school-enquiries"] as const)
+      : (["school-enquiries", contacted] as const),
 };
 
 export const useSubjects = () =>
@@ -223,6 +245,28 @@ export const useAddSubject = () => {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.subjects() });
       void qc.invalidateQueries({ queryKey: queryKeys.academicProfile() });
+    },
+  });
+};
+
+// --- Admin: school enquiries (sales pipeline) ---------------------------
+
+export const useSchoolEnquiries = (contacted?: boolean) =>
+  useQuery<SchoolEnquiry[]>({
+    queryKey: queryKeys.schoolEnquiries(contacted),
+    queryFn: () => {
+      const qs = contacted === undefined ? "" : `?contacted=${contacted}`;
+      return apiClient.get<SchoolEnquiry[]>(`/api/sales/school-enquiries${qs}`);
+    },
+  });
+
+export const useMarkEnquiryContacted = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.post<void>(`/api/sales/school-enquiries/${id}/mark-contacted`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["school-enquiries"] });
     },
   });
 };
