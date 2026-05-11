@@ -76,10 +76,10 @@ export default function StudentDashboardPage() {
           <StatCard label="Active goals" value={activeGoals.length} hint={goals.length === 0 ? "Set one to start" : `${goals.length} total`} icon={<FlagIcon />} color="secondary" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="APS (live)" value={APS_SCORE} delta={2} deltaLabel="this term" icon={<QuizIcon />} color="info" />
+          <StatCard label="APS (live)" value="—" hint="Not yet computed" icon={<QuizIcon />} color="info" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Wellbeing" value="3.8 / 5" hint="Steady" icon={<FavoriteIcon />} color="success" />
+          <StatCard label="Wellbeing" value="—" hint="Check in via Diary" icon={<FavoriteIcon />} color="success" />
         </Grid>
       </Grid>
 
@@ -104,9 +104,9 @@ export default function StudentDashboardPage() {
                   Today's focus
                 </Typography>
                 <Stack alignItems="center" spacing={1.5}>
-                  <ProgressRing value={62} size={140} thickness={10} caption="of daily target" />
+                  <ProgressRing value={0} size={140} thickness={10} caption="of daily target" />
                   <Typography variant="caption" color="text.secondary">
-                    Aim for 60 minutes of focused study today
+                    Start a focus session to begin tracking today's minutes.
                   </Typography>
                   <Button fullWidth component={Link} href="/dashboard/workspace" variant="contained">
                     Start focus session
@@ -125,18 +125,13 @@ export default function StudentDashboardPage() {
               <CardContent sx={{ p: 3 }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
                   <Typography variant="h6">Mood this week</Typography>
-                  <Button size="small" component={Link} href="/dashboard/wellbeing">
+                  <Button size="small" component={Link} href="/dashboard/diary">
                     Check in
                   </Button>
                 </Stack>
-                <BarChart
-                  height={140}
-                  xAxis={[{ data: ["M", "T", "W", "T", "F", "S", "S"], scaleType: "band" }]}
-                  yAxis={[{ min: 0, max: 5 }]}
-                  series={[{ data: [4, 3, 2, 3, 4, 5, 4], color: "#F25C2E" }]}
-                  margin={{ top: 0, right: 8, bottom: 24, left: 24 }}
-                  grid={{ horizontal: true }}
-                />
+                <Typography variant="body2" color="text.secondary">
+                  No mood data yet. Log a diary entry to start seeing your weekly trend.
+                </Typography>
               </CardContent>
             </Card>
 
