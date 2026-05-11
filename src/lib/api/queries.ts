@@ -22,6 +22,9 @@ import {
   type Reward,
   type Career,
   type StudyGroup,
+  type Curriculum,
+  type CatalogSubject,
+  type AcademicProfile,
 } from "@/lib/mockData";
 
 export type PastPaper = {
@@ -149,6 +152,9 @@ export const queryKeys = {
   auditLogs: () => ["audit-logs"] as const,
   moderationQueue: () => ["moderation-queue"] as const,
   featureFlags: () => ["feature-flags"] as const,
+  curricula: () => ["curricula"] as const,
+  curriculumSubjects: (curriculumId: string) => ["curriculum-subjects", curriculumId] as const,
+  academicProfile: () => ["academic-profile"] as const,
 };
 
 export const useSubjects = () =>
@@ -163,6 +169,73 @@ export const useSubject = (id: string) =>
     queryFn: () => apiClient.get<Subject>(`/api/academic-planning/subjects/${id}`),
     enabled: !!id,
   });
+
+// --- Curriculum catalog + per-student profile ---------------------------
+
+export const useCurricula = () =>
+  useQuery<Curriculum[]>({
+    queryKey: queryKeys.curricula(),
+    queryFn: () => apiClient.get<Curriculum[]>("/api/academic-planning/curricula"),
+  });
+
+export const useCurriculumSubjects = (curriculumId: string | null | undefined) =>
+  useQuery<CatalogSubject[]>({
+    queryKey: queryKeys.curriculumSubjects(curriculumId ?? ""),
+    queryFn: () =>
+      apiClient.get<CatalogSubject[]>(`/api/academic-planning/curricula/${curriculumId}/subjects`),
+    enabled: !!curriculumId,
+  });
+
+export const useAcademicProfile = () =>
+  useQuery<AcademicProfile>({
+    queryKey: queryKeys.academicProfile(),
+    queryFn: () => apiClient.get<AcademicProfile>("/api/academic-planning/me/profile"),
+  });
+
+export type UpdateAcademicProfileInput = {
+  curriculumId?: string;
+  grade?: number;
+  school?: string;
+};
+
+export const useUpdateAcademicProfile = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateAcademicProfileInput) =>
+      apiClient.patch<AcademicProfile>("/api/academic-planning/me/profile", input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.academicProfile() });
+    },
+  });
+};
+
+export type AddSubjectInput = {
+  curriculumSubjectId: number;
+  grade?: number;
+  teacher?: string;
+};
+
+export const useAddSubject = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: AddSubjectInput) =>
+      apiClient.post<Subject>("/api/academic-planning/subjects", input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.subjects() });
+      void qc.invalidateQueries({ queryKey: queryKeys.academicProfile() });
+    },
+  });
+};
+
+export const useDeleteSubject = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete<void>(`/api/academic-planning/subjects/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.subjects() });
+    },
+  });
+};
 
 export const useAssessments = () =>
   useQuery<Assessment[]>({

@@ -41,7 +41,7 @@ export default function JourneyPage() {
 
 function JourneyView({ subjects }: { subjects: Subject[] }) {
   const topics = subjects.flatMap((s) =>
-    s.topics.map((t) => ({ ...t, subject: s.name, subjectId: s.id })),
+    (s.topics ?? []).map((t) => ({ ...t, subject: s.name, subjectId: s.id })),
   );
   const completed = topics.filter((t) => t.mastery >= 70);
   const inProgress = topics.filter((t) => t.mastery >= 40 && t.mastery < 70);

@@ -43,7 +43,7 @@ export default function MasteryPage() {
 }
 
 function MasteryView({ subjects }: { subjects: Subject[] }) {
-  const allTopics = subjects.flatMap((s) => s.topics.map((t) => ({ ...t, subject: s.name })));
+  const allTopics = subjects.flatMap((s) => (s.topics ?? []).map((t) => ({ ...t, subject: s.name })));
   const weakest = [...allTopics].sort((a, b) => a.mastery - b.mastery).slice(0, 5);
   const strongest = [...allTopics].sort((a, b) => b.mastery - a.mastery).slice(0, 5);
   const overall =
@@ -78,11 +78,13 @@ function MasteryView({ subjects }: { subjects: Subject[] }) {
               <LineChart
                 height={360}
                 xAxis={[{ data: ["T1", "T2", "T3", "T4"], scaleType: "point" }]}
-                series={subjects.map((s) => ({
-                  data: s.termAverages.map((t) => t.mark),
-                  label: s.name,
-                  curve: "monotoneX",
-                }))}
+                series={subjects
+                  .filter((s) => s.termAverages && s.termAverages.length > 0)
+                  .map((s) => ({
+                    data: (s.termAverages ?? []).map((t) => t.mark),
+                    label: s.name,
+                    curve: "monotoneX",
+                  }))}
                 margin={{ top: 16, right: 24, bottom: 32, left: 40 }}
                 grid={{ horizontal: true }}
               />
@@ -157,8 +159,8 @@ function MasteryView({ subjects }: { subjects: Subject[] }) {
                 height={320}
                 xAxis={[{ data: subjects.map((s) => s.code), scaleType: "band" }]}
                 series={[
-                  { data: subjects.map((s) => s.currentAverage), label: "Current term", color: "#0F6963" },
-                  { data: subjects.map((s) => s.predictedNextTerm), label: "Predicted next", color: "#F25C2E" },
+                  { data: subjects.map((s) => s.currentAverage ?? null), label: "Current term", color: "#0F6963" },
+                  { data: subjects.map((s) => s.predictedNextTerm ?? null), label: "Predicted next", color: "#F25C2E" },
                 ]}
                 margin={{ top: 16, right: 24, bottom: 32, left: 40 }}
                 grid={{ horizontal: true }}

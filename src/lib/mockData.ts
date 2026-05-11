@@ -1,6 +1,61 @@
 import dayjs from "dayjs";
 
+// FET-phase subject shape returned by the API. `id` is the student's
+// enrolment row id; `subjectId` is the canonical catalog slug. Marks
+// /mastery fields are optional placeholders until SBA tasks are wired —
+// they're undefined for fresh accounts. Pages must guard nullable access.
 export type Subject = {
+  id: string;             // student_subject id (e.g. "42")
+  subjectId: string;      // canonical slug (e.g. "math", "physci")
+  code: string;
+  name: string;
+  category: string;       // language|mathematics|natural_science|commerce|humanities|services|technical|arts|life_orientation
+  languageType?: string | null;
+  grade: number;          // 10 | 11 | 12
+  teacher?: string | null;
+  isCompulsory: boolean;
+  createdAt: string;
+
+  // Legacy aggregate fields — empty until SBA tasks land.
+  level?: "core" | "elective";
+  paper?: string;
+  predictedNextTerm?: number;
+  currentAverage?: number;
+  trend?: "up" | "down" | "flat";
+  termAverages?: { term: string; mark: number }[];
+  topics?: { name: string; mastery: number }[];
+  upcomingSBA?: number;
+};
+
+export type Curriculum = {
+  id: string;
+  name: string;
+  shortName: string;
+  description?: string | null;
+};
+
+export type CatalogSubject = {
+  id: string;
+  curriculumSubjectId: number;
+  code: string;
+  name: string;
+  category: string;
+  languageType?: string | null;
+  description?: string | null;
+  isCompulsory: boolean;
+};
+
+export type AcademicProfile = {
+  curriculumId: string | null;
+  grade: number | null;
+  school: string | null;
+};
+
+// Legacy seed data — preserved only because a handful of demo-mode pages
+// (workspace, parent child view) still import it. New code paths use the
+// /api/academic-planning/subjects endpoint via useSubjects(). Typed loosely
+// so it doesn't have to carry the full Subject contract.
+export const SUBJECTS: Array<{
   id: string;
   name: string;
   code: string;
@@ -13,9 +68,7 @@ export type Subject = {
   topics: { name: string; mastery: number }[];
   upcomingSBA: number;
   teacher: string;
-};
-
-export const SUBJECTS: Subject[] = [
+}> = [
   {
     id: "math",
     name: "Mathematics",

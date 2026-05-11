@@ -53,9 +53,13 @@ export default function StudentDashboardPage() {
   const activeGoals = goals
     .filter((g) => g.status === "active" || g.status === "at_risk")
     .slice(0, 3);
+  const subjectsWithPredictions = subjects.filter((s) => s.predictedNextTerm != null);
   const predictedAverage =
-    subjects.length > 0
-      ? Math.round(subjects.reduce((s, x) => s + x.predictedNextTerm, 0) / subjects.length)
+    subjectsWithPredictions.length > 0
+      ? Math.round(
+          subjectsWithPredictions.reduce((acc, x) => acc + (x.predictedNextTerm ?? 0), 0) /
+            subjectsWithPredictions.length,
+        )
       : null;
 
   return (
@@ -170,14 +174,23 @@ function MasteryTrendCard({ subjects, loading }: { subjects: Subject[]; loading:
               No subjects yet — add some to see your term-over-term trend.
             </Typography>
           </Box>
+        ) : subjects.every((s) => !s.termAverages || s.termAverages.length === 0) ? (
+          <Box sx={{ py: 6, textAlign: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              Log marks against your subjects to see your term-over-term trend appear here.
+            </Typography>
+          </Box>
         ) : (
           <LineChart
             height={300}
             xAxis={[{ data: ["T1", "T2", "T3", "T4"], scaleType: "point" }]}
-            series={subjects.slice(0, 5).map((s) => ({
-              data: s.termAverages.map((t) => t.mark),
-              label: s.name,
-            }))}
+            series={subjects
+              .filter((s) => s.termAverages && s.termAverages.length > 0)
+              .slice(0, 5)
+              .map((s) => ({
+                data: (s.termAverages ?? []).map((t) => t.mark),
+                label: s.name,
+              }))}
             margin={{ top: 16, right: 24, bottom: 32, left: 40 }}
           />
         )}

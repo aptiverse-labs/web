@@ -78,22 +78,24 @@ function SubjectView({
   assessments: Assessment[];
   practiceTests: PracticeTest[];
 }) {
+  const topics = subject.topics ?? [];
+  const termAverages = subject.termAverages ?? [];
   const masteryAvg =
-    subject.topics.length > 0
-      ? Math.round(subject.topics.reduce((s, t) => s + t.mastery, 0) / subject.topics.length)
+    topics.length > 0
+      ? Math.round(topics.reduce((s, t) => s + t.mastery, 0) / topics.length)
       : 0;
 
   return (
     <>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Current average" value={`${subject.currentAverage}%`} delta={3} deltaLabel="vs last term" color="primary" />
+          <StatCard label="Current average" value={subject.currentAverage != null ? `${subject.currentAverage}%` : "—"} color="primary" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Predicted next term" value={`${subject.predictedNextTerm}%`} hint="AI forecast" color="info" />
+          <StatCard label="Predicted next term" value={subject.predictedNextTerm != null ? `${subject.predictedNextTerm}%` : "—"} hint="AI forecast" color="info" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Upcoming SBAs" value={subject.upcomingSBA} hint="this term" color="warning" />
+          <StatCard label="Upcoming SBAs" value={subject.upcomingSBA ?? 0} hint="this term" color="warning" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard label="Mastery" value={`${masteryAvg}%`} hint="across topics" color="success" />
@@ -107,12 +109,20 @@ function SubjectView({
               <Typography variant="h6" sx={{ mb: 2 }}>
                 Term-over-term performance
               </Typography>
-              <LineChart
-                height={260}
-                xAxis={[{ data: subject.termAverages.map((t) => t.term), scaleType: "point" }]}
-                series={[{ data: subject.termAverages.map((t) => t.mark), label: "Average", color: "#0F6963" }]}
-                margin={{ top: 16, right: 24, bottom: 24, left: 40 }}
-              />
+              {termAverages.length > 0 ? (
+                <LineChart
+                  height={260}
+                  xAxis={[{ data: termAverages.map((t) => t.term), scaleType: "point" }]}
+                  series={[{ data: termAverages.map((t) => t.mark), label: "Average", color: "#0F6963" }]}
+                  margin={{ top: 16, right: 24, bottom: 24, left: 40 }}
+                />
+              ) : (
+                <Box sx={{ py: 6, textAlign: "center" }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Log marks against this subject to see your term-over-term trend.
+                  </Typography>
+                </Box>
+              )}
             </CardContent>
           </Card>
 
@@ -159,7 +169,12 @@ function SubjectView({
                 Topic mastery
               </Typography>
               <Stack spacing={2}>
-                {subject.topics.map((t) => (
+                {topics.length === 0 ? (
+                  <Typography variant="body2" color="text.secondary">
+                    Topic mastery fills in as you log assessments for this subject.
+                  </Typography>
+                ) : null}
+                {topics.map((t) => (
                   <Box key={t.name}>
                     <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
                       <Typography variant="body2">{t.name}</Typography>
