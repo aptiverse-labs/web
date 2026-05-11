@@ -23,3 +23,6 @@ test-results/
 playwright-report/
 .playwright/
 .features-gen/
+
+# E2E test output logs
+e2e-run.log
