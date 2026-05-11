@@ -48,3 +48,18 @@ export const contactSchema = z.object({
   message: z.string().min(10, "Tell us a little more (10+ chars)"),
 });
 export type ContactValues = z.infer<typeof contactSchema>;
+
+export const schoolEnquirySchema = z.object({
+  schoolName: z.string().min(2, "School name is required"),
+  contactName: z.string().min(2, "Your full name is required"),
+  contactRole: z.string().optional(),
+  email: z.string().email("Enter a valid email"),
+  phone: z.string().optional(),
+  province: z.string().optional(),
+  city: z.string().optional(),
+  curricula: z.array(z.string()).optional(),
+  learnerCount: z.string().optional(),
+  stage: z.string().optional(),
+  notes: z.string().optional(),
+});
+export type SchoolEnquiryValues = z.infer<typeof schoolEnquirySchema>;

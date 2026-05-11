@@ -84,4 +84,10 @@ export const api = {
     void input;
     return { ok: true } as const;
   },
+  async schoolEnquiry(input: import("@/lib/schemas").SchoolEnquiryValues) {
+    return request<{ id: number }>("/api/sales/school-enquiry", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  },
 };

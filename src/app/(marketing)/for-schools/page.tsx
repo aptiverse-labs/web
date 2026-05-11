@@ -15,7 +15,7 @@ export default function Page() {
       eyebrow="For schools & districts"
       title="A whole-school lift, calibrated."
       description="Aptiverse delivers university-readiness, learner wellbeing and SBA outcome reporting — alongside teacher tools that actually save time."
-      primaryCta={{ label: "Book a school demo", href: "/contact?reason=school" }}
+      primaryCta={{ label: "Talk to sales", href: "/for-schools/contact" }}
       secondaryCta={{ label: "Pricing", href: "/pricing" }}
       features={[
         { icon: <InsightsIcon />, title: "Whole-school analytics", description: "Year-by-year trends across grades, subjects, and demographics.", accent: "primary" },
