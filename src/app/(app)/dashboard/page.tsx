@@ -33,7 +33,7 @@ import {
   useGoals,
   useNotifications,
 } from "@/lib/api/queries";
-import { APS_SCORE, type Notification, type Subject } from "@/lib/mockData";
+import { type Notification, type Subject } from "@/lib/mockData";
 
 export default function StudentDashboardPage() {
   const subjectsQuery = useSubjects();

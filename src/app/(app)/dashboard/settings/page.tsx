@@ -15,12 +15,26 @@ import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import { useSession } from "next-auth/react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EditWithTabs, type EditTab } from "@/components/common/EditWithTabs";
 import { useColorMode } from "@/providers/ColorModeProvider";
 
 export default function SettingsPage() {
   const { mode, setMode } = useColorMode();
+  const { data: session } = useSession();
+  const u = (session?.user ?? {}) as {
+    name?: string | null;
+    email?: string | null;
+    firstName?: string;
+    lastName?: string;
+    school?: string;
+    grade?: string | number;
+  };
+  const fallbackFirst = u.firstName ?? (u.name ? u.name.split(" ")[0] : "");
+  const fallbackLast =
+    u.lastName ?? (u.name && u.name.includes(" ") ? u.name.split(" ").slice(1).join(" ") : "");
+
   const [emailNotifs, setEmailNotifs] = useState(true);
   const [pushNotifs, setPushNotifs] = useState(true);
   const [parentVisibility, setParentVisibility] = useState(true);
@@ -34,12 +48,43 @@ export default function SettingsPage() {
       content: (
         <Stack spacing={2} sx={{ maxWidth: 560 }}>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <TextField label="First name" defaultValue="Thandi" fullWidth />
-            <TextField label="Last name" defaultValue="Mokoena" fullWidth />
+            <TextField
+              label="First name"
+              defaultValue={fallbackFirst}
+              key={`first-${fallbackFirst}`}
+              fullWidth
+              placeholder="—"
+            />
+            <TextField
+              label="Last name"
+              defaultValue={fallbackLast}
+              key={`last-${fallbackLast}`}
+              fullWidth
+              placeholder="—"
+            />
           </Stack>
-          <TextField label="Email" defaultValue="thandi@example.com" fullWidth />
-          <TextField label="School" defaultValue="Crawford College Pretoria" fullWidth />
-          <TextField label="Grade" defaultValue="12" fullWidth select>
+          <TextField
+            label="Email"
+            defaultValue={u.email ?? ""}
+            key={`email-${u.email ?? ""}`}
+            fullWidth
+            placeholder="—"
+          />
+          <TextField
+            label="School"
+            defaultValue={u.school ?? ""}
+            key={`school-${u.school ?? ""}`}
+            fullWidth
+            placeholder="Add your school"
+          />
+          <TextField
+            label="Grade"
+            defaultValue={u.grade?.toString() ?? ""}
+            key={`grade-${u.grade ?? ""}`}
+            fullWidth
+            select
+          >
+            <MenuItem value="">Not set</MenuItem>
             <MenuItem value="11">11</MenuItem>
             <MenuItem value="12">12</MenuItem>
           </TextField>

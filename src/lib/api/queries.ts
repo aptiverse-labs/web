@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api/fetcher";
 import {
   BURSARIES,
@@ -182,6 +182,47 @@ export const useGoals = () =>
     queryKey: queryKeys.goals(),
     queryFn: () => apiClient.get<Goal[]>("/api/goals"),
   });
+
+export type CreateGoalInput = {
+  title: string;
+  description?: string;
+  target?: string;
+  category?: Goal["category"];
+  subjectId?: string | null;
+  reward?: string;
+  dueDate?: string;
+};
+
+export const useCreateGoal = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateGoalInput) => apiClient.post<Goal>("/api/goals", input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.goals() });
+    },
+  });
+};
+
+export const useUpdateGoal = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...patch }: Partial<Goal> & { id: string }) =>
+      apiClient.patch<Goal>(`/api/goals/${id}`, patch),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.goals() });
+    },
+  });
+};
+
+export const useDeleteGoal = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete<void>(`/api/goals/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.goals() });
+    },
+  });
+};
 
 export const usePracticeTests = () =>
   useQuery<PracticeTest[]>({

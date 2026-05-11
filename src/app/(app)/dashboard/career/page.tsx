@@ -5,15 +5,14 @@ import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import LinearProgress from "@mui/material/LinearProgress";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import Button from "@mui/material/Button";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutlineOutlined";
+import RocketLaunchOutlinedIcon from "@mui/icons-material/RocketLaunchOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryStates } from "@/components/common/QueryStates";
 import { useCareers } from "@/lib/api/queries";
-import { APS_SCORE } from "@/lib/mockData";
 import type { Career } from "@/lib/mockData";
 import Link from "next/link";
 
@@ -33,31 +32,41 @@ export default function CareerPage() {
         <Grid size={{ xs: 12, md: 8 }}>
           <Card sx={{ mb: 3 }}>
             <CardContent sx={{ p: 3 }}>
-              <Typography variant="overline" color="primary.main">
-                Your dream course
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
-                BSc Engineering — University of Cape Town
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                APS cutoff: 41 · You're at {APS_SCORE} (likely with current trajectory: 39)
-              </Typography>
-              <LinearProgress variant="determinate" value={(APS_SCORE / 41) * 100} sx={{ height: 12, borderRadius: 999, mb: 1 }} color="primary" />
-              <Stack direction="row" justifyContent="space-between">
-                <Typography variant="caption" color="text.secondary">
-                  Current APS: {APS_SCORE}
-                </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                  Target: 41
-                </Typography>
-              </Stack>
-              <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                <Button component={Link} href="/dashboard/universities" variant="outlined">
-                  Explore universities
-                </Button>
-                <Button component={Link} href="/dashboard/bursaries" variant="outlined">
-                  Find bursaries
-                </Button>
+              <Stack direction="row" spacing={2} alignItems="flex-start">
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 1.5,
+                    bgcolor: "primary.main",
+                    color: "primary.contrastText",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <RocketLaunchOutlinedIcon />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="overline" color="primary.main">
+                    Your dream course
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    Not set yet
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                    Pick a target course and we'll track the APS gap, suggest matching bursaries, and recommend the subjects most worth pushing.
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    <Button variant="contained" size="small">
+                      Set dream course
+                    </Button>
+                    <Button component={Link} href="/dashboard/universities" variant="outlined" size="small">
+                      Explore universities
+                    </Button>
+                  </Stack>
+                </Box>
               </Stack>
             </CardContent>
           </Card>
@@ -72,8 +81,14 @@ export default function CareerPage() {
                 empty={{
                   icon: <WorkOutlineIcon />,
                   title: "No career matches yet",
-                  description: "Complete your subjects and interests so we can match you with careers that fit.",
+                  description:
+                    "Add your subjects and a few interests, and we'll surface careers that fit your strengths.",
                   size: "compact",
+                  action: (
+                    <Button variant="contained" component={Link} href="/dashboard/subjects">
+                      Add subjects
+                    </Button>
+                  ),
                 }}
               >
                 {(careers) => <CareerList careers={careers} />}
@@ -89,19 +104,9 @@ export default function CareerPage() {
                 <Typography variant="h6" sx={{ mb: 1.5 }}>
                   Financial literacy
                 </Typography>
-                <Stack spacing={1}>
-                  {[
-                    "Understanding student loans (NSFAS vs banks)",
-                    "Budgeting at university",
-                    "Cost of living in SA cities",
-                    "Why your credit score matters at 18",
-                  ].map((m) => (
-                    <Stack key={m} direction="row" alignItems="center" justifyContent="space-between">
-                      <Typography variant="body2">{m}</Typography>
-                      <Button size="small">Read</Button>
-                    </Stack>
-                  ))}
-                </Stack>
+                <Typography variant="body2" color="text.secondary">
+                  Short reads to help you make smart money decisions before you leave home. Coming soon.
+                </Typography>
               </CardContent>
             </Card>
             <Card>
@@ -109,22 +114,9 @@ export default function CareerPage() {
                 <Typography variant="h6" sx={{ mb: 1.5 }}>
                   Day in the life
                 </Typography>
-                <Stack spacing={1.5}>
-                  {[
-                    { name: "Software Engineer", company: "Anthropic" },
-                    { name: "Chemical Engineer", company: "Sasol" },
-                    { name: "Junior Doctor", company: "GSH" },
-                  ].map((d) => (
-                    <Box key={d.name} sx={{ p: 1.5, borderRadius: 1.5, bgcolor: "action.hover" }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {d.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {d.company} · 4 min read
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
+                <Typography variant="body2" color="text.secondary">
+                  Real stories from SA professionals across fields. Coming soon.
+                </Typography>
               </CardContent>
             </Card>
           </Stack>
