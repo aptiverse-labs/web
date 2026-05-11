@@ -1,3 +1,4 @@
+@student
 Feature: Goals
   Students set personal goals (academic, wellbeing, habit, career) and
   track progress towards them. Each user's goals are scoped to their

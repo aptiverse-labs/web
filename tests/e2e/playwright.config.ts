@@ -1,16 +1,15 @@
 // Playwright + Cucumber (BDD) configuration for Aptiverse end-to-end tests.
 //
-// .feature files in ./features are compiled into Playwright tests by
-// playwright-bdd at run-time. Step definitions live in ./steps.
+// Per-role projects:
+//   - setup project signs in each test account and saves its session to
+//     .auth/<role>.json
+//   - one main project per role, each loading its own storageState and
+//     grep-filtering scenarios by @<role> tag.
 //
 // Tests run against your local dev stack:
 //   - Next.js UI on  http://localhost:3000
 //   - .NET API on    http://localhost:5100
 //   - Postgres via SSH tunnel on localhost:5432
-//
-// Auth: a one-time "setup" project signs into the UI and saves a storage
-// state to .auth/user.json. The main "chromium" project loads that state
-// so every scenario starts already authenticated.
 
 import { defineConfig, devices } from "@playwright/test";
 import { defineBddConfig } from "playwright-bdd";
@@ -24,7 +23,7 @@ const testDir = defineBddConfig({
   steps: path.resolve(__dirname, "steps"),
 });
 
-const authFile = path.resolve(__dirname, ".auth/user.json");
+const auth = (role: string) => path.resolve(__dirname, `.auth/${role}.json`);
 
 export default defineConfig({
   testDir,
@@ -51,12 +50,28 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
-      name: "chromium",
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: authFile,
-      },
+      name: "student",
+      use: { ...devices["Desktop Chrome"], storageState: auth("student") },
       dependencies: ["setup"],
+      grep: /@student/,
+    },
+    {
+      name: "parent",
+      use: { ...devices["Desktop Chrome"], storageState: auth("parent") },
+      dependencies: ["setup"],
+      grep: /@parent/,
+    },
+    {
+      name: "teacher",
+      use: { ...devices["Desktop Chrome"], storageState: auth("teacher") },
+      dependencies: ["setup"],
+      grep: /@teacher/,
+    },
+    {
+      name: "tutor",
+      use: { ...devices["Desktop Chrome"], storageState: auth("tutor") },
+      dependencies: ["setup"],
+      grep: /@tutor/,
     },
   ],
 });

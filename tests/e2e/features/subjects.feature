@@ -1,3 +1,4 @@
+@student
 Feature: Subjects
   Students pick a curriculum once, then add subjects from the canonical
   catalog. Compulsory subjects (Life Orientation in NSC/IEB) cannot be

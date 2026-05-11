@@ -1,9 +1,12 @@
 // Custom Playwright + BDD fixtures shared across feature files.
 //
-//   api — an authenticated API client that talks to the .NET API directly.
-//         Useful for cleanup (reset user state) and for asserting that the
-//         UI's actions actually persisted.
-//   apiToken — the raw Bearer token from /api/auth/login. Cached per worker.
+//   api       — an authenticated API client that talks to the .NET API
+//               directly. Resolves the user's role from the Playwright
+//               project name (student / parent / teacher / tutor) and
+//               logs that user in. Used for cleanup + ground-truth
+//               assertions.
+//   apiToken  — the raw Bearer token from /api/auth/login. Cached per
+//               worker.
 
 import { expect, type APIRequestContext } from "@playwright/test";
 import { test as base, createBdd } from "playwright-bdd";
@@ -24,18 +27,29 @@ function apiBaseUrl(): string {
   return process.env.E2E_API_BASE_URL ?? "http://localhost:5100";
 }
 
-async function loginAndGetToken(request: APIRequestContext): Promise<string> {
-  const email = process.env.E2E_TEST_EMAIL;
-  const password = process.env.E2E_TEST_PASSWORD;
+function credentialsFor(projectName: string): { email: string; password: string } {
+  // Project names from playwright.config.ts: student, parent, teacher, tutor.
+  // Each maps to E2E_<ROLE>_EMAIL; password is shared.
+  const role = projectName.toLowerCase();
+  const email = process.env[`E2E_${role.toUpperCase()}_EMAIL`];
+  const password = process.env.E2E_PASSWORD;
   if (!email || !password) {
     throw new Error(
-      "E2E_TEST_EMAIL / E2E_TEST_PASSWORD are not set. Copy tests/e2e/.env.example to tests/e2e/.env.",
+      `Missing E2E_${role.toUpperCase()}_EMAIL or E2E_PASSWORD in tests/e2e/.env`,
     );
   }
+  return { email, password };
+}
+
+async function loginAndGetToken(
+  request: APIRequestContext,
+  email: string,
+  pw: string,
+): Promise<string> {
   const res = await request.post(`${apiBaseUrl()}/api/auth/login`, {
-    data: { email, password },
+    data: { email, password: pw },
   });
-  expect(res.ok(), `login failed: ${res.status()} ${await res.text()}`).toBeTruthy();
+  expect(res.ok(), `login failed for ${email}: ${res.status()} ${await res.text()}`).toBeTruthy();
   const body = await res.json();
   const token: string | undefined = body.accessToken ?? body.token ?? body.access_token;
   if (!token) throw new Error(`No accessToken in login response: ${JSON.stringify(body)}`);
@@ -83,8 +97,9 @@ function makeClient(request: APIRequestContext, token: string): ApiClient {
 }
 
 export const test = base.extend<Fixtures>({
-  apiToken: async ({ request }, use) => {
-    const token = await loginAndGetToken(request);
+  apiToken: async ({ request }, use, testInfo) => {
+    const { email, password } = credentialsFor(testInfo.project.name);
+    const token = await loginAndGetToken(request, email, password);
     await use(token);
   },
   api: async ({ request, apiToken }, use) => {

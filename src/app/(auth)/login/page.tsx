@@ -3,7 +3,7 @@
 import { Suspense, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -33,10 +33,34 @@ function LoginSkeleton() {
   );
 }
 
+// Maps a NextAuth session role to that role's dashboard root. Used post-
+// login when no specific callbackUrl was supplied — without this every
+// role was being dropped onto /dashboard (student) and bouncing into the
+// "Wrong role for this area" RoleGuard.
+function dashboardForRole(role: string | undefined | null): string {
+  switch ((role ?? "").toLowerCase()) {
+    case "teacher":
+      return "/teacher";
+    case "parent":
+      return "/parent";
+    case "tutor":
+      return "/tutor";
+    case "schooladmin":
+    case "school_admin":
+    case "school-admin":
+      return "/school-admin";
+    case "admin":
+    case "superuser":
+      return "/admin";
+    default:
+      return "/dashboard";
+  }
+}
+
 function LoginInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const callbackUrl = params.get("callbackUrl") ?? "/dashboard";
+  const rawCallback = params.get("callbackUrl");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -63,7 +87,16 @@ function LoginInner() {
       setError("Invalid email or password");
       return;
     }
-    router.push(callbackUrl);
+
+    // Resolve where to send the user. If they were redirected here from
+    // a specific protected page, honour that. Otherwise fall back to the
+    // dashboard for their role. The default /dashboard from NextAuth is
+    // student-only and would bounce non-students to the RoleGuard page.
+    const session = await getSession();
+    const role = (session?.user as { role?: string } | undefined)?.role;
+    const dest =
+      !rawCallback || rawCallback === "/dashboard" ? dashboardForRole(role) : rawCallback;
+    router.push(dest);
     router.refresh();
   }
 
@@ -81,7 +114,7 @@ function LoginInner() {
         </Typography>
       </Box>
 
-      <OAuthButtons callbackUrl={callbackUrl} />
+      <OAuthButtons callbackUrl={rawCallback ?? "/dashboard"} />
 
       {error && <Alert severity="error">{error}</Alert>}
 

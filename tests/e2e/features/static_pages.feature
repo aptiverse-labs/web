@@ -1,3 +1,4 @@
+@student
 Feature: Static link pages
   Past papers, bursaries and universities are curated link pages — we
   smoke-test that they render with the key content and external links

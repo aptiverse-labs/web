@@ -1,3 +1,4 @@
+@student
 Feature: Assessments
   Students log their own SBA tasks. The Assessments page lists what's
   upcoming and graded; the /new form is the create flow.
