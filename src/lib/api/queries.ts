@@ -76,6 +76,16 @@ export type Verification = {
   reward: string;
 };
 
+export type Milestone = {
+  id: string;
+  goalId: string;
+  title: string;
+  description: string;
+  priority: number;
+  isCompleted: boolean;
+  rewardPoints: number;
+};
+
 // Mock fetch with delay so loading states render properly. Used only by
 // hooks that haven't been wired to the real API yet — convert per page.
 const fakeFetch = <T>(value: T, ms = 350): Promise<T> =>
@@ -107,6 +117,7 @@ export const queryKeys = {
   gaps: () => ["gaps"] as const,
   differentiation: () => ["differentiation"] as const,
   verifications: () => ["verifications"] as const,
+  goalMilestones: (goalId: string) => ["goal-milestones", goalId] as const,
 };
 
 export const useSubjects = () =>
@@ -256,3 +267,13 @@ export const useVerifications = () =>
     queryKey: queryKeys.verifications(),
     queryFn: () => apiClient.get<Verification[]>("/api/goals/verifications"),
   });
+
+export const useGoalMilestones = (goalId: string) =>
+  useQuery<Milestone[]>({
+    queryKey: queryKeys.goalMilestones(goalId),
+    queryFn: () => apiClient.get<Milestone[]>(`/api/goals/${goalId}/milestones`),
+    enabled: !!goalId,
+  });
+
+export const reorderGoalMilestones = (goalId: string, milestoneIds: string[]) =>
+  apiClient.patch(`/api/goals/${goalId}/milestones/order`, { milestoneIds });

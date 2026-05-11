@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -113,11 +114,23 @@ function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
       : "primary";
 
   return (
-    <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <Card
+      component={Link}
+      href={`/dashboard/goals/${goal.id}`}
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        textDecoration: "none",
+        color: "inherit",
+        transition: "border-color 150ms, box-shadow 150ms",
+        "&:hover": { borderColor: "primary.main" },
+      }}
+    >
       <CardContent sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
           <Chip label={goal.category} size="small" sx={{ textTransform: "capitalize" }} />
-          <IconButton size="small">
+          <IconButton size="small" onClick={(e) => e.preventDefault()}>
             <MoreHorizIcon />
           </IconButton>
         </Stack>
