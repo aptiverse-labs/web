@@ -240,18 +240,58 @@ export const SUBJECTS: Array<{
   },
 ];
 
+export type AssessmentType =
+  | "test"
+  | "essay"
+  | "investigation"
+  | "practical"
+  | "exam"
+  | "project"
+  | "oral";
+
+export type AssessmentStatus = "scheduled" | "in_progress" | "submitted" | "graded";
+
 export type Assessment = {
   id: string;
   subjectId: string;
   title: string;
-  type: "Test" | "Investigation" | "Essay" | "Practical" | "Oral" | "Project" | "Exam";
+  type: AssessmentType;
   weight: number;
   dueDate: string;
-  status: "scheduled" | "in_progress" | "submitted" | "graded";
-  predictedMark?: number;
-  actualMark?: number;
+  status: AssessmentStatus;
+  predictedMark?: number | null;
+  actualMark?: number | null;
+  notes?: string | null;
+  createdAt?: string;
   rubric?: { criterion: string; weight: number; description: string }[];
   tasks?: string[];
+};
+
+export const ASSESSMENT_TYPES: AssessmentType[] = [
+  "test",
+  "essay",
+  "investigation",
+  "practical",
+  "exam",
+  "project",
+  "oral",
+];
+
+export const ASSESSMENT_TYPE_LABELS: Record<AssessmentType, string> = {
+  test: "Test",
+  essay: "Essay",
+  investigation: "Investigation",
+  practical: "Practical",
+  exam: "Exam",
+  project: "Project",
+  oral: "Oral",
+};
+
+export const ASSESSMENT_STATUS_LABELS: Record<AssessmentStatus, string> = {
+  scheduled: "Scheduled",
+  in_progress: "In progress",
+  submitted: "Submitted",
+  graded: "Graded",
 };
 
 const today = dayjs();
@@ -261,7 +301,7 @@ export const ASSESSMENTS: Assessment[] = [
     id: "a1",
     subjectId: "math",
     title: "Calculus & Trigonometry Test",
-    type: "Test",
+    type: "test",
     weight: 15,
     dueDate: today.add(6, "day").toISOString(),
     status: "scheduled",
@@ -272,7 +312,7 @@ export const ASSESSMENTS: Assessment[] = [
     id: "a2",
     subjectId: "english",
     title: "Argumentative Essay — Social Media",
-    type: "Essay",
+    type: "essay",
     weight: 10,
     dueDate: today.add(3, "day").toISOString(),
     status: "in_progress",
@@ -288,7 +328,7 @@ export const ASSESSMENTS: Assessment[] = [
     id: "a3",
     subjectId: "physci",
     title: "Chemical Equilibrium SBA",
-    type: "Investigation",
+    type: "investigation",
     weight: 20,
     dueDate: today.add(12, "day").toISOString(),
     status: "scheduled",
@@ -304,7 +344,7 @@ export const ASSESSMENTS: Assessment[] = [
     id: "a4",
     subjectId: "lifesci",
     title: "Genetics & Heredity Practical",
-    type: "Practical",
+    type: "practical",
     weight: 12,
     dueDate: today.add(9, "day").toISOString(),
     status: "scheduled",
@@ -314,7 +354,7 @@ export const ASSESSMENTS: Assessment[] = [
     id: "a5",
     subjectId: "math",
     title: "Trial Exam Paper 1",
-    type: "Exam",
+    type: "exam",
     weight: 25,
     dueDate: today.add(28, "day").toISOString(),
     status: "scheduled",
@@ -324,7 +364,7 @@ export const ASSESSMENTS: Assessment[] = [
     id: "a6",
     subjectId: "geography",
     title: "Mapwork Assignment",
-    type: "Project",
+    type: "project",
     weight: 8,
     dueDate: today.subtract(3, "day").toISOString(),
     status: "graded",
@@ -334,7 +374,7 @@ export const ASSESSMENTS: Assessment[] = [
     id: "a7",
     subjectId: "afri",
     title: "Skryfstuk - Argumenterende Opstel",
-    type: "Essay",
+    type: "essay",
     weight: 10,
     dueDate: today.add(5, "day").toISOString(),
     status: "scheduled",

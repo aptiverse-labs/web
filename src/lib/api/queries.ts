@@ -237,6 +237,55 @@ export const useDeleteSubject = () => {
   });
 };
 
+// --- Assessments (SBA tasks) -------------------------------------------
+
+export type CreateAssessmentInput = {
+  subjectId: string;
+  title: string;
+  type: Assessment["type"];
+  weight: number;
+  dueDate: string;
+  status?: Assessment["status"];
+  predictedMark?: number | null;
+  actualMark?: number | null;
+  notes?: string;
+};
+
+export type UpdateAssessmentInput = Partial<CreateAssessmentInput>;
+
+export const useCreateAssessment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateAssessmentInput) =>
+      apiClient.post<Assessment>("/api/academic-planning/assessments", input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.assessments() });
+    },
+  });
+};
+
+export const useUpdateAssessment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...patch }: UpdateAssessmentInput & { id: string }) =>
+      apiClient.patch<Assessment>(`/api/academic-planning/assessments/${id}`, patch),
+    onSuccess: (_data, vars) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.assessments() });
+      void qc.invalidateQueries({ queryKey: queryKeys.assessment(vars.id) });
+    },
+  });
+};
+
+export const useDeleteAssessment = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.delete<void>(`/api/academic-planning/assessments/${id}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.assessments() });
+    },
+  });
+};
+
 export const useAssessments = () =>
   useQuery<Assessment[]>({
     queryKey: queryKeys.assessments(),

@@ -25,7 +25,7 @@ export default function AssessmentDetail({ params }: { params: Promise<{ id: str
   const assessmentQuery = useAssessment(id);
   const subjectsQuery = useSubjects();
 
-  const subject = (subjectsQuery.data ?? []).find((s) => s.id === assessmentQuery.data?.subjectId);
+  const subject = (subjectsQuery.data ?? []).find((s) => s.subjectId === assessmentQuery.data?.subjectId);
 
   return (
     <>

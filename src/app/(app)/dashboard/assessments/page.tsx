@@ -14,7 +14,12 @@ import { DataList } from "@/components/data/DataList";
 import { StatusChip } from "@/components/common/StatusChip";
 import { QueryStates } from "@/components/common/QueryStates";
 import { useAssessments, useSubjects } from "@/lib/api/queries";
-import type { Assessment, Subject } from "@/lib/mockData";
+import {
+  ASSESSMENT_TYPE_LABELS,
+  ASSESSMENT_STATUS_LABELS,
+  type Assessment,
+  type Subject,
+} from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
 import { RelativeTime } from "@/components/common/RelativeTime";
 import dayjs from "dayjs";
@@ -76,16 +81,16 @@ function AssessmentsList({ assessments, subjects }: { assessments: Assessment[];
           <TextField select size="small" label="Subject" value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} sx={{ minWidth: 200 }}>
             <MenuItem value="all">All subjects</MenuItem>
             {subjects.map((s) => (
-              <MenuItem key={s.id} value={s.id}>
+              <MenuItem key={s.subjectId} value={s.subjectId}>
                 {s.name}
               </MenuItem>
             ))}
           </TextField>
           <TextField select size="small" label="Status" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} sx={{ minWidth: 200 }}>
             <MenuItem value="all">All statuses</MenuItem>
-            {["scheduled", "in_progress", "submitted", "graded"].map((s) => (
-              <MenuItem key={s} value={s}>
-                {s.replace("_", " ")}
+            {(Object.entries(ASSESSMENT_STATUS_LABELS) as [keyof typeof ASSESSMENT_STATUS_LABELS, string][]).map(([k, v]) => (
+              <MenuItem key={k} value={k}>
+                {v}
               </MenuItem>
             ))}
           </TextField>
@@ -100,12 +105,12 @@ function AssessmentsList({ assessments, subjects }: { assessments: Assessment[];
             <Stack>
               <Typography sx={{ fontWeight: 500 }}>{r.title}</Typography>
               <Typography variant="caption" color="text.secondary">
-                {subjects.find((s) => s.id === r.subjectId)?.name}
+                {subjects.find((s) => s.subjectId === r.subjectId)?.name}
               </Typography>
             </Stack>
           ),
         },
-        { key: "type", header: "Type", sortable: true },
+        { key: "type", header: "Type", sortable: true, render: (r) => ASSESSMENT_TYPE_LABELS[r.type] ?? r.type },
         {
           key: "weight",
           header: "Weight",
@@ -154,8 +159,7 @@ function AssessmentsList({ assessments, subjects }: { assessments: Assessment[];
           render: (r) => (
             <StatusChip
               kind={r.status === "graded" ? "success" : r.status === "in_progress" ? "info" : r.status === "submitted" ? "primary" : "neutral"}
-              label={r.status.replace("_", " ")}
-              sx={{ textTransform: "capitalize" }}
+              label={ASSESSMENT_STATUS_LABELS[r.status] ?? r.status}
             />
           ),
         },
