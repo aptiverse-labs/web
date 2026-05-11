@@ -2,9 +2,6 @@ Feature: Assessments
   Students log their own SBA tasks. The Assessments page lists what's
   upcoming and graded; the /new form is the create flow.
 
-  Background:
-    Given I am signed in
-
   Scenario: Student logs a Maths SBA test
     Given I have a subject "Mathematics" in grade 12 on the NSC curriculum
     When I create an assessment titled "Calculus & Trig Test" with type test weight 15% due in 14 days

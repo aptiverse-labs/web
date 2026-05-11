@@ -2,11 +2,7 @@ Feature: Subjects
   Students pick a curriculum once, then add subjects from the canonical
   catalog. The Subjects page is the on-ramp into the rest of the dashboard.
 
-  Background:
-    Given I am signed in
-
   Scenario: First-time student picks NSC and adds Mathematics
-    Given I have no curriculum picked yet
     When I open "/dashboard/subjects"
     Then I should see "Pick your curriculum"
 

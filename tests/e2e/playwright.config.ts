@@ -8,13 +8,9 @@
 //   - .NET API on    http://localhost:5100
 //   - Postgres via SSH tunnel on localhost:5432
 //
-// Run:
-//   npm run e2e              (headless)
-//   npm run e2e:headed       (visible browser, useful for debugging)
-//   npm run e2e:ui           (Playwright UI mode)
-//
-// One worker only — scenarios share a single test user and would race
-// on each other if parallelised.
+// Auth: a one-time "setup" project signs into the UI and saves a storage
+// state to .auth/user.json. The main "chromium" project loads that state
+// so every scenario starts already authenticated.
 
 import { defineConfig, devices } from "@playwright/test";
 import { defineBddConfig } from "playwright-bdd";
@@ -27,6 +23,8 @@ const testDir = defineBddConfig({
   features: path.resolve(__dirname, "features"),
   steps: path.resolve(__dirname, "steps"),
 });
+
+const authFile = path.resolve(__dirname, ".auth/user.json");
 
 export default defineConfig({
   testDir,
@@ -47,8 +45,18 @@ export default defineConfig({
 
   projects: [
     {
-      name: "chromium",
+      name: "setup",
+      testDir: path.resolve(__dirname, "setup"),
+      testMatch: /.*\.setup\.ts/,
       use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: authFile,
+      },
+      dependencies: ["setup"],
     },
   ],
 });

@@ -247,7 +247,9 @@ function AddSubjectDialog({
   const add = useAddSubject();
 
   const [grade, setGrade] = useState<number>(userGrade);
-  const [teacher, setTeacher] = useState("");
+  // Per-row teacher input — keyed by curriculumSubjectId so each subject
+  // can have its own teacher entered before pressing Add.
+  const [teacherByRow, setTeacherByRow] = useState<Record<number, string>>({});
   const [adding, setAdding] = useState<number | null>(null);
 
   const grouped = useMemo(() => {
@@ -268,12 +270,19 @@ function AddSubjectDialog({
     if (existingSubjectIds.has(s.id) || adding != null) return;
     setAdding(s.curriculumSubjectId);
     try {
+      const t = (teacherByRow[s.curriculumSubjectId] ?? "").trim();
       await add.mutateAsync({
         curriculumSubjectId: s.curriculumSubjectId,
         grade,
-        teacher: teacher.trim() || undefined,
+        teacher: t || undefined,
       });
       enqueueSnackbar(`Added ${s.name}.`, { variant: "success" });
+      // Clear the teacher input for the just-added row so it's tidy on re-open
+      setTeacherByRow((prev) => {
+        const next = { ...prev };
+        delete next[s.curriculumSubjectId];
+        return next;
+      });
     } catch (err) {
       enqueueSnackbar(
         `Couldn't add ${s.name}${err instanceof Error ? `: ${err.message}` : ""}`,
@@ -299,7 +308,7 @@ function AddSubjectDialog({
         </Stack>
       </DialogTitle>
       <DialogContent dividers>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
+        <Stack direction="row" spacing={2} sx={{ mb: 3 }} alignItems="center">
           <TextField
             label="Grade"
             select
@@ -311,13 +320,9 @@ function AddSubjectDialog({
             <MenuItem value={11}>Grade 11</MenuItem>
             <MenuItem value={12}>Grade 12</MenuItem>
           </TextField>
-          <TextField
-            label="Teacher (optional)"
-            value={teacher}
-            onChange={(e) => setTeacher(e.target.value)}
-            placeholder="e.g. Ms. Naidoo"
-            fullWidth
-          />
+          <Typography variant="caption" color="text.secondary">
+            Enter the teacher (optional) next to each subject before clicking Add.
+          </Typography>
         </Stack>
 
         {catalogQuery.isLoading ? (
@@ -344,6 +349,7 @@ function AddSubjectDialog({
                     return (
                       <Box
                         key={s.curriculumSubjectId}
+                        data-subject-slug={s.id}
                         sx={{
                           p: 1.5,
                           border: 1,
@@ -397,14 +403,34 @@ function AddSubjectDialog({
                             variant="outlined"
                           />
                         ) : (
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            onClick={() => handleAdd(s)}
-                            disabled={isAdding}
-                          >
-                            {isAdding ? "Adding…" : "Add"}
-                          </Button>
+                          <>
+                            <TextField
+                              size="small"
+                              placeholder="Teacher (optional)"
+                              value={teacherByRow[s.curriculumSubjectId] ?? ""}
+                              onChange={(e) =>
+                                setTeacherByRow((prev) => ({
+                                  ...prev,
+                                  [s.curriculumSubjectId]: e.target.value,
+                                }))
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  handleAdd(s);
+                                }
+                              }}
+                              sx={{ width: { xs: 140, sm: 200 } }}
+                            />
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              onClick={() => handleAdd(s)}
+                              disabled={isAdding}
+                            >
+                              {isAdding ? "Adding…" : "Add"}
+                            </Button>
+                          </>
                         )}
                       </Box>
                     );

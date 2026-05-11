@@ -24,17 +24,30 @@ When(
   "I create an assessment titled {string} with type {word} weight {int}% due in {int} days",
   async ({ page }, title: string, type: string, weight: number, daysOut: number) => {
     await page.goto("/dashboard/assessments/new");
-    // Pick the first subject in the dropdown (we set it up via API).
-    await page.getByLabel("Subject").click();
+
+    // Wait for the subject dropdown to populate. MUI Select renders as a div
+    // with role="combobox" — we wait for it to leave the disabled state
+    // (subjectsQuery returns -> length>0 -> field enabled).
+    const subjectSelect = page.getByLabel("Subject");
+    await expect(subjectSelect).toBeEnabled({ timeout: 15_000 });
+
+    await subjectSelect.click();
     await page.getByRole("option").first().click();
+
     await page.getByLabel("Title").fill(title);
+
     await page.getByLabel("Type").click();
     await page.getByRole("option", { name: new RegExp(`^${type}$`, "i") }).click();
+
     await page.getByLabel("Weight").fill(String(weight));
+
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + daysOut);
     await page.getByLabel("Due date").fill(dueDate.toISOString().slice(0, 10));
+
     await page.getByRole("button", { name: /save assessment/i }).click();
+
+    // Redirect to /dashboard/assessments/{id} signals success
     await page.waitForURL(/\/dashboard\/assessments\/\d+/);
   },
 );

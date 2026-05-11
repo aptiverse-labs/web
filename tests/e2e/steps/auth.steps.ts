@@ -1,19 +1,8 @@
-// Auth steps — uses the form-based sign-in because NextAuth's session is
-// cookie-bound and signed with NEXTAUTH_SECRET (which our tests don't have
-// access to). For pure API assertions we still use the fixtures.api client
-// (Bearer token, bypasses the cookie auth).
+// Auth steps. The Playwright "setup" project signs in once via the UI
+// and persists storage state to .auth/user.json; every other test loads
+// that state at startup and is already signed in.
+//
+// Keep this file for any explicit re-sign-in scenarios that need to
+// exercise the login form itself.
 
-import { expect } from "@playwright/test";
-import { Given } from "./fixtures";
-
-Given("I sign in via the UI", async ({ page }) => {
-  const email = process.env.E2E_TEST_EMAIL!;
-  const password = process.env.E2E_TEST_PASSWORD!;
-
-  await page.goto("/login");
-  await page.getByLabel(/email/i).fill(email);
-  await page.getByLabel(/password/i).fill(password);
-  await page.getByRole("button", { name: /sign in|log in/i }).click();
-  await page.waitForURL((url) => url.pathname.startsWith("/dashboard"));
-  await expect(page).toHaveURL(/\/dashboard/);
-});
+export {};
