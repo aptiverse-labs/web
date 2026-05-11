@@ -86,6 +86,34 @@ export type Milestone = {
   rewardPoints: number;
 };
 
+export type AuditLog = {
+  id: string;
+  ts: string;
+  actor: string;
+  action: string;
+  resource: string;
+  ip: string;
+  severity: string;
+};
+
+export type ModerationFlag = {
+  id: string;
+  reason: string;
+  target: string;
+  reporter: string;
+  excerpt: string;
+  severity: string;
+  createdAt: string;
+};
+
+export type FeatureFlag = {
+  key: string;
+  description: string;
+  enabled: boolean;
+  rollout: number;
+  env: string;
+};
+
 // Mock fetch with delay so loading states render properly. Used only by
 // hooks that haven't been wired to the real API yet — convert per page.
 const fakeFetch = <T>(value: T, ms = 350): Promise<T> =>
@@ -118,6 +146,9 @@ export const queryKeys = {
   differentiation: () => ["differentiation"] as const,
   verifications: () => ["verifications"] as const,
   goalMilestones: (goalId: string) => ["goal-milestones", goalId] as const,
+  auditLogs: () => ["audit-logs"] as const,
+  moderationQueue: () => ["moderation-queue"] as const,
+  featureFlags: () => ["feature-flags"] as const,
 };
 
 export const useSubjects = () =>
@@ -277,3 +308,21 @@ export const useGoalMilestones = (goalId: string) =>
 
 export const reorderGoalMilestones = (goalId: string, milestoneIds: string[]) =>
   apiClient.patch(`/api/goals/${goalId}/milestones/order`, { milestoneIds });
+
+export const useAuditLogs = (take = 60) =>
+  useQuery<AuditLog[]>({
+    queryKey: [...queryKeys.auditLogs(), take],
+    queryFn: () => apiClient.get<AuditLog[]>(`/api/audit/logs?take=${take}`),
+  });
+
+export const useModerationQueue = () =>
+  useQuery<ModerationFlag[]>({
+    queryKey: queryKeys.moderationQueue(),
+    queryFn: () => apiClient.get<ModerationFlag[]>("/api/moderation/queue"),
+  });
+
+export const useFeatureFlags = () =>
+  useQuery<FeatureFlag[]>({
+    queryKey: queryKeys.featureFlags(),
+    queryFn: () => apiClient.get<FeatureFlag[]>("/api/feature-flags/flags"),
+  });
