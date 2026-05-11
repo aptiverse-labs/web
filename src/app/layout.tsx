@@ -50,6 +50,23 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/*
+          TODO(font-licensing): this loads Euphoria's CloudFront-hosted
+          Frygia stylesheet for visual parity. Frygia is licensed to
+          Euphoria — replace with a self-hosted face (Manrope / Outfit /
+          a purchased Frygia license) before any external launch.
+        */}
+        <link
+          rel="preconnect"
+          href="https://dt46w9nqlye04.cloudfront.net"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="stylesheet"
+          href="https://dt46w9nqlye04.cloudfront.net/fonts/v4/stylesheet.css"
+        />
+      </head>
       <body className={roboto.className}>
         <AppProviders>{children}</AppProviders>
       </body>

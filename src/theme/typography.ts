@@ -1,12 +1,13 @@
 import type { TypographyVariantsOptions } from "@mui/material/styles";
 
-// Roboto matches Euphoria.v4's typographic conventions. The body element
-// already has next/font/google's Roboto applied via className in
-// app/layout.tsx; this fontFamily is the explicit MUI override so emotion
-// emits font-family on every typography variant (avoiding any chance of
-// downstream cascade weirdness).
+// Match Euphoria.v4's commonTheme: Frygia first, then Roboto, then the
+// usual system stack. Frygia is loaded via a <link> to Euphoria's
+// CloudFront stylesheet in app/layout.tsx (see TODO there about
+// replacing before any public launch — licensing).
+// next/font/google's Roboto is bundled at /_next/static/media so it's
+// always available as a second-choice fallback if Frygia fails.
 const fontFamily =
-  '"Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+  '"Frygia", "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
 
 export const typography: TypographyVariantsOptions = {
   fontFamily,
