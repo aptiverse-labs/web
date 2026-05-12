@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -9,6 +9,7 @@ import CardContent from "@mui/material/CardContent";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
+import Skeleton from "@mui/material/Skeleton";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import Tabs from "@mui/material/Tabs";
@@ -27,6 +28,7 @@ import SmsOutlinedIcon from "@mui/icons-material/SmsOutlined";
 import Link from "next/link";
 import { Section } from "@/components/common/Section";
 import { GradientBackdrop } from "@/components/common/GradientBackdrop";
+import { usePlans, type PlanDto } from "@/lib/api/queries";
 
 // Pricing is grouped by audience. Within each group, tiers follow a
 // shared structure: same shape of features across the group, upper
@@ -63,16 +65,29 @@ type Plan = {
 // ============================================================
 // STUDENT TRACK
 // ============================================================
-const STUDENT_PLANS: Plan[] = [
-  {
-    code: "free",
-    name: "Free",
+// =====================================================================
+// Marketing copy per plan — taglines, audiences, CTAs, feature bullets,
+// "Most popular" + coming-soon flags. The canonical price / quotas /
+// commission / max-members all come from /api/entitlements/plans at
+// render time, so changing a number in the seeder propagates without a
+// frontend rebuild. Bullet copy stays local because it's curated
+// salescraft, not derivable from the entitlement model.
+// =====================================================================
+type PlanMarketingCopy = {
+  tagline: string;
+  audience: string;
+  monthlyHint?: string;
+  highlight?: boolean;
+  comingSoon?: boolean;
+  cta: { label: string; href: string };
+  features: string[];
+  notIncluded?: string[];
+};
+
+const PLAN_COPY: Record<string, PlanMarketingCopy> = {
+  free: {
     tagline: "Genuinely useful — start here",
     audience: "Any FET student",
-    monthly: 0,
-    aiQuickPerMonth: 15,
-    aiDeepPerMonth: 0,
-    whatsappPerMonth: 0,
     cta: { label: "Create free account", href: "/register" },
     features: [
       "SBA tracking (up to 6 subjects)",
@@ -88,16 +103,9 @@ const STUDENT_PLANS: Plan[] = [
       "WhatsApp assistant",
     ],
   },
-  {
-    code: "student",
-    name: "Student",
+  student: {
     tagline: "Unlimited subjects, basic AI practice",
     audience: "Casual study aid",
-    monthly: 79,
-    annual: 790,
-    aiQuickPerMonth: 60,
-    aiDeepPerMonth: 5,
-    whatsappPerMonth: 10,
     comingSoon: true,
     cta: { label: "Start with Student", href: "/register?plan=student" },
     features: [
@@ -109,17 +117,10 @@ const STUDENT_PLANS: Plan[] = [
       "Everything in Free",
     ],
   },
-  {
-    code: "student.pro",
-    name: "Student Pro",
+  "student.pro": {
     tagline: "The AI moat — what ChatGPT can't do",
     audience: "Serious students",
-    monthly: 149,
-    annual: 1490,
     highlight: true,
-    aiQuickPerMonth: 300,
-    aiDeepPerMonth: 30,
-    whatsappPerMonth: 50,
     comingSoon: true,
     cta: { label: "Go Pro", href: "/register?plan=student.pro" },
     features: [
@@ -135,16 +136,9 @@ const STUDENT_PLANS: Plan[] = [
       "Priority email support · 1-day response",
     ],
   },
-  {
-    code: "student.max",
-    name: "Student Max",
+  "student.max": {
     tagline: "For exam finalists",
     audience: "Going for distinctions",
-    monthly: 299,
-    annual: 2990,
-    aiQuickPerMonth: 1200,
-    aiDeepPerMonth: 100,
-    whatsappPerMonth: 200,
     comingSoon: true,
     cta: { label: "Go Max", href: "/register?plan=student.max" },
     features: [
@@ -156,23 +150,9 @@ const STUDENT_PLANS: Plan[] = [
       "Everything in Student Pro",
     ],
   },
-];
-
-// ============================================================
-// FAMILY TRACK
-// ============================================================
-const FAMILY_PLANS: Plan[] = [
-  {
-    code: "family",
-    name: "Family",
+  family: {
     tagline: "Up to 2 learners on one bill",
     audience: "Smaller households",
-    monthly: 199,
-    annual: 1990,
-    seats: 2,
-    aiQuickPerMonth: 200,
-    aiDeepPerMonth: 15,
-    whatsappPerMonth: 40,
     comingSoon: true,
     cta: { label: "Start Family", href: "/register?plan=family" },
     features: [
@@ -184,18 +164,10 @@ const FAMILY_PLANS: Plan[] = [
       "Celebration alerts when they hit a goal",
     ],
   },
-  {
-    code: "family.pro",
-    name: "Family Pro",
+  "family.pro": {
     tagline: "The household stack",
     audience: "Typical SA family",
-    monthly: 349,
-    annual: 3490,
-    seats: 4,
     highlight: true,
-    aiQuickPerMonth: 800,
-    aiDeepPerMonth: 80,
-    whatsappPerMonth: 200,
     comingSoon: true,
     cta: { label: "Go Family Pro", href: "/register?plan=family.pro" },
     features: [
@@ -208,17 +180,9 @@ const FAMILY_PLANS: Plan[] = [
       "Everything in Family",
     ],
   },
-  {
-    code: "family.max",
-    name: "Family Max",
+  "family.max": {
     tagline: "Concierge tier",
     audience: "Big families & power parents",
-    monthly: 649,
-    annual: 6490,
-    seats: 6,
-    aiQuickPerMonth: 2400,
-    aiDeepPerMonth: 200,
-    whatsappPerMonth: 500,
     comingSoon: true,
     cta: { label: "Go Family Max", href: "/register?plan=family.max" },
     features: [
@@ -230,22 +194,9 @@ const FAMILY_PLANS: Plan[] = [
       "Everything in Family Pro",
     ],
   },
-];
-
-// ============================================================
-// TUTOR TRACK (commission-based)
-// ============================================================
-const TUTOR_PLANS: Plan[] = [
-  {
-    code: "tutor.free",
-    name: "Tutor Free",
+  "tutor.free": {
     tagline: "No subscription — we take 15% commission",
     audience: "Tutors testing the platform",
-    monthly: 0,
-    commissionPercent: 0.15,
-    aiQuickPerMonth: 15,
-    aiDeepPerMonth: 0,
-    whatsappPerMonth: 10,
     cta: { label: "Apply as tutor", href: "/register?plan=tutor.free" },
     features: [
       "Marketplace listing — students can find you",
@@ -259,18 +210,10 @@ const TUTOR_PLANS: Plan[] = [
       "SBA marker · SARS export · white-label branding",
     ],
   },
-  {
-    code: "tutor.pro",
-    name: "Tutor Pro",
+  "tutor.pro": {
     tagline: "The AI moat for tutors",
     audience: "Established tutors",
-    monthly: 149,
-    annual: 1490,
-    commissionPercent: 0.10,
     highlight: true,
-    aiQuickPerMonth: 300,
-    aiDeepPerMonth: 20,
-    whatsappPerMonth: 100,
     comingSoon: true,
     cta: { label: "Go Pro", href: "/register?plan=tutor.pro" },
     features: [
@@ -284,17 +227,9 @@ const TUTOR_PLANS: Plan[] = [
       "Everything in Tutor Free",
     ],
   },
-  {
-    code: "tutor.max",
-    name: "Tutor Max",
+  "tutor.max": {
     tagline: "Zero commission. White-glove tools.",
     audience: "Full-time tutors",
-    monthly: 349,
-    annual: 3490,
-    commissionPercent: 0,
-    aiQuickPerMonth: 1500,
-    aiDeepPerMonth: 80,
-    whatsappPerMonth: 500,
     comingSoon: true,
     cta: { label: "Go Max", href: "/register?plan=tutor.max" },
     features: [
@@ -307,34 +242,75 @@ const TUTOR_PLANS: Plan[] = [
       "Everything in Tutor Pro",
     ],
   },
-];
-
-// ============================================================
-// SCHOOL (custom, single tier)
-// ============================================================
-const SCHOOL_PLAN: Plan = {
-  code: "school",
-  name: "School",
-  tagline: "Whole-school deployment",
-  audience: "Schools & districts",
-  monthly: null,
-  monthlyHint: "from R59 / learner / month",
-  aiQuickPerMonth: "Unlimited",
-  aiDeepPerMonth: "Unlimited",
-  whatsappPerMonth: "Unlimited",
-  cta: { label: "Talk to sales", href: "/for-schools/contact" },
-  features: [
-    "Every Family Max feature for every learner",
-    "Teacher gap-analysis — which topics your cohort is losing marks on",
-    "AI differentiator — auto-generated worksheets per ability band",
-    "Class & teacher analytics, live lesson view",
-    "School admin dashboard — readiness, analytics, students, teachers",
-    "Bursary partner pipeline — connect funders to top learners",
-    "SSO + SIS integration",
-    "Dedicated success manager",
-    "Custom pricing — depends on roll size",
-  ],
+  school: {
+    tagline: "Whole-school deployment",
+    audience: "Schools & districts",
+    monthlyHint: "from R59 / learner / month",
+    cta: { label: "Talk to sales", href: "/for-schools/contact" },
+    features: [
+      "Every Family Max feature for every learner",
+      "Teacher gap-analysis — which topics your cohort is losing marks on",
+      "AI differentiator — auto-generated worksheets per ability band",
+      "Class & teacher analytics, live lesson view",
+      "School admin dashboard — readiness, analytics, students, teachers",
+      "Bursary partner pipeline — connect funders to top learners",
+      "SSO + SIS integration",
+      "Dedicated success manager",
+      "Custom pricing — depends on roll size",
+    ],
+  },
 };
+
+// Track ordering — drives which plans show up in each audience tab.
+// Order matters: it's the visual left-to-right order in the cards row.
+const STUDENT_CODES = ["free", "student", "student.pro", "student.max"];
+const FAMILY_CODES = ["family", "family.pro", "family.max"];
+const TUTOR_CODES = ["tutor.free", "tutor.pro", "tutor.max"];
+
+// Convert an API plan + local copy into the shape <PlanCard /> expects.
+// Returns null when the API doesn't know about this code yet (e.g.
+// catalog is still loading or seeder hasn't been re-run).
+function buildPlan(api: PlanDto | undefined, copy: PlanMarketingCopy | undefined): Plan | null {
+  if (!api || !copy) return null;
+
+  // Free / Tutor Free → R0. School → null (custom). Everything else → real price.
+  const monthly: number | null =
+    api.monthlyPriceZar !== null
+      ? Number(api.monthlyPriceZar)
+      : api.kind === "free"
+        ? 0
+        : null;
+
+  // Seats badge is only meaningful on family plans — school has 5000 which
+  // would be a meaningless "Up to 5000 learners" card.
+  const seats = api.code.startsWith("family") ? api.maxMembers : undefined;
+
+  return {
+    code: api.code,
+    name: api.name,
+    tagline: copy.tagline,
+    audience: copy.audience,
+    monthly,
+    annual: api.annualPriceZar !== null ? Number(api.annualPriceZar) : undefined,
+    monthlyHint: copy.monthlyHint,
+    highlight: copy.highlight,
+    comingSoon: copy.comingSoon,
+    cta: copy.cta,
+    commissionPercent: api.commissionPercent !== null ? Number(api.commissionPercent) : undefined,
+    seats,
+    aiQuickPerMonth: quotaFor(api, "ai.quick"),
+    aiDeepPerMonth: quotaFor(api, "ai.deep"),
+    whatsappPerMonth: quotaFor(api, "whatsapp"),
+    features: copy.features,
+    notIncluded: copy.notIncluded,
+  };
+}
+
+function quotaFor(plan: PlanDto, key: string): number | "Unlimited" {
+  const q = plan.quotas?.find((x) => x.quotaKey === key);
+  if (!q) return 0;
+  return q.perMonth < 0 ? "Unlimited" : q.perMonth;
+}
 
 // ============================================================
 // FAQ
@@ -380,6 +356,28 @@ const FAQ = [
 export default function PricingPage() {
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [audience, setAudience] = useState<Audience>("students");
+  const plansQuery = usePlans();
+
+  // Build the four track arrays from (live catalog × local marketing copy).
+  // Memoised so we don't rebuild on every billing/audience toggle.
+  const { studentPlans, familyPlans, tutorPlans, schoolPlan } = useMemo(() => {
+    const byCode = new Map<string, PlanDto>(
+      (plansQuery.data ?? []).map((p) => [p.code, p]),
+    );
+    const build = (codes: string[]): Plan[] =>
+      codes
+        .map((c) => buildPlan(byCode.get(c), PLAN_COPY[c]))
+        .filter((p): p is Plan => p !== null);
+
+    return {
+      studentPlans: build(STUDENT_CODES),
+      familyPlans: build(FAMILY_CODES),
+      tutorPlans: build(TUTOR_CODES),
+      schoolPlan: buildPlan(byCode.get("school"), PLAN_COPY["school"]),
+    };
+  }, [plansQuery.data]);
+
+  const isLoading = plansQuery.isLoading;
 
   return (
     <>
@@ -433,15 +431,21 @@ export default function PricingPage() {
           </Tabs>
         </Box>
 
-        {audience === "students" && <PlanGrid plans={STUDENT_PLANS} billing={billing} cols={3} />}
-        {audience === "families" && <PlanGrid plans={FAMILY_PLANS} billing={billing} cols={4} />}
-        {audience === "tutors" && <PlanGrid plans={TUTOR_PLANS} billing={billing} cols={4} />}
-        {audience === "schools" && (
-          <Grid container justifyContent="center">
-            <Grid size={{ xs: 12, md: 8, lg: 6 }}>
-              <PlanCard plan={SCHOOL_PLAN} billing={billing} />
-            </Grid>
-          </Grid>
+        {isLoading ? (
+          <PlanGridSkeleton cols={audience === "students" ? 3 : 4} />
+        ) : (
+          <>
+            {audience === "students" && <PlanGrid plans={studentPlans} billing={billing} cols={3} />}
+            {audience === "families" && <PlanGrid plans={familyPlans} billing={billing} cols={4} />}
+            {audience === "tutors" && <PlanGrid plans={tutorPlans} billing={billing} cols={4} />}
+            {audience === "schools" && schoolPlan && (
+              <Grid container justifyContent="center">
+                <Grid size={{ xs: 12, md: 8, lg: 6 }}>
+                  <PlanCard plan={schoolPlan} billing={billing} />
+                </Grid>
+              </Grid>
+            )}
+          </>
         )}
 
         <Stack
@@ -543,6 +547,21 @@ export default function PricingPage() {
 // ============================================================
 // Plan grid & card
 // ============================================================
+// Shown while the catalog fetch is in flight — matches the row geometry
+// of PlanGrid so the page doesn't reflow once data lands.
+function PlanGridSkeleton({ cols }: { cols: 3 | 4 }) {
+  const size = cols === 4 ? { xs: 12, sm: 6, md: 3 } : { xs: 12, sm: 6, md: 4 };
+  return (
+    <Grid container spacing={3} alignItems="stretch" justifyContent="center">
+      {Array.from({ length: cols }).map((_, i) => (
+        <Grid key={i} size={size}>
+          <Skeleton variant="rounded" height={520} sx={{ borderRadius: 2 }} />
+        </Grid>
+      ))}
+    </Grid>
+  );
+}
+
 function PlanGrid({ plans, billing, cols }: { plans: Plan[]; billing: "monthly" | "annual"; cols: 3 | 4 }) {
   // 3-card layout: each card is xs:12 sm:6 md:4
   // 4-card layout: each card is xs:12 sm:6 md:3

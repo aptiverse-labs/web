@@ -542,6 +542,11 @@ export const useFeatureFlags = () =>
 // see plan info. Long staleTime — pricing rarely changes, and a stale read
 // is harmless (worst case the user sees yesterday's price on the billing
 // page, then a refresh fixes it).
+export type PlanQuotaDto = {
+  quotaKey: string;
+  perMonth: number; // -1 = unlimited
+};
+
 export type PlanDto = {
   code: string;
   name: string;
@@ -550,7 +555,10 @@ export type PlanDto = {
   annualPriceZar: number | null;
   maxMembers: number;
   kind: string;
+  // Marketplace cut (tutor track only). 0.15 / 0.10 / 0; null elsewhere.
+  commissionPercent: number | null;
   features: string[];
+  quotas: PlanQuotaDto[];
 };
 
 export const usePlans = () =>
