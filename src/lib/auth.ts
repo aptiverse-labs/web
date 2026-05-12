@@ -4,7 +4,6 @@
 // NextAuth's JWT-mode session cookie.
 
 import type { AuthOptions } from "next-auth";
-import AppleProvider from "next-auth/providers/apple";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 
@@ -73,21 +72,13 @@ export const authOptions: AuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
     }),
-
-    // Apple — same pattern. The clientSecret here is a *signed JWT* you
-    // generate offline using your Apple Developer .p8 key, valid up to 6
-    // months. Drop it in APPLE_CLIENT_SECRET. See docs/apple-secret.md.
-    AppleProvider({
-      clientId: process.env.APPLE_CLIENT_ID ?? "",
-      clientSecret: process.env.APPLE_CLIENT_SECRET ?? "",
-    }),
   ],
 
   callbacks: {
     // After OAuth providers complete, exchange the provider's ID token for
     // an Aptiverse JWT and stash it on the user so jwt() can pick it up.
     async signIn({ user, account }) {
-      if (account?.provider === "google" || account?.provider === "apple") {
+      if (account?.provider === "google") {
         const idToken = account.id_token;
         if (!idToken) return false;
         try {
