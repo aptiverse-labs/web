@@ -177,6 +177,7 @@ export const queryKeys = {
     contacted === undefined
       ? (["school-enquiries"] as const)
       : (["school-enquiries", contacted] as const),
+  plans: () => ["entitlements", "plans"] as const,
 };
 
 export const useSubjects = () =>
@@ -532,4 +533,29 @@ export const useFeatureFlags = () =>
   useQuery<FeatureFlag[]>({
     queryKey: queryKeys.featureFlags(),
     queryFn: () => apiClient.get<FeatureFlag[]>("/api/feature-flags/flags"),
+  });
+
+// --- Entitlements catalog (public) --------------------------------------
+//
+// Mirrors api/Modules/Entitlements/.../EntitlementsController.FrontendPlanDto.
+// The catalog endpoint is anonymous so anonymous visitors on /pricing can
+// see plan info. Long staleTime — pricing rarely changes, and a stale read
+// is harmless (worst case the user sees yesterday's price on the billing
+// page, then a refresh fixes it).
+export type PlanDto = {
+  code: string;
+  name: string;
+  description: string | null;
+  monthlyPriceZar: number | null;
+  annualPriceZar: number | null;
+  maxMembers: number;
+  kind: string;
+  features: string[];
+};
+
+export const usePlans = () =>
+  useQuery<PlanDto[]>({
+    queryKey: queryKeys.plans(),
+    queryFn: () => apiClient.get<PlanDto[]>("/api/entitlements/plans"),
+    staleTime: 5 * 60_000, // 5 minutes
   });
