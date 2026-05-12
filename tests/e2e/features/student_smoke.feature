@@ -23,6 +23,7 @@ Feature: Student page smoke tests
       | study-groups     | /dashboard/study-groups    | Study groups        |
       | rewards          | /dashboard/rewards         | Rewards             |
       | notifications    | /dashboard/notifications   | Notifications       |
+      | billing          | /dashboard/billing         | Monthly AI allowance |
       | settings         | /dashboard/settings        | Settings            |
       | help             | /dashboard/help            | Help & feedback     |
       | chatbot          | /dashboard/chatbot         | AI Tutor            |

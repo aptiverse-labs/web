@@ -18,7 +18,16 @@ export type RegisterInput = {
   grade?: string;
 };
 export type ForgotPasswordInput = { email: string };
-export type ResetPasswordInput = { password: string; confirm: string; token?: string };
+// Shape matches the API's ResetPasswordDto(UserId, ResetToken, NewPassword).
+// confirm stays on the input because the form revalidates; it isn't sent.
+export type ResetPasswordInput = {
+  password: string;
+  confirm: string;
+  userId: string;
+  token: string;
+};
+export type ConfirmEmailInput = { userId: string; token: string };
+export type ResendVerificationInput = { email: string };
 export type ContactInput = {
   firstName: string;
   lastName: string;
@@ -72,7 +81,27 @@ export const api = {
     });
   },
   async resetPassword(input: ResetPasswordInput) {
+    // The API's record is positional (UserId, ResetToken, NewPassword) but
+    // serialized as a JSON object. Send exactly those three fields; drop
+    // `confirm` (UI-only) so the API doesn't see noise.
     return request<{ ok: true }>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({
+        userId: input.userId,
+        resetToken: input.token,
+        newPassword: input.password,
+      }),
+    });
+  },
+  async confirmEmail(input: ConfirmEmailInput) {
+    // confirm-email reads userId + token from query string, not body.
+    const params = new URLSearchParams({ userId: input.userId, token: input.token });
+    return request<{ ok: true }>(`/api/auth/confirm-email?${params}`, {
+      method: "POST",
+    });
+  },
+  async resendVerification(input: ResendVerificationInput) {
+    return request<{ ok: true }>("/api/auth/resend-verification", {
       method: "POST",
       body: JSON.stringify(input),
     });

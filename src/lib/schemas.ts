@@ -32,6 +32,11 @@ export const resetPasswordSchema = z
   .object({
     password,
     confirm: z.string(),
+    // userId + token come from the reset-link query string, populated
+    // by the page before validation runs. Required by the API's
+    // ResetPasswordDto(UserId, ResetToken, NewPassword) shape.
+    userId: z.string().min(1, "Missing reset token — request a new link"),
+    token: z.string().min(1, "Missing reset token — request a new link"),
   })
   .refine((d) => d.password === d.confirm, {
     message: "Passwords do not match",
