@@ -24,5 +24,6 @@ playwright-report/
 .playwright/
 .features-gen/
 
-# E2E test output logs
+# E2E test output logs (per-suite runs land in tests/e2e/<name>-run.log)
 e2e-run.log
+tests/e2e/*.log
