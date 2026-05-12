@@ -23,12 +23,13 @@ import MenuItem from "@mui/material/MenuItem";
 import AddIcon from "@mui/icons-material/Add";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEventsOutlined";
 import FlagIcon from "@mui/icons-material/FlagOutlined";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { useSnackbar } from "notistack";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
 import { QueryStates } from "@/components/common/QueryStates";
-import { useGoals, useSubjects, useCreateGoal, type CreateGoalInput } from "@/lib/api/queries";
+import { useConfirm } from "@/components/common/ConfirmDialog";
+import { useGoals, useSubjects, useCreateGoal, useDeleteGoal, type CreateGoalInput } from "@/lib/api/queries";
 import type { Goal, Subject } from "@/lib/mockData";
 import { RelativeTime } from "@/components/common/RelativeTime";
 
@@ -291,6 +292,9 @@ function GoalsList({ goals, subjects }: { goals: Goal[]; subjects: Subject[] }) 
 }
 
 function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
+  const { enqueueSnackbar } = useSnackbar();
+  const del = useDeleteGoal();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const tone =
     goal.status === "at_risk"
       ? "warning"
@@ -300,7 +304,28 @@ function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
       ? "info"
       : "primary";
 
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const ok = await confirm({
+      title: `Delete "${goal.title}"?`,
+      description: "This goal and all its milestones will be removed. This can't be undone.",
+      confirmLabel: "Delete goal",
+    });
+    if (!ok) return;
+    try {
+      await del.mutateAsync(goal.id);
+      enqueueSnackbar("Goal deleted.", { variant: "success" });
+    } catch (err) {
+      enqueueSnackbar(
+        `Couldn't delete${err instanceof Error ? `: ${err.message}` : ""}`,
+        { variant: "error" },
+      );
+    }
+  };
+
   return (
+    <>
     <Card
       component={Link}
       href={`/dashboard/goals/${goal.id}`}
@@ -317,8 +342,13 @@ function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
       <CardContent sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
           <Chip label={goal.category} size="small" sx={{ textTransform: "capitalize" }} />
-          <IconButton size="small" onClick={(e) => e.preventDefault()}>
-            <MoreHorizIcon />
+          <IconButton
+            size="small"
+            onClick={handleDelete}
+            disabled={del.isPending}
+            aria-label="Delete goal"
+          >
+            <DeleteOutlineIcon fontSize="small" />
           </IconButton>
         </Stack>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -382,5 +412,7 @@ function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
         </Box>
       </CardContent>
     </Card>
+    {confirmDialog}
+    </>
   );
 }

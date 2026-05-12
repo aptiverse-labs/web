@@ -27,6 +27,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useSnackbar } from "notistack";
 import { PageHeader } from "@/components/common/PageHeader";
+import { useConfirm } from "@/components/common/ConfirmDialog";
 import {
   useSubjects,
   useCurricula,
@@ -463,6 +464,7 @@ function SubjectsGrid({ subjects }: { subjects: Subject[] }) {
 function SubjectCard({ subject: s }: { subject: Subject }) {
   const { enqueueSnackbar } = useSnackbar();
   const del = useDeleteSubject();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const color = CATEGORY_COLOR[s.category] ?? "#1F8079";
 
   const remove = async () => {
@@ -472,6 +474,13 @@ function SubjectCard({ subject: s }: { subject: Subject }) {
       });
       return;
     }
+    const ok = await confirm({
+      title: `Remove ${s.name}?`,
+      description:
+        "Any marks you logged against this subject stay in your records but stop counting towards averages and predictions. You can add it back later.",
+      confirmLabel: "Remove subject",
+    });
+    if (!ok) return;
     try {
       await del.mutateAsync(s.id);
       enqueueSnackbar(`Removed ${s.name}.`, { variant: "success" });
@@ -484,6 +493,7 @@ function SubjectCard({ subject: s }: { subject: Subject }) {
   };
 
   return (
+    <>
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardContent sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
@@ -600,5 +610,7 @@ function SubjectCard({ subject: s }: { subject: Subject }) {
         </Stack>
       </CardContent>
     </Card>
+    {confirmDialog}
+    </>
   );
 }
