@@ -25,7 +25,7 @@ export default function CalendarPage() {
     <>
       <PageHeader
         title="Calendar"
-        description="Your matric year at a glance. Sync with Google Calendar or Outlook."
+        description="Your high-school year at a glance. Sync with Google Calendar or Outlook."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Calendar" }]}
         actions={
           <>

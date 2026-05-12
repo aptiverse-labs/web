@@ -121,7 +121,7 @@ function CourseCard({
         <Chip
           label={subject?.name ?? "Course"}
           size="small"
-          sx={{ alignSelf: "flex-start", bgcolor: "rgba(255,255,255,0.2)", color: "white", border: 0 }}
+          sx={{ alignSelf: "flex-start", bgcolor: "rgba(0,0,0,0.35)", color: "white", border: 0 }}
         />
         <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.25 }}>
           {c.title}

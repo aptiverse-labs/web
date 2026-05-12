@@ -53,7 +53,7 @@ export default function HowCanIHelp() {
           <Card key={i}>
             <CardContent sx={{ p: 3 }}>
               <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-                <Box sx={{ width: 44, height: 44, borderRadius: 1.5, display: "grid", placeItems: "center", bgcolor: "secondary.main", color: "white" }}>
+                <Box sx={{ width: 44, height: 44, borderRadius: 1.5, display: "grid", placeItems: "center", bgcolor: "secondary.main", color: "secondary.contrastText" }}>
                   <LightbulbIcon />
                 </Box>
                 <Box>

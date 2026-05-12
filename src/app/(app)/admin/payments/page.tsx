@@ -24,7 +24,7 @@ export default function AdminPaymentsPage() {
     <PermissionGuard require="payments.read">
       <PageHeader
         title="Payments & refunds"
-        description="Stripe charges, webhooks, refunds. Issue refunds with two-person approval."
+        description="Charges, webhooks, refunds. Issue refunds with two-person approval."
         breadcrumbs={[{ label: "Admin", href: "/admin" }, { label: "Payments" }]}
       />
       <DataList

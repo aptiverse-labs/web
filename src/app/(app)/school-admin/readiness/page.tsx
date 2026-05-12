@@ -15,6 +15,7 @@ import DownloadIcon from "@mui/icons-material/DownloadOutlined";
 const COHORTS = [
   { name: "Grade 12 (162 learners)", university: 64, bursary: 38, vocational: 22, undecided: 16 },
   { name: "Grade 11 (188 learners)", university: 58, bursary: 30, vocational: 25, undecided: 30 },
+  { name: "Grade 10 (212 learners)", university: 46, bursary: 24, vocational: 28, undecided: 42 },
 ];
 
 export default function ReadinessPage() {

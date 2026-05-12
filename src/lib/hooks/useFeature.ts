@@ -29,9 +29,24 @@ export function useFeatures(): {
   };
 }
 
+const ALL_PLAN_CODES: readonly PlanCode[] = [
+  "free",
+  "student",
+  "student.pro",
+  "student.max",
+  "family",
+  "family.pro",
+  "family.max",
+  "tutor.free",
+  "tutor.pro",
+  "tutor.max",
+  "school",
+];
+
 export function usePlanCode(): PlanCode {
   const { data: session } = useSession();
   const p = (session?.user as { planCode?: string } | undefined)?.planCode;
-  if (p === "student" || p === "family" || p === "school") return p;
-  return "free";
+  return (ALL_PLAN_CODES as readonly string[]).includes(p ?? "")
+    ? (p as PlanCode)
+    : "free";
 }

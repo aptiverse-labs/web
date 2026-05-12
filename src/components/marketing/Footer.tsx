@@ -70,7 +70,7 @@ export function Footer() {
           <Box sx={{ maxWidth: 320 }}>
             <Logo size={36} />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              The holistic student success partner — built for South African Grade 11 & 12 learners. Grow with confidence.
+              The holistic student success partner — built for South African FET-phase learners (Grades 10–12). Grow with confidence.
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 2 }}>
               Made with care in South Africa.

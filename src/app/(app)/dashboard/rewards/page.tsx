@@ -97,7 +97,7 @@ function RewardCard({ reward: r, points }: { reward: Reward; points: number }) {
   return (
     <Card sx={{ height: "100%", opacity: r.available ? 1 : 0.5 }}>
       <Box sx={{ height: 80, bgcolor: r.imageColor, p: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <Chip label={r.category} size="small" sx={{ bgcolor: "rgba(255,255,255,0.2)", color: "white" }} />
+        <Chip label={r.category} size="small" sx={{ bgcolor: "rgba(0,0,0,0.35)", color: "white" }} />
         {r.cost === 0 && <Chip label="Free" size="small" color="secondary" />}
       </Box>
       <CardContent sx={{ p: 3 }}>

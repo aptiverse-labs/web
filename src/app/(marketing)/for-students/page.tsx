@@ -13,7 +13,7 @@ export default function Page() {
   return (
     <RoleLanding
       eyebrow="For students"
-      title="Your matric year, on your side."
+      title="Your high school years, on your side."
       description="Aptiverse plans your study, drills your weak spots, and watches your wellbeing — so the only thing you have to do is grow."
       primaryCta={{ label: "Start free", href: "/register" }}
       secondaryCta={{ label: "See features", href: "/features" }}

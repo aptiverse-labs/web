@@ -26,7 +26,7 @@ export default function TutorEarningsPage() {
     <>
       <PageHeader
         title="Earnings"
-        description="Weekly payouts via Stripe — net of platform fee."
+        description="Weekly payouts to your bank — net of platform fee."
         breadcrumbs={[{ label: "Tutor", href: "/tutor" }, { label: "Earnings" }]}
         actions={<Button variant="contained">Bank details</Button>}
       />

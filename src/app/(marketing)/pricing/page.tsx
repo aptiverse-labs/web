@@ -11,7 +11,8 @@ import Chip from "@mui/material/Chip";
 import Grid from "@mui/material/Grid";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import Divider from "@mui/material/Divider";
+import Tabs from "@mui/material/Tabs";
+import Tab from "@mui/material/Tab";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import Accordion from "@mui/material/Accordion";
@@ -27,142 +28,333 @@ import Link from "next/link";
 import { Section } from "@/components/common/Section";
 import { GradientBackdrop } from "@/components/common/GradientBackdrop";
 
-// Pricing is sized for the South African market and our AI cost basis.
-// Claude Haiku ~R0.018 / Sonnet ~R0.18 per typical exchange; WhatsApp
-// Business API ~R0.05–0.30 per conversation. Quotas below leave ~30–40%
-// gross margin after API + hosting at small scale, with room to widen
-// as volume grows.
+// Pricing is grouped by audience. Within each group, tiers follow a
+// shared structure: same shape of features across the group, upper
+// tiers (Pro / Max) buy more quota & deeper AI capabilities. The Tutor
+// track uniquely has a marketplace commission that tapers down as you
+// climb (15% → 10% → 0%), giving tutors a no-subscription on-ramp.
+//
+// Numbers are sized for the South African market against our actual
+// variable cost basis. Margin clears 50% at half utilisation on every
+// paid tier — see internal cost-model docs for the breakdown.
+
+type Audience = "students" | "families" | "tutors" | "schools";
+
 type Plan = {
-  code: "free" | "student" | "family" | "school";
+  code: string;
   name: string;
   tagline: string;
   audience: string;
-  monthly: number | null;     // null = custom
-  annual?: number;            // typically monthly × 10 (≈17% saving)
-  monthlyHint?: string;       // shown when monthly is null
+  monthly: number | null;     // null = custom or commission-only
+  annual?: number;
+  monthlyHint?: string;
   highlight?: boolean;
   comingSoon?: boolean;
   cta: { label: string; href: string };
-  aiQuickPerMonth: number | "Unlimited";   // Claude Haiku exchanges
-  aiDeepPerMonth: number | "Unlimited";    // Claude Sonnet exchanges
-  whatsappPerMonth: number | "Unlimited";  // WhatsApp Business messages
+  commissionPercent?: number; // tutor track only — 0.15, 0.10, 0
+  seats?: number;             // family track only
+  aiQuickPerMonth: number | "Unlimited";
+  aiDeepPerMonth: number | "Unlimited";
+  whatsappPerMonth: number | "Unlimited";
   features: string[];
   notIncluded?: string[];
 };
 
-const PLANS: Plan[] = [
+// ============================================================
+// STUDENT TRACK
+// ============================================================
+const STUDENT_PLANS: Plan[] = [
   {
     code: "free",
     name: "Free",
     tagline: "Genuinely useful — start here",
     audience: "Any FET student",
     monthly: 0,
-    aiQuickPerMonth: 20,
+    aiQuickPerMonth: 15,
     aiDeepPerMonth: 0,
     whatsappPerMonth: 0,
     cta: { label: "Create free account", href: "/register" },
     features: [
-      "SBA tracking (up to 3 subjects)",
+      "SBA tracking (up to 6 subjects)",
       "Basic goal tracking",
       "Daily diary & mood check-in",
-      "Wellbeing break library",
       "Past papers — DBE archive links",
-      "Bursaries — directory links",
-      "Universities — apply links",
+      "Bursaries directory · Universities directory",
+      "Calendar · Notifications · Help",
     ],
     notIncluded: [
-      "Unlimited subjects + milestones",
       "AI tutor / past-paper walk-throughs",
-      "Tutor marketplace",
+      "Mastery predictions",
       "WhatsApp assistant",
     ],
   },
   {
     code: "student",
     name: "Student",
-    tagline: "The full AI toolkit",
-    audience: "Individual student",
+    tagline: "Unlimited subjects, basic AI practice",
+    audience: "Casual study aid",
+    monthly: 79,
+    annual: 790,
+    aiQuickPerMonth: 60,
+    aiDeepPerMonth: 5,
+    whatsappPerMonth: 10,
+    comingSoon: true,
+    cta: { label: "Start with Student", href: "/register?plan=student" },
+    features: [
+      "Unlimited subjects + goals",
+      "AI practice questions (basic)",
+      "Mastery snapshot",
+      "Course enrolment + workspace",
+      "Read access to psychologist directory",
+      "Everything in Free",
+    ],
+  },
+  {
+    code: "student.pro",
+    name: "Student Pro",
+    tagline: "The AI moat — what ChatGPT can't do",
+    audience: "Serious students",
     monthly: 149,
     annual: 1490,
     highlight: true,
-    aiQuickPerMonth: 200,
+    aiQuickPerMonth: 300,
     aiDeepPerMonth: 30,
     whatsappPerMonth: 50,
     comingSoon: true,
-    cta: { label: "Start 14-day trial", href: "/register?plan=student" },
+    cta: { label: "Go Pro", href: "/register?plan=student.pro" },
     features: [
-      "Unlimited subjects + goals + milestones",
-      "AI quick-assists (Claude Haiku)",
-      "AI deep tutor sessions (Claude Sonnet)",
-      "Past papers with worked solutions",
-      "Mastery predictions & forecasts",
+      "Curriculum-aware AI tutor (NSC / IEB / Cambridge)",
+      "Past papers — examiner-style walk-throughs",
+      "SBA Coach — feedback on your draft against the rubric",
+      "Adaptive practice — difficulty scales to your mastery",
+      "Mastery predictions with confidence interval",
       "Career & university navigator",
       "Bursary application checklist",
       "Tutor marketplace + booking",
-      "Verified rewards programme",
-      "WhatsApp assistant — log SBAs by text",
-      "Email support, 1-day response",
+      "Study groups · Verified rewards",
+      "Priority email support · 1-day response",
     ],
   },
   {
-    code: "family",
-    name: "Family",
-    tagline: "For parents & guardians",
-    audience: "Up to 4 learners on one plan",
-    monthly: 349,
-    annual: 3490,
-    aiQuickPerMonth: 500,
-    aiDeepPerMonth: 80,
+    code: "student.max",
+    name: "Student Max",
+    tagline: "For exam finalists",
+    audience: "Going for distinctions",
+    monthly: 299,
+    annual: 2990,
+    aiQuickPerMonth: 1200,
+    aiDeepPerMonth: 100,
     whatsappPerMonth: 200,
     comingSoon: true,
-    cta: { label: "Choose Family", href: "/register?plan=family" },
+    cta: { label: "Go Max", href: "/register?plan=student.max" },
     features: [
-      "Everything in Student × 4 learners",
-      "Parent dashboard — calm, never invasive",
-      "Realtime activity & celebration alerts",
-      "Family wellbeing summary (anonymised)",
-      "Shared family calendar",
-      "1 free counselling session / quarter",
-      "Parent WhatsApp assistant — receive nudges, send check-ins",
-      "Priority support, 4-hour response",
-    ],
-  },
-  {
-    code: "school",
-    name: "School",
-    tagline: "Whole-school deployment",
-    audience: "Schools & districts",
-    monthly: null,
-    monthlyHint: "from R59 / learner",
-    aiQuickPerMonth: "Unlimited",
-    aiDeepPerMonth: "Unlimited",
-    whatsappPerMonth: "Unlimited",
-    cta: { label: "Talk to sales", href: "/for-schools/contact" },
-    features: [
-      "Everything in Family for every learner",
-      "Teacher gap-analysis & differentiator",
-      "School admin analytics & readiness",
-      "SSO & student-info-system integration",
-      "Bursary partnership pipeline",
-      "Dedicated school WhatsApp number",
-      "Dedicated success manager",
-      "Volume discount past 200 learners",
+      "Exam simulator — timed full papers, AI-marked",
+      "Weekly AI debrief — long, deep session reviewing your week",
+      "Cross-subject study plan — auto-built from your calendar",
+      "Audio explanations for every topic",
+      "WhatsApp tutor that remembers your subjects & weak spots",
+      "Everything in Student Pro",
     ],
   },
 ];
 
+// ============================================================
+// FAMILY TRACK
+// ============================================================
+const FAMILY_PLANS: Plan[] = [
+  {
+    code: "family",
+    name: "Family",
+    tagline: "Up to 2 learners on one bill",
+    audience: "Smaller households",
+    monthly: 199,
+    annual: 1990,
+    seats: 2,
+    aiQuickPerMonth: 200,
+    aiDeepPerMonth: 15,
+    whatsappPerMonth: 40,
+    comingSoon: true,
+    cta: { label: "Start Family", href: "/register?plan=family" },
+    features: [
+      "Up to 2 learners, full Student Pro features each",
+      "Parent dashboard — calm, never invasive",
+      "Realtime activity feed",
+      "Mastery forecast per child (predicted matric mark)",
+      "Wellbeing summary — trends without revealing diary content",
+      "Celebration alerts when they hit a goal",
+    ],
+  },
+  {
+    code: "family.pro",
+    name: "Family Pro",
+    tagline: "The household stack",
+    audience: "Typical SA family",
+    monthly: 349,
+    annual: 3490,
+    seats: 4,
+    highlight: true,
+    aiQuickPerMonth: 800,
+    aiDeepPerMonth: 80,
+    whatsappPerMonth: 200,
+    comingSoon: true,
+    cta: { label: "Go Family Pro", href: "/register?plan=family.pro" },
+    features: [
+      "Up to 4 learners",
+      "Bursary pipeline tracker per child — eligibility + deadlines",
+      "University readiness forecast per child",
+      "Family WhatsApp recap — weekly digest to parents",
+      "Shared family calendar (exams · SBAs · deadlines)",
+      "1 counselling session per quarter (registered counsellor)",
+      "Everything in Family",
+    ],
+  },
+  {
+    code: "family.max",
+    name: "Family Max",
+    tagline: "Concierge tier",
+    audience: "Big families & power parents",
+    monthly: 649,
+    annual: 6490,
+    seats: 6,
+    aiQuickPerMonth: 2400,
+    aiDeepPerMonth: 200,
+    whatsappPerMonth: 500,
+    comingSoon: true,
+    cta: { label: "Go Family Max", href: "/register?plan=family.max" },
+    features: [
+      "Up to 6 learners",
+      "AI parenting coach — knows your kids' context, helps you respond, not react",
+      "Custom intervention plans per child",
+      "Tutor concierge — we book the right tutor for you",
+      "Family wellbeing dashboard with aggregated trends",
+      "Everything in Family Pro",
+    ],
+  },
+];
+
+// ============================================================
+// TUTOR TRACK (commission-based)
+// ============================================================
+const TUTOR_PLANS: Plan[] = [
+  {
+    code: "tutor.free",
+    name: "Tutor Free",
+    tagline: "No subscription — we take 15% commission",
+    audience: "Tutors testing the platform",
+    monthly: 0,
+    commissionPercent: 0.15,
+    aiQuickPerMonth: 15,
+    aiDeepPerMonth: 0,
+    whatsappPerMonth: 10,
+    cta: { label: "Apply as tutor", href: "/register?plan=tutor.free" },
+    features: [
+      "Marketplace listing — students can find you",
+      "Scheduling + secure payment processing (cards & EFT)",
+      "Basic client tracker (notes, history, messaging)",
+      "Unlimited clients",
+      "15% commission on platform bookings",
+    ],
+    notIncluded: [
+      "AI lesson plans / worksheets / parent reports",
+      "SBA marker · SARS export · white-label branding",
+    ],
+  },
+  {
+    code: "tutor.pro",
+    name: "Tutor Pro",
+    tagline: "The AI moat for tutors",
+    audience: "Established tutors",
+    monthly: 149,
+    annual: 1490,
+    commissionPercent: 0.10,
+    highlight: true,
+    aiQuickPerMonth: 300,
+    aiDeepPerMonth: 20,
+    whatsappPerMonth: 100,
+    comingSoon: true,
+    cta: { label: "Go Pro", href: "/register?plan=tutor.pro" },
+    features: [
+      "AI lesson plan generator — personalised per client per week",
+      "Mastery prediction per client (shareable with parents)",
+      "Auto parent reports — weekly WhatsApp / email recap",
+      "AI worksheet generator — NSC / IEB-style at the client's level",
+      "Featured marketplace listing",
+      "Curriculum-aware AI for your own learning too",
+      "10% commission on platform bookings (down from 15%)",
+      "Everything in Tutor Free",
+    ],
+  },
+  {
+    code: "tutor.max",
+    name: "Tutor Max",
+    tagline: "Zero commission. White-glove tools.",
+    audience: "Full-time tutors",
+    monthly: 349,
+    annual: 3490,
+    commissionPercent: 0,
+    aiQuickPerMonth: 1500,
+    aiDeepPerMonth: 80,
+    whatsappPerMonth: 500,
+    comingSoon: true,
+    cta: { label: "Go Max", href: "/register?plan=tutor.max" },
+    features: [
+      "0% commission — keep every rand you earn",
+      "AI SBA marker — photograph a draft, get marked output",
+      "White-label parent reports with your own branding",
+      "SARS-ready income report (year-end tax export)",
+      "Group tutoring mode — adaptive worksheets per learner in one session",
+      "Top-of-marketplace placement",
+      "Everything in Tutor Pro",
+    ],
+  },
+];
+
+// ============================================================
+// SCHOOL (custom, single tier)
+// ============================================================
+const SCHOOL_PLAN: Plan = {
+  code: "school",
+  name: "School",
+  tagline: "Whole-school deployment",
+  audience: "Schools & districts",
+  monthly: null,
+  monthlyHint: "from R59 / learner / month",
+  aiQuickPerMonth: "Unlimited",
+  aiDeepPerMonth: "Unlimited",
+  whatsappPerMonth: "Unlimited",
+  cta: { label: "Talk to sales", href: "/for-schools/contact" },
+  features: [
+    "Every Family Max feature for every learner",
+    "Teacher gap-analysis — which topics your cohort is losing marks on",
+    "AI differentiator — auto-generated worksheets per ability band",
+    "Class & teacher analytics, live lesson view",
+    "School admin dashboard — readiness, analytics, students, teachers",
+    "Bursary partner pipeline — connect funders to top learners",
+    "SSO + SIS integration",
+    "Dedicated success manager",
+    "Custom pricing — depends on roll size",
+  ],
+};
+
+// ============================================================
+// FAQ
+// ============================================================
 const FAQ = [
   {
     q: "Are AI message limits hard?",
-    a: "Yes — when you hit your monthly limit the AI politely declines further requests until your billing cycle resets. We've sized the quotas so the typical student or family won't hit them in normal use. If you do, you'll get a nudge to upgrade or wait. We won't silently bill you for overages.",
+    a: "Yes — when you hit your monthly limit the AI politely declines further requests until your billing cycle resets. We've sized the quotas so the typical user won't hit them in normal use. If you do, you'll get a nudge to upgrade or wait. We won't silently bill you for overages.",
   },
   {
     q: "What's the difference between Quick and Deep AI?",
-    a: "Quick (Claude Haiku) is for short answers, recall, formulas, definitions — fast and cheap. Deep (Claude Sonnet) is for long walk-throughs, marking essays, building study plans — slower but does serious work. Both end-to-end in the same chat — we pick the right model behind the scenes; you just see a 'quick' or 'deep' tag on each reply.",
+    a: "Quick AI handles short answers, recall, formulas and definitions — fast and lightweight. Deep AI is for long walk-throughs, marking essays, building cross-subject study plans and the weekly debrief — slower but does serious work. Both flow through the same chat; we pick the right one behind the scenes and tag each reply so you can see what you used.",
   },
   {
-    q: "How does the WhatsApp assistant work?",
-    a: "We give you a WhatsApp number. Message it to log an SBA your teacher just announced, ask the AI tutor a quick question, or get a celebration when your child hits a goal. It's the full Aptiverse experience through chat — no app needed in the moment.",
+    q: "How does the tutor commission work?",
+    a: "When a student books a session with you through the Aptiverse marketplace, we take a percentage of the booking. Tutor Free is 15%, Tutor Pro is 10%, Tutor Max is 0%. Commission only applies to platform-acquired bookings — if you bring an existing client and route their payments through us, the commission still applies (we're handling the payment processing and tax docs). The Max tier waives commission entirely as the carrot for committing to a subscription.",
+  },
+  {
+    q: "What's actually different between Pro and Max for students?",
+    a: "Same shape of features; Max adds the exam-finals tools: the exam simulator, weekly AI debrief, audio explanations, contextual WhatsApp tutor, cross-subject study plan. Pro is enough for most of high school; Max is for when you're going for distinctions.",
   },
   {
     q: "Can my school sponsor my plan?",
@@ -170,26 +362,30 @@ const FAQ = [
   },
   {
     q: "What's your refund policy?",
-    a: "14-day no-questions refund on any monthly subscription. Annual plans are pro-rated. Cancel any time — we won't make you fight a chat-bot. (We use a real human or a clearly-labelled AI.)",
+    a: "14-day no-questions refund on any monthly subscription. Annual plans are pro-rated. Cancel any time — we won't make you fight a chatbot. (We use a real human or a clearly-labelled AI.)",
   },
   {
-    q: "Why aren't you on Stripe?",
-    a: "We use Paystack — South African payment processor, supports EFT, instant EFT, and all the cards Stripe takes. Local fees are roughly half what Stripe charges, which is why our prices can stay lower.",
+    q: "How do payments work?",
+    a: "Cards (Visa, Mastercard, AmEx) and instant EFT — all SA banks supported. Billed monthly or annually in ZAR, no FX fees. Cancel any time from your settings; you keep access until the end of the billed period.",
   },
   {
     q: "Is my data safe?",
-    a: "POPIA-compliant. Data resides in af-south-1 (Cape Town). Your diary is end-to-end encrypted by default — even Aptiverse staff can't read it. We never sell data; bursary funders only see what you explicitly opt to share.",
+    a: "POPIA-compliant. Data is hosted in South Africa (Cape Town region). Your diary is end-to-end encrypted by default — even Aptiverse staff can't read it. We never sell data; bursary funders only see what you explicitly opt to share.",
   },
 ];
 
+// ============================================================
+// PAGE
+// ============================================================
 export default function PricingPage() {
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+  const [audience, setAudience] = useState<Audience>("students");
 
   return (
     <>
       <GradientBackdrop variant="soft">
         <Box sx={{ maxWidth: 1240, mx: "auto", px: { xs: 2.5, sm: 4, lg: 6 }, py: { xs: 8, md: 12 } }}>
-          <Stack spacing={2.5} sx={{ textAlign: "center", maxWidth: 760, mx: "auto" }}>
+          <Stack spacing={2.5} sx={{ textAlign: "center", maxWidth: 820, mx: "auto" }}>
             <Typography variant="overline" color="primary.main">
               Pricing
             </Typography>
@@ -197,9 +393,9 @@ export default function PricingPage() {
               Real tools. Honest pricing.
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
-              We use Claude (Anthropic's leading AI) under the hood. That costs us
-              real money per message — so plans include monthly quotas, never silent
-              overages. You'll always know what you're using and when to upgrade.
+              Our AI is powered by Anthropic. Every message has a real cost behind it, so plans
+              include monthly quotas — never silent overages. Within each track the features are
+              the same; upper tiers buy more quota and deeper AI capabilities.
             </Typography>
 
             <Stack direction="row" justifyContent="center" sx={{ pt: 1 }}>
@@ -221,14 +417,33 @@ export default function PricingPage() {
         </Box>
       </GradientBackdrop>
 
-      <Section py={6}>
-        <Grid container spacing={3} alignItems="stretch">
-          {PLANS.map((p) => (
-            <Grid key={p.code} size={{ xs: 12, sm: 6, md: 3 }}>
-              <PlanCard plan={p} billing={billing} />
+      <Section py={4}>
+        <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+          <Tabs
+            value={audience}
+            onChange={(_, v) => setAudience(v)}
+            sx={{
+              "& .MuiTab-root": { fontWeight: 600, textTransform: "none", fontSize: "0.95rem" },
+            }}
+          >
+            <Tab value="students" label="For students" />
+            <Tab value="families" label="For families" />
+            <Tab value="tutors" label="For tutors" />
+            <Tab value="schools" label="For schools" />
+          </Tabs>
+        </Box>
+
+        {audience === "students" && <PlanGrid plans={STUDENT_PLANS} billing={billing} cols={3} />}
+        {audience === "families" && <PlanGrid plans={FAMILY_PLANS} billing={billing} cols={4} />}
+        {audience === "tutors" && <PlanGrid plans={TUTOR_PLANS} billing={billing} cols={4} />}
+        {audience === "schools" && (
+          <Grid container justifyContent="center">
+            <Grid size={{ xs: 12, md: 8, lg: 6 }}>
+              <PlanCard plan={SCHOOL_PLAN} billing={billing} />
             </Grid>
-          ))}
-        </Grid>
+          </Grid>
+        )}
+
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1.5}
@@ -238,9 +453,9 @@ export default function PricingPage() {
           flexWrap="wrap"
           useFlexGap
         >
-          <Chip icon={<AutoAwesomeIcon />} label="AI by Claude (Anthropic)" variant="outlined" size="small" />
-          <Chip icon={<SmsOutlinedIcon />} label="WhatsApp Business API" variant="outlined" size="small" />
-          <Chip label="Payments by Paystack — EFT + cards" variant="outlined" size="small" />
+          <Chip icon={<AutoAwesomeIcon />} label="Powered by Anthropic" variant="outlined" size="small" />
+          <Chip icon={<SmsOutlinedIcon />} label="WhatsApp included" variant="outlined" size="small" />
+          <Chip label="Secure cards + EFT" variant="outlined" size="small" />
           <Chip label="POPIA compliant · ZA data residency" variant="outlined" size="small" />
         </Stack>
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", textAlign: "center", mt: 2 }}>
@@ -249,16 +464,36 @@ export default function PricingPage() {
       </Section>
 
       <Section bg="paper" py={6}>
-        <Box sx={{ maxWidth: 960, mx: "auto" }}>
+        <Box sx={{ maxWidth: 1100, mx: "auto" }}>
           <Stack spacing={1.5} sx={{ textAlign: "center", mb: 4 }}>
             <Typography variant="overline" color="primary.main">
               Compare
             </Typography>
             <Typography variant="h3" component="h2" sx={{ fontWeight: 700 }}>
-              What's in each plan
+              {audience === "students" && "What you unlock at each Student tier"}
+              {audience === "families" && "What you unlock at each Family tier"}
+              {audience === "tutors" && "What you unlock at each Tutor tier"}
+              {audience === "schools" && "What's in School"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Same feature scope across a track — upper tiers buy more quota and deeper AI capabilities.
             </Typography>
           </Stack>
-          <ComparisonTable />
+          {audience === "students" && <ComparisonTable rows={STUDENT_COMPARE} cols={["Free", "Student", "Pro", "Max"]} highlightCol="Pro" />}
+          {audience === "families" && <ComparisonTable rows={FAMILY_COMPARE} cols={["Family", "Pro", "Max"]} highlightCol="Pro" />}
+          {audience === "tutors" && <ComparisonTable rows={TUTOR_COMPARE} cols={["Free", "Pro", "Max"]} highlightCol="Pro" />}
+          {audience === "schools" && (
+            <Card variant="outlined" sx={{ p: 4, textAlign: "center" }}>
+              <Typography variant="body1" color="text.secondary">
+                School plans are custom-quoted on roll size. Every learner gets the full Family Max stack;
+                every teacher gets the analytics + differentiator + live-view suite; SchoolAdmins get readiness
+                forecasts + bursary partner pipeline.
+              </Typography>
+              <Button component={Link} href="/for-schools/contact" variant="contained" size="large" sx={{ mt: 3 }}>
+                Talk to sales
+              </Button>
+            </Card>
+          )}
         </Box>
       </Section>
 
@@ -289,7 +524,12 @@ export default function PricingPage() {
         </Box>
       </Section>
 
-      <Section bg="paper" eyebrow="Bursary partnerships" title="A pipeline that finds the talent" subtitle="If you fund students, we surface verified progress and university readiness — making allocations more accurate and impactful.">
+      <Section
+        bg="paper"
+        eyebrow="Bursary partnerships"
+        title="A pipeline that finds the talent"
+        subtitle="If you fund students, we surface verified progress and university readiness — making allocations more accurate and impactful."
+      >
         <Stack direction="row" justifyContent="center">
           <Button component={Link} href="/for-schools/contact" variant="contained" size="large">
             Partner with us
@@ -297,6 +537,24 @@ export default function PricingPage() {
         </Stack>
       </Section>
     </>
+  );
+}
+
+// ============================================================
+// Plan grid & card
+// ============================================================
+function PlanGrid({ plans, billing, cols }: { plans: Plan[]; billing: "monthly" | "annual"; cols: 3 | 4 }) {
+  // 3-card layout: each card is xs:12 sm:6 md:4
+  // 4-card layout: each card is xs:12 sm:6 md:3
+  const size = cols === 4 ? { xs: 12, sm: 6, md: 3 } : { xs: 12, sm: 6, md: 4 };
+  return (
+    <Grid container spacing={3} alignItems="stretch" justifyContent="center">
+      {plans.map((p) => (
+        <Grid key={p.code} size={size}>
+          <PlanCard plan={p} billing={billing} />
+        </Grid>
+      ))}
+    </Grid>
   );
 }
 
@@ -338,7 +596,7 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: "monthly" | "annual"
           {plan.tagline}
         </Typography>
 
-        <Box sx={{ mb: 2.5 }}>
+        <Box sx={{ mb: 2 }}>
           {isCustom ? (
             <Stack direction="row" alignItems="baseline" spacing={1}>
               <Typography variant="h3" sx={{ fontWeight: 700 }}>
@@ -351,7 +609,7 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: "monthly" | "annual"
                 R0
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                forever
+                {plan.commissionPercent ? "subscription" : "forever"}
               </Typography>
             </Stack>
           ) : billing === "annual" && plan.annual ? (
@@ -383,35 +641,38 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: "monthly" | "annual"
           </Typography>
         </Box>
 
-        {!isFree && !isCustom && (
-          <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1, mb: 2 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 600 }}>
-              MONTHLY ALLOWANCE
+        {plan.commissionPercent !== undefined && (
+          <Box sx={{ p: 1.25, mb: 2, bgcolor: "primary.main", color: "primary.contrastText", borderRadius: 1 }}>
+            <Typography variant="caption" sx={{ display: "block", fontWeight: 700, letterSpacing: 0.5 }}>
+              MARKETPLACE COMMISSION
             </Typography>
-            <Quota label="Quick AI replies" value={plan.aiQuickPerMonth} />
-            <Quota label="Deep AI sessions" value={plan.aiDeepPerMonth} />
-            <Quota label="WhatsApp messages" value={plan.whatsappPerMonth} />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              {plan.commissionPercent === 0
+                ? "0% — keep every rand you earn"
+                : `${Math.round(plan.commissionPercent * 100)}% on platform bookings`}
+            </Typography>
           </Box>
         )}
-        {isFree && (
-          <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1, mb: 2 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 600 }}>
-              MONTHLY ALLOWANCE
+
+        {plan.seats !== undefined && (
+          <Box sx={{ p: 1.25, mb: 2, bgcolor: "action.hover", borderRadius: 1 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 600 }}>
+              SEATS
             </Typography>
-            <Quota label="Quick AI replies" value={20} />
-            <Quota label="Deep AI sessions" value={0} muted />
-            <Quota label="WhatsApp messages" value={0} muted />
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Up to {plan.seats} learners
+            </Typography>
           </Box>
         )}
-        {isCustom && (
-          <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1, mb: 2 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 600 }}>
-              FAIR-USE AT SCHOOL SCALE
-            </Typography>
-            <Typography variant="body2">Unmetered AI within fair use</Typography>
-            <Typography variant="body2">Dedicated WhatsApp number</Typography>
-          </Box>
-        )}
+
+        <Box sx={{ p: 1.5, bgcolor: "action.hover", borderRadius: 1, mb: 2 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5, fontWeight: 600 }}>
+            MONTHLY ALLOWANCE
+          </Typography>
+          <Quota label="Quick AI replies" value={plan.aiQuickPerMonth} />
+          <Quota label="Deep AI sessions" value={plan.aiDeepPerMonth} />
+          <Quota label="WhatsApp messages" value={plan.whatsappPerMonth} />
+        </Box>
 
         <Stack spacing={1} sx={{ mb: 3, flex: 1 }}>
           {plan.features.map((f) => (
@@ -436,7 +697,7 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: "monthly" | "annual"
               Coming soon
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center" }}>
-              Available once Paystack billing is live
+              Available once paid billing is live
             </Typography>
           </Stack>
         ) : (
@@ -449,7 +710,8 @@ function PlanCard({ plan, billing }: { plan: Plan; billing: "monthly" | "annual"
   );
 }
 
-function Quota({ label, value, muted }: { label: string; value: number | "Unlimited"; muted?: boolean }) {
+function Quota({ label, value }: { label: string; value: number | "Unlimited" }) {
+  const muted = value === 0;
   return (
     <Stack direction="row" justifyContent="space-between" sx={{ opacity: muted ? 0.5 : 1, py: 0.25 }}>
       <Typography variant="body2" color="text.secondary">
@@ -462,48 +724,116 @@ function Quota({ label, value, muted }: { label: string; value: number | "Unlimi
   );
 }
 
-type Row = { label: string; tip?: string; free: React.ReactNode; student: React.ReactNode; family: React.ReactNode; school: React.ReactNode };
+// ============================================================
+// Comparison tables
+// ============================================================
+type Row = { label: string; tip?: string; values: Record<string, React.ReactNode> };
 
-const COMPARE_ROWS: Row[] = [
-  { label: "Subjects tracked", free: "Up to 3", student: "Unlimited", family: "Unlimited × 4", school: "Unlimited" },
-  { label: "Goals + milestones", free: "Basic", student: "Unlimited", family: "Unlimited × 4", school: "Unlimited" },
-  { label: "Daily diary & wellbeing", free: <Yes />, student: <Yes />, family: <Yes />, school: <Yes /> },
-  { label: "Quick AI replies / month", tip: "Short answers, recall, formulas — Claude Haiku.", free: "20", student: "200", family: "500", school: "Unlimited" },
-  { label: "Deep AI sessions / month", tip: "Long walk-throughs, essay marking, study plans — Claude Sonnet.", free: "—", student: "30", family: "80", school: "Unlimited" },
-  { label: "WhatsApp assistant", tip: "Message a WhatsApp number to log SBAs, get nudges, ask the AI tutor without opening the app.", free: "—", student: "50 msgs/mo", family: "200 msgs/mo", school: "Dedicated number" },
-  { label: "Past papers — DBE links", free: <Yes />, student: <Yes />, family: <Yes />, school: <Yes /> },
-  { label: "Past papers — worked solutions", free: <No />, student: <Yes />, family: <Yes />, school: <Yes /> },
-  { label: "Mastery predictions & forecasts", free: <No />, student: <Yes />, family: <Yes />, school: <Yes /> },
-  { label: "Career & university navigator", free: <No />, student: <Yes />, family: <Yes />, school: <Yes /> },
-  { label: "Tutor marketplace + booking", free: <No />, student: <Yes />, family: <Yes />, school: <Yes /> },
-  { label: "Parent dashboard", free: <No />, student: <No />, family: <Yes />, school: <Yes /> },
-  { label: "Counselling sessions", free: <No />, student: <No />, family: "1 / quarter", school: "Included" },
-  { label: "Teacher gap-analysis + differentiator", free: <No />, student: <No />, family: <No />, school: <Yes /> },
-  { label: "School admin analytics & readiness", free: <No />, student: <No />, family: <No />, school: <Yes /> },
-  { label: "SSO & SIS integration", free: <No />, student: <No />, family: <No />, school: <Yes /> },
-  { label: "Support", free: "Community", student: "Email · 1 day", family: "Email · 4 hours", school: "Success manager" },
+const STUDENT_COMPARE: Row[] = [
+  { label: "Subjects", values: { Free: "Up to 6", Student: "Unlimited", Pro: "Unlimited", Max: "Unlimited" } },
+  { label: "Daily diary & wellbeing", values: { Free: <Yes />, Student: <Yes />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Quick AI / month", tip: "Short answers, recall, formulas — fast and lightweight.", values: { Free: "15", Student: "60", Pro: "300", Max: "1,200" } },
+  { label: "Deep AI / month", tip: "Long walk-throughs, essay marking, study plans — slower but does serious work.", values: { Free: "—", Student: "5", Pro: "30", Max: "100" } },
+  { label: "WhatsApp messages / month", values: { Free: "—", Student: "10", Pro: "50", Max: "200" } },
+  { label: "Curriculum-aware AI tutor", tip: "Knows the exact NSC/IEB syllabus + textbook references.", values: { Free: <No />, Student: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "SBA Coach", tip: "Feedback on your draft against the actual SBA rubric.", values: { Free: <No />, Student: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Adaptive practice", values: { Free: <No />, Student: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Past papers — worked solutions", values: { Free: <No />, Student: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Mastery predictions & forecasts", values: { Free: <No />, Student: "Snapshot", Pro: <Yes />, Max: <Yes /> } },
+  { label: "Career & university navigator", values: { Free: <No />, Student: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Tutor marketplace + booking", values: { Free: <No />, Student: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Exam simulator", tip: "Timed full papers, AI-marked.", values: { Free: <No />, Student: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "Weekly AI debrief", values: { Free: <No />, Student: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "Audio explanations", values: { Free: <No />, Student: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "Cross-subject study plan", values: { Free: <No />, Student: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "Contextual WhatsApp tutor", values: { Free: <No />, Student: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "Support", values: { Free: "Community", Student: "Email", Pro: "Priority email", Max: "Priority email" } },
 ];
 
-function ComparisonTable() {
+const FAMILY_COMPARE: Row[] = [
+  { label: "Learners", values: { Family: "2", Pro: "4", Max: "6" } },
+  { label: "Quick AI / month (shared)", values: { Family: "200", Pro: "800", Max: "2,400" } },
+  { label: "Deep AI / month", values: { Family: "15", Pro: "80", Max: "200" } },
+  { label: "WhatsApp / month", values: { Family: "40", Pro: "200", Max: "500" } },
+  { label: "Every learner gets Student Pro features", values: { Family: <Yes />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Parent dashboard + realtime feed", values: { Family: <Yes />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Mastery forecast per child", tip: "Predicted matric mark with confidence interval.", values: { Family: <Yes />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Wellbeing summary (anonymised)", values: { Family: <Yes />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Bursary pipeline tracker per child", values: { Family: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "University readiness forecast", values: { Family: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Shared family calendar", values: { Family: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Family WhatsApp weekly recap", values: { Family: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Counselling session included", values: { Family: <No />, Pro: "1 / quarter", Max: "1 / quarter" } },
+  { label: "AI parenting coach", tip: "Deep AI that knows your kids' context, helps you respond rather than react.", values: { Family: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "Custom intervention plans per child", values: { Family: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "Tutor concierge service", values: { Family: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "Family wellbeing dashboard", values: { Family: <No />, Pro: <No />, Max: <Yes /> } },
+];
+
+const TUTOR_COMPARE: Row[] = [
+  { label: "Subscription", values: { Free: "R0", Pro: "R149/mo", Max: "R349/mo" } },
+  { label: "Commission on platform bookings", values: { Free: "15%", Pro: "10%", Max: "0%" } },
+  { label: "Clients", values: { Free: "Unlimited", Pro: "Unlimited", Max: "Unlimited" } },
+  { label: "Marketplace listing", values: { Free: <Yes />, Pro: "Featured", Max: "Top placement" } },
+  { label: "Scheduling + secure payments", values: { Free: <Yes />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Client tracker + messaging", values: { Free: <Yes />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Quick AI / month", values: { Free: "15", Pro: "300", Max: "1,500" } },
+  { label: "Deep AI / month", values: { Free: "—", Pro: "20", Max: "80" } },
+  { label: "WhatsApp / month", values: { Free: "10", Pro: "100", Max: "500" } },
+  { label: "AI lesson plan generator", tip: "Pulls each client's curriculum + SBA marks → 60-min plan.", values: { Free: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "AI worksheet generator", values: { Free: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Mastery prediction per client", values: { Free: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Auto parent reports", tip: "AI-written weekly recap delivered via WhatsApp / email.", values: { Free: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "Curriculum-aware AI (your own)", values: { Free: <No />, Pro: <Yes />, Max: <Yes /> } },
+  { label: "AI SBA marker", tip: "Photo a draft, get marked output against the rubric.", values: { Free: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "White-label parent reports", values: { Free: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "SARS-ready income export", values: { Free: <No />, Pro: <No />, Max: <Yes /> } },
+  { label: "Group tutoring mode", values: { Free: <No />, Pro: <No />, Max: <Yes /> } },
+];
+
+function ComparisonTable({
+  rows,
+  cols,
+  highlightCol,
+}: {
+  rows: Row[];
+  cols: string[];
+  highlightCol?: string;
+}) {
   return (
     <Card variant="outlined">
       <Box sx={{ overflowX: "auto" }}>
         <Box component="table" sx={{ width: "100%", borderCollapse: "collapse", minWidth: 700 }}>
           <Box component="thead" sx={{ bgcolor: "action.hover" }}>
             <Box component="tr">
-              <Box component="th" sx={{ p: 2, textAlign: "left", fontWeight: 600, width: "30%" }}>Feature</Box>
-              <Box component="th" sx={{ p: 2, textAlign: "center", fontWeight: 600 }}>Free</Box>
-              <Box component="th" sx={{ p: 2, textAlign: "center", fontWeight: 600, color: "primary.main" }}>Student</Box>
-              <Box component="th" sx={{ p: 2, textAlign: "center", fontWeight: 600 }}>Family</Box>
-              <Box component="th" sx={{ p: 2, textAlign: "center", fontWeight: 600 }}>School</Box>
+              <Box component="th" sx={{ p: 2, textAlign: "left", fontWeight: 600, width: "32%" }}>
+                Feature
+              </Box>
+              {cols.map((c) => (
+                <Box
+                  key={c}
+                  component="th"
+                  sx={{
+                    p: 2,
+                    textAlign: "center",
+                    fontWeight: 600,
+                    color: c === highlightCol ? "primary.main" : undefined,
+                  }}
+                >
+                  {c}
+                </Box>
+              ))}
             </Box>
           </Box>
           <Box component="tbody">
-            {COMPARE_ROWS.map((r, i) => (
+            {rows.map((r, i) => (
               <Box
                 component="tr"
                 key={r.label}
-                sx={{ "&:not(:last-of-type)": { borderBottom: 1, borderColor: "divider" }, "&:hover": { bgcolor: "action.hover" } }}
+                sx={{
+                  "&:not(:last-of-type)": { borderBottom: 1, borderColor: "divider" },
+                  "&:hover": { bgcolor: "action.hover" },
+                }}
               >
                 <Box component="td" sx={{ p: 2 }}>
                   <Stack direction="row" spacing={0.5} alignItems="center">
@@ -519,10 +849,19 @@ function ComparisonTable() {
                     )}
                   </Stack>
                 </Box>
-                <Box component="td" sx={{ p: 2, textAlign: "center" }}>{r.free}</Box>
-                <Box component="td" sx={{ p: 2, textAlign: "center", bgcolor: i % 2 === 0 ? "action.hover" : undefined }}>{r.student}</Box>
-                <Box component="td" sx={{ p: 2, textAlign: "center" }}>{r.family}</Box>
-                <Box component="td" sx={{ p: 2, textAlign: "center" }}>{r.school}</Box>
+                {cols.map((c) => (
+                  <Box
+                    key={c}
+                    component="td"
+                    sx={{
+                      p: 2,
+                      textAlign: "center",
+                      bgcolor: c === highlightCol && i % 2 === 0 ? "action.hover" : undefined,
+                    }}
+                  >
+                    {r.values[c] ?? "—"}
+                  </Box>
+                ))}
               </Box>
             ))}
           </Box>

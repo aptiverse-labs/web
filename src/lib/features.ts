@@ -7,7 +7,7 @@
 // new feature is two edits: add the key here, add the row in the seeder.
 
 export type FeatureKey =
-  // Free-tier
+  // -------- Free baseline (every user) --------
   | "subjects.up_to_6"
   | "goals.basic"
   | "ai_practice.basic"
@@ -20,33 +20,83 @@ export type FeatureKey =
   | "notifications"
   | "settings"
   | "help"
-  // Student-and-above
+
+  // -------- Student entry --------
   | "subjects.unlimited"
   | "goals.unlimited"
-  | "goals.milestones"
   | "ai_practice.unlimited"
-  | "past_papers.solved"
-  | "mastery.predictions"
+  | "mastery.snapshot"
+  | "courses.enrol"
+  | "psychologist.read"
+
+  // -------- Student Pro (the AI moat) --------
+  | "goals.milestones"
   | "ai_tutor"
+  | "ai_tutor.curriculum_aware"
+  | "ai_practice.adaptive"
+  | "past_papers.solved"
+  | "sba.coach"
+  | "mastery.predictions"
   | "career_navigator"
   | "bursaries.checklist"
   | "rewards.redeem"
-  | "support.priority"
   | "tutor_marketplace.book"
-  | "courses.enrol"
   | "study_groups"
   | "workspace"
-  | "psychologist.read"
-  // Family-and-above
+  | "support.priority"
+
+  // -------- Student Max (exam-finals tier) --------
+  | "exam.simulator"
+  | "audio.explanations"
+  | "study_plan.ai"
+  | "ai_debrief.weekly"
+  | "whatsapp.contextual"
+
+  // -------- Family entry --------
   | "parent.dashboard"
   | "parent.realtime_feed"
   | "parent.wellbeing_view"
   | "parent.celebrations"
-  | "family.shared_calendar"
-  | "family.linked_children"
-  | "counselling.session_included"
+  | "parent.forecast"
   | "parent.billing"
-  // School-only
+  | "family.linked_children"
+
+  // -------- Family Pro --------
+  | "parent.bursary_pipeline"
+  | "parent.uni_readiness"
+  | "family.shared_calendar"
+  | "family.whatsapp_recap"
+  | "counselling.session_included"
+
+  // -------- Family Max --------
+  | "parent.ai_coach"
+  | "parent.interventions"
+  | "parent.tutor_concierge"
+  | "family.wellbeing_dashboard"
+
+  // -------- Tutor entry (Tutor Free) --------
+  | "tutor.dashboard"
+  | "tutor.marketplace_listing"
+  | "tutor.scheduling"
+  | "tutor.payments"
+  | "tutor.client_tracker"
+  | "tutor.messaging"
+
+  // -------- Tutor Pro (AI moat for tutors) --------
+  | "tutor.lesson_plans_ai"
+  | "tutor.mastery_per_client"
+  | "tutor.parent_reports_auto"
+  | "tutor.worksheets_ai"
+  | "tutor.marketplace_featured"
+
+  // -------- Tutor Max (white-glove) --------
+  | "tutor.sba_marker_ai"
+  | "tutor.parent_reports_whitelabel"
+  | "tutor.sars_export"
+  | "tutor.group_mode"
+  | "tutor.marketplace_top"
+
+  // -------- School --------
   | "teacher.dashboard"
   | "teacher.gap_analysis"
   | "teacher.differentiator"
@@ -65,14 +115,25 @@ export type FeatureKey =
   | "school.sso"
   | "school.success_manager";
 
-export type PlanCode = "free" | "student" | "family" | "school";
+export type PlanCode =
+  | "free"
+  | "student"
+  | "student.pro"
+  | "student.max"
+  | "family"
+  | "family.pro"
+  | "family.max"
+  | "tutor.free"
+  | "tutor.pro"
+  | "tutor.max"
+  | "school";
 
-// User-facing labels for the Upgrade CTA. The lowest plan that unlocks
-// each feature is what we suggest upgrading to. Pulled from the seeder
-// so they stay aligned; add a mapping here whenever you add a feature
-// to FeatureKey.
+// Cheapest plan that unlocks each feature. Used by FeatureGuard's fallback
+// to suggest the right "Upgrade to X" CTA. For cross-track features (like
+// `ai_tutor`, which is in both Student Pro and Tutor Pro) we pick the
+// student-track entry since that's the cheaper / more common upgrade path.
 export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanCode> = {
-  // Free
+  // Free baseline
   "subjects.up_to_6": "free",
   "goals.basic": "free",
   "ai_practice.basic": "free",
@@ -85,32 +146,82 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanCode> = {
   notifications: "free",
   settings: "free",
   help: "free",
-  // Student
+
+  // Student entry
   "subjects.unlimited": "student",
   "goals.unlimited": "student",
-  "goals.milestones": "student",
   "ai_practice.unlimited": "student",
-  "past_papers.solved": "student",
-  "mastery.predictions": "student",
-  ai_tutor: "student",
-  career_navigator: "student",
-  "bursaries.checklist": "student",
-  "rewards.redeem": "student",
-  "support.priority": "student",
-  "tutor_marketplace.book": "student",
+  "mastery.snapshot": "student",
   "courses.enrol": "student",
-  study_groups: "student",
-  workspace: "student",
   "psychologist.read": "student",
-  // Family
+
+  // Student Pro
+  "goals.milestones": "student.pro",
+  ai_tutor: "student.pro",
+  "ai_tutor.curriculum_aware": "student.pro",
+  "ai_practice.adaptive": "student.pro",
+  "past_papers.solved": "student.pro",
+  "sba.coach": "student.pro",
+  "mastery.predictions": "student.pro",
+  career_navigator: "student.pro",
+  "bursaries.checklist": "student.pro",
+  "rewards.redeem": "student.pro",
+  "tutor_marketplace.book": "student.pro",
+  study_groups: "student.pro",
+  workspace: "student.pro",
+  "support.priority": "student.pro",
+
+  // Student Max
+  "exam.simulator": "student.max",
+  "audio.explanations": "student.max",
+  "study_plan.ai": "student.max",
+  "ai_debrief.weekly": "student.max",
+  "whatsapp.contextual": "student.max",
+
+  // Family entry
   "parent.dashboard": "family",
   "parent.realtime_feed": "family",
   "parent.wellbeing_view": "family",
   "parent.celebrations": "family",
-  "family.shared_calendar": "family",
-  "family.linked_children": "family",
-  "counselling.session_included": "family",
+  "parent.forecast": "family",
   "parent.billing": "family",
+  "family.linked_children": "family",
+
+  // Family Pro
+  "parent.bursary_pipeline": "family.pro",
+  "parent.uni_readiness": "family.pro",
+  "family.shared_calendar": "family.pro",
+  "family.whatsapp_recap": "family.pro",
+  "counselling.session_included": "family.pro",
+
+  // Family Max
+  "parent.ai_coach": "family.max",
+  "parent.interventions": "family.max",
+  "parent.tutor_concierge": "family.max",
+  "family.wellbeing_dashboard": "family.max",
+
+  // Tutor entry (Free with commission)
+  "tutor.dashboard": "tutor.free",
+  "tutor.marketplace_listing": "tutor.free",
+  "tutor.scheduling": "tutor.free",
+  "tutor.payments": "tutor.free",
+  "tutor.client_tracker": "tutor.free",
+  "tutor.messaging": "tutor.free",
+
+  // Tutor Pro
+  "tutor.lesson_plans_ai": "tutor.pro",
+  "tutor.mastery_per_client": "tutor.pro",
+  "tutor.parent_reports_auto": "tutor.pro",
+  "tutor.worksheets_ai": "tutor.pro",
+  "tutor.marketplace_featured": "tutor.pro",
+
+  // Tutor Max
+  "tutor.sba_marker_ai": "tutor.max",
+  "tutor.parent_reports_whitelabel": "tutor.max",
+  "tutor.sars_export": "tutor.max",
+  "tutor.group_mode": "tutor.max",
+  "tutor.marketplace_top": "tutor.max",
+
   // School
   "teacher.dashboard": "school",
   "teacher.gap_analysis": "school",
@@ -134,6 +245,13 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanCode> = {
 export const PLAN_LABELS: Record<PlanCode, string> = {
   free: "Free",
   student: "Student",
+  "student.pro": "Student Pro",
+  "student.max": "Student Max",
   family: "Family",
+  "family.pro": "Family Pro",
+  "family.max": "Family Max",
+  "tutor.free": "Tutor Free",
+  "tutor.pro": "Tutor Pro",
+  "tutor.max": "Tutor Max",
   school: "School",
 };

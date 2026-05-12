@@ -21,7 +21,7 @@ export default function Page() {
               Built with care, in South Africa.
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400 }}>
-              We believe matric is hard enough — the tools around it shouldn't make it harder. Aptiverse is what we wish we'd had ourselves.
+              We believe high school is hard enough — the tools around it shouldn't make it harder. Aptiverse is what we wish we'd had ourselves.
             </Typography>
           </Stack>
         </Box>

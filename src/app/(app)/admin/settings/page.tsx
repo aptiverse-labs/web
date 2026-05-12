@@ -29,7 +29,7 @@ export default function AdminSettings() {
             <TextField label="Support email" defaultValue="support@aptiverse.co.za" />
             <TextField label="Default currency" defaultValue="ZAR" />
             <FormControlLabel control={<Switch defaultChecked />} label="Enable new signups" />
-            <FormControlLabel control={<Switch defaultChecked />} label="Enable Stripe webhooks" />
+            <FormControlLabel control={<Switch defaultChecked />} label="Enable payment webhooks" />
             <FormControlLabel control={<Switch />} label="Maintenance mode" />
             <Button variant="contained" sx={{ alignSelf: "flex-start" }}>
               Save

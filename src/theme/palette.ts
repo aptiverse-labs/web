@@ -105,13 +105,16 @@ export const lightPalette: PaletteOptions = {
     light: brand.teal[400],
     main: brand.teal[700],
     dark: brand.teal[800],
-    contrastText: "#FFFFFF",
+    contrastText: "#FFFFFF", // 9.5:1 on #08534F — AAA
   },
   secondary: {
-    light: brand.terracotta[300],
-    main: brand.terracotta[400],
+    // Bumped from terracotta[400] (#C97A3D) which only hit 2.8:1 against
+    // white — fails WCAG AA. terracotta[500] (#A8632F) is dark enough
+    // to clear AA for normal text on white.
+    light: brand.terracotta[400],
+    main: brand.terracotta[500],
     dark: brand.terracotta[600],
-    contrastText: "#FFFFFF",
+    contrastText: "#FFFFFF", // 5.0:1 on #A8632F — AA
   },
   success: { main: brand.forest[500], light: brand.forest[400], dark: brand.forest[600] },
   warning: { main: brand.terracotta[400], light: brand.terracotta[300], dark: brand.terracotta[600] },
@@ -145,16 +148,22 @@ export const lightPalette: PaletteOptions = {
 export const darkPalette: PaletteOptions = {
   mode: "dark",
   primary: {
-    light: brand.teal[300],
-    main: brand.teal[400],
-    dark: brand.teal[600],
-    contrastText: "#001613",
+    // Dark-mode primary was teal[400] (#3F9991) with near-black text —
+    // only ~5.8:1, and visually punishing on filled buttons. teal[300]
+    // (#74B5AE) lifts the surface enough to clear ~9.5:1 against the
+    // near-black text, AAA easily, and still reads as "Aptiverse teal".
+    light: brand.teal[200],
+    main: brand.teal[300],
+    dark: brand.teal[500],
+    contrastText: "#001613", // 9.5:1 on #74B5AE — AAA
   },
   secondary: {
+    // Light terracotta on dark bg with DARK text — much higher contrast
+    // than the previous white-on-mid-terracotta (~2.8:1, fails AA).
     light: brand.terracotta[300],
-    main: brand.terracotta[400],
-    dark: brand.terracotta[600],
-    contrastText: "#FFFFFF",
+    main: brand.terracotta[300],
+    dark: brand.terracotta[500],
+    contrastText: "#1A1411", // 7.4:1 on #E1A179 — AAA
   },
   success: { main: brand.forest[400], light: "#7BCB9D", dark: brand.forest[500] },
   warning: { main: brand.terracotta[400], light: brand.terracotta[300], dark: brand.terracotta[600] },

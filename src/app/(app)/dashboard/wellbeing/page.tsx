@@ -48,7 +48,7 @@ export default function WellbeingPage() {
     <>
       <PageHeader
         title="Wellbeing"
-        description="A calmer matric. Daily check-ins, breathing tools, and pros to talk to."
+        description="A calmer high school. Daily check-ins, breathing tools, and pros to talk to."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Wellbeing" }]}
       />
 

@@ -97,6 +97,7 @@ export const STUDENT_NAV: NavSection[] = [
     items: [
       { label: "Calendar", href: "/dashboard/calendar", icon: CalendarMonthIcon },
       { label: "Notifications", href: "/dashboard/notifications", icon: NotificationsIcon },
+      { label: "Billing", href: "/dashboard/billing", icon: PaymentsIcon },
       { label: "Settings", href: "/dashboard/settings", icon: SettingsIcon },
       { label: "Help", href: "/dashboard/help", icon: HelpOutlineIcon },
     ],

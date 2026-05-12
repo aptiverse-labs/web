@@ -24,7 +24,7 @@ export default function SchoolAdminDashboard() {
 
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Learners" value={612} hint="Grade 11 + 12" color="primary" />
+          <StatCard label="Learners" value={612} hint="Grades 10–12" color="primary" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard label="Teachers" value={42} color="info" />

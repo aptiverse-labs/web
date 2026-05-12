@@ -30,7 +30,7 @@ export default function JourneyPage() {
         empty={{
           icon: <RouteIcon />,
           title: "Your journey starts with a subject",
-          description: "Add your matric subjects to see topics tracked as you move from upcoming → in progress → mastered.",
+          description: "Add your subjects to see topics tracked as you move from upcoming → in progress → mastered.",
         }}
       >
         {(subjects) => <JourneyView subjects={subjects} />}

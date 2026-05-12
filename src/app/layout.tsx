@@ -18,13 +18,16 @@ export const metadata: Metadata = {
     template: "%s · Aptiverse",
   },
   description:
-    "AI-powered student success platform built for South African Grade 11 & 12 learners. SBA prep, goals, mastery, wellbeing, and bursary navigation in one calm, empowering space.",
+    "AI-powered student success platform built for South African FET-phase learners (Grades 10–12). SBA prep, goals, mastery, wellbeing, and bursary navigation in one calm, empowering space.",
   applicationName: "Aptiverse",
   keywords: [
     "Aptiverse",
     "SBA",
+    "Grade 10",
+    "Grade 11",
     "Grade 12",
-    "Matric",
+    "FET phase",
+    "High school",
     "South Africa",
     "Bursary",
     "NSFAS",

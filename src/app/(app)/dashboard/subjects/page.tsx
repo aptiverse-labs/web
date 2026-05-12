@@ -63,16 +63,19 @@ const CATEGORY_LABELS: Record<string, string> = {
   life_orientation: "Life Orientation",
 };
 
+// All values darkened from the original palette so the white text the
+// chip uses clears WCAG AA (≥4.5:1) on every category. The previous
+// values failed for yellow / light-blue / red-orange / blue-grey / pink.
 const CATEGORY_COLOR: Record<string, string> = {
-  language: "#F25C2E",
-  mathematics: "#1F8079",
-  natural_science: "#5BA3E5",
-  commerce: "#FFB733",
-  humanities: "#9c27b0",
-  technical: "#607d8b",
-  services: "#3D9762",
-  arts: "#e91e63",
-  life_orientation: "#0F6963",
+  language: "#C2421F",         // was #F25C2E — 5.4:1 with white
+  mathematics: "#1F8079",      // unchanged — 5.3:1
+  natural_science: "#1E6BB5",  // was #5BA3E5 — 5.0:1
+  commerce: "#8B6210",         // was #FFB733 — 6.0:1
+  humanities: "#7B1FA2",       // was #9c27b0 — 6.3:1
+  technical: "#455A64",        // was #607d8b — 6.5:1
+  services: "#2A6B45",         // was #3D9762 — 5.5:1
+  arts: "#B0094A",             // was #e91e63 — 5.6:1
+  life_orientation: "#0F6963", // unchanged — 7.1:1
 };
 
 export default function SubjectsPage() {

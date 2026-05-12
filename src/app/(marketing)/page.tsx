@@ -7,16 +7,10 @@ import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import Link from "next/link";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEventsOutlined";
 import FavoriteIcon from "@mui/icons-material/FavoriteBorder";
 import GroupIcon from "@mui/icons-material/GroupsOutlined";
-import InsightsIcon from "@mui/icons-material/Insights";
 import MenuBookIcon from "@mui/icons-material/MenuBookOutlined";
-import PsychologyIcon from "@mui/icons-material/PsychologyOutlined";
 import SchoolIcon from "@mui/icons-material/School";
-import TimelineIcon from "@mui/icons-material/Timeline";
-import WorkIcon from "@mui/icons-material/WorkOutline";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import SignalCellularAltIcon from "@mui/icons-material/SignalCellularAlt";
 import LanguageIcon from "@mui/icons-material/LanguageOutlined";
@@ -24,47 +18,98 @@ import AssessmentIcon from "@mui/icons-material/AssessmentOutlined";
 import { Hero } from "@/components/marketing/Hero";
 import { Section } from "@/components/common/Section";
 import { FeatureCard } from "@/components/common/FeatureCard";
+import { FeatureShowcase } from "@/components/marketing/FeatureShowcase";
+import {
+  TutorChatDemo,
+  MasteryChartDemo,
+  MoodCheckInDemo,
+} from "@/components/marketing/FeatureDemos";
 
 export default function HomePage() {
   return (
     <>
       <Hero />
 
-      <Section
-        eyebrow="Everything connected"
-        title="A complete success partner — not another study app"
-        subtitle="From the SBA you wrote yesterday to the bursary deadline next month, Aptiverse joins the dots so you always know what to do next."
-        align="center"
-      >
-        <Grid container spacing={3}>
-          {FEATURES.map((f) => (
-            <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>
-              <FeatureCard {...f} />
-            </Grid>
-          ))}
-        </Grid>
+      {/* =====================================================================
+          "How it works" — three big showcases. Replaces 9 generic cards.
+      ===================================================================== */}
+      <Section py={2}>
+        <Stack spacing={1.5} sx={{ textAlign: "center", mb: 2 }}>
+          <Typography variant="overline" color="primary.main">
+            How Aptiverse works
+          </Typography>
+          <Typography variant="h2" component="h2" sx={{ fontWeight: 700 }}>
+            One platform. Three things ChatGPT can&apos;t.
+          </Typography>
+        </Stack>
+
+        <FeatureShowcase
+          eyebrow="Curriculum-aware AI tutor"
+          title="Knows your syllabus. Cites your textbook."
+          body="Aptiverse's AI is anchored to the NSC, IEB and Cambridge curricula — so it references the exact textbook page and uses examiner-style language, not generic internet help."
+          bullets={[
+            "Stays in scope for your grade — won't introduce off-syllabus content",
+            "Cites past-paper questions and markschemes",
+            "Switches to Deep AI automatically for essays and long walk-throughs",
+          ]}
+          demo={<TutorChatDemo />}
+        />
+
+        <FeatureShowcase
+          reverse
+          eyebrow="Predictive mastery"
+          title="See your matric mark, months ahead."
+          body="A continuous forecast of your final mark per subject, with a confidence interval. Spot the topics costing you the most marks before the exam — not in the autopsy."
+          bullets={[
+            "Updates every time you finish a practice set or SBA",
+            "Identifies the three topics costing you the most marks",
+            "Shareable with parents on Family tiers (anonymised available)",
+          ]}
+          demo={<MasteryChartDemo />}
+        />
+
+        <FeatureShowcase
+          eyebrow="Wellbeing woven through"
+          title="The platform watches for stress — not just marks."
+          body="60-second daily check-ins surface stress trends weeks early. When you need a real human, HPCSA-registered counsellors are one tap away."
+          bullets={[
+            "Trend detection across days, not single-day reactions",
+            "Diary is end-to-end encrypted — even Aptiverse staff can't read it",
+            "First counselling session free on Family Pro+",
+          ]}
+          demo={<MoodCheckInDemo />}
+        />
       </Section>
 
-      <Section bg="paper" eyebrow="Built for you" title="One platform, five views" subtitle="Every role gets exactly what they need — no clutter, no toxic comparison.">
+      {/* =====================================================================
+          Role tiles — slimmed to 4. Click through to /for-{role} for detail.
+      ===================================================================== */}
+      <Section bg="paper" eyebrow="Built for you" title="Every role, a tailored view" subtitle="No clutter. No toxic comparison.">
         <Grid container spacing={3}>
           {ROLES.map((r) => (
-            <Grid key={r.title} size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid key={r.title} size={{ xs: 12, sm: 6, md: 3 }}>
               <FeatureCard {...r} />
             </Grid>
           ))}
         </Grid>
       </Section>
 
-      <Section eyebrow="Designed in SA, for SA" title="The South African context — handled" subtitle="Aptiverse is built for the realities of matric in this country.">
+      {/* =====================================================================
+          SA context — trimmed to 4 cards, tighter copy.
+      ===================================================================== */}
+      <Section eyebrow="Designed in SA, for SA" title="The South African context — handled" align="center">
         <Grid container spacing={3}>
           {SA_CONTEXT.map((s) => (
-            <Grid key={s.title} size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid key={s.title} size={{ xs: 12, sm: 6, md: 3 }}>
               <FeatureCard {...s} />
             </Grid>
           ))}
         </Grid>
       </Section>
 
+      {/* =====================================================================
+          Closing CTA.
+      ===================================================================== */}
       <Box
         sx={{
           py: { xs: 8, md: 12 },
@@ -90,16 +135,12 @@ export default function HomePage() {
               justifyContent="space-between"
             >
               <Stack spacing={1.5} sx={{ maxWidth: 580 }}>
-                <Typography
-                  variant="h3"
-                  component="h2"
-                  sx={{ letterSpacing: "-0.02em" }}
-                >
+                <Typography variant="h3" component="h2" sx={{ letterSpacing: "-0.02em" }}>
                   Start free. Grow at your pace.
                 </Typography>
                 <Typography color="text.secondary" sx={{ fontSize: "1rem" }}>
-                  The free tier is genuinely useful — goals, diary, basic practice
-                  and the wellbeing toolkit. Upgrade only when you're ready.
+                  The free tier is genuinely useful — goals, diary, basic practice,
+                  wellbeing tools. Upgrade only when you&apos;re ready.
                 </Typography>
               </Stack>
               <Stack direction="row" spacing={1.25} flexWrap="wrap" useFlexGap>
@@ -129,116 +170,36 @@ export default function HomePage() {
   );
 }
 
-const FEATURES = [
-  {
-    icon: <SchoolIcon />,
-    title: "SBA-aligned planning",
-    description: "Add your upcoming SBAs once. AI plans the lead-up, sets healthy goals from your history, and keeps you on track.",
-    href: "/features#planning",
-    accent: "primary" as const,
-  },
-  {
-    icon: <AutoAwesomeIcon />,
-    title: "AI practice tests",
-    description: "Drilled to your weakest topics, with rubric-based marking and pattern analysis after every attempt.",
-    href: "/features#practice",
-    accent: "secondary" as const,
-  },
-  {
-    icon: <InsightsIcon />,
-    title: "Predictive mastery",
-    description: "We track strengths over each term so you can prep for next term in advance — never blindsided.",
-    href: "/features#mastery",
-    accent: "info" as const,
-  },
-  {
-    icon: <FavoriteIcon />,
-    title: "Wellbeing first",
-    description: "Mood check-ins, breathing breaks, in-app psychologist. We catch stress early and give you space to breathe.",
-    href: "/features#wellbeing",
-    accent: "secondary" as const,
-  },
-  {
-    icon: <EmojiEventsIcon />,
-    title: "Verified rewards",
-    description: "Free courses, tutor hours, masterclasses, badges. Schools verify with one click — no paperwork for teachers.",
-    href: "/features#rewards",
-    accent: "warning" as const,
-  },
-  {
-    icon: <PsychologyIcon />,
-    title: "Always-on AI tutor",
-    description: "A patient explainer, drill-generator and exam coach in your pocket. No question is too small.",
-    href: "/features#chatbot",
-    accent: "primary" as const,
-  },
-  {
-    icon: <GroupIcon />,
-    title: "Tutors & courses",
-    description: "Verified tutors and specialised courses to bridge the gaps. Pay-per-session or subscribe — it's your choice.",
-    href: "/features#marketplace",
-    accent: "info" as const,
-  },
-  {
-    icon: <WorkIcon />,
-    title: "University & career",
-    description: "Dream-course planner, APS calculator, real-life career stories — and the bursary navigator that helps you fund it.",
-    href: "/careers",
-    accent: "primary" as const,
-  },
-  {
-    icon: <TimelineIcon />,
-    title: "Learning journey map",
-    description: "Visualise progress as a map of mastered landmarks — gamified for growth, never ranking.",
-    href: "/features#journey",
-    accent: "secondary" as const,
-  },
-];
-
 const ROLES = [
-  { icon: <SchoolIcon />, title: "For Students", description: "Plan, practise, reflect, win.", href: "/for-students", accent: "primary" as const },
-  { icon: <FavoriteIcon />, title: "For Parents", description: "How can I help dashboards.", href: "/for-parents", accent: "secondary" as const },
-  { icon: <MenuBookIcon />, title: "For Teachers", description: "Class-wide gap analysis.", href: "/for-teachers", accent: "info" as const },
-  { icon: <InsightsIcon />, title: "For Schools", description: "Whole-school readiness.", href: "/for-schools", accent: "primary" as const },
-  { icon: <GroupIcon />, title: "For Tutors", description: "Sell courses, run sessions.", href: "/for-tutors", accent: "warning" as const },
-  { icon: <VolunteerActivismIcon />, title: "Bursary partners", description: "Find verified, motivated talent.", href: "/bursaries", accent: "success" as const },
+  { icon: <SchoolIcon />, title: "Students", description: "Plan, practise, reflect, win.", href: "/for-students", accent: "primary" as const },
+  { icon: <FavoriteIcon />, title: "Parents", description: "A calm dashboard, never invasive.", href: "/for-parents", accent: "secondary" as const },
+  { icon: <GroupIcon />, title: "Tutors", description: "Sell sessions, manage clients, get paid.", href: "/for-tutors", accent: "warning" as const },
+  { icon: <MenuBookIcon />, title: "Schools", description: "Whole-school readiness & gap analysis.", href: "/for-schools", accent: "info" as const },
 ];
 
 const SA_CONTEXT = [
   {
     icon: <SignalCellularAltIcon />,
     title: "Data-light & offline",
-    description: "Practice tests download. Diary works offline. Goals you set today sync next time you're online.",
+    description: "Diary works offline. Practice tests cache. Sync next time you're online.",
     accent: "primary" as const,
   },
   {
     icon: <LanguageIcon />,
-    title: "Multi-language support",
-    description: "Key explanations and chatbot replies in isiZulu, Afrikaans, isiXhosa — and more rolling out.",
-    accent: "primary" as const,
-  },
-  {
-    icon: <MenuBookIcon />,
-    title: "Catch-up modules",
-    description: "Optional foundations like 'Algebra for Physics' or 'Grammar for Essays' to bridge real gaps.",
+    title: "isiZulu · Afrikaans · isiXhosa",
+    description: "Key explanations and AI replies in your home language.",
     accent: "primary" as const,
   },
   {
     icon: <VolunteerActivismIcon />,
-    title: "NSFAS & bursary navigator",
-    description: "Updated guides, deadline reminders, document checklists. Demystified, in plain language.",
+    title: "NSFAS & bursary nav",
+    description: "Deadlines, document checklists, eligibility — in plain language.",
     accent: "primary" as const,
   },
   {
     icon: <AssessmentIcon />,
-    title: "IEB & NSC past papers",
-    description: "AI links past paper questions to your specific upcoming SBA — instant, relevant practice.",
-    accent: "primary" as const,
-  },
-  {
-    icon: <FavoriteIcon />,
-    title: "Mental health, normalised",
-    description: "Stress is part of matric — we frame struggle as growth and connect you to a psychologist when needed.",
+    title: "IEB · NSC · Cambridge",
+    description: "Real past papers, real markschemes, linked to your upcoming SBAs.",
     accent: "primary" as const,
   },
 ];

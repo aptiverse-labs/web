@@ -393,7 +393,12 @@ function RecentNotificationsCard({
                         : n.kind === "alert"
                           ? "warning.main"
                           : "primary.main",
-                    color: "#fff",
+                    color:
+                      n.kind === "celebration"
+                        ? "secondary.contrastText"
+                        : n.kind === "alert"
+                          ? "warning.contrastText"
+                          : "primary.contrastText",
                     fontSize: "0.75rem",
                   }}
                 >

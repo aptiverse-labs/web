@@ -61,7 +61,7 @@ export function Hero() {
                     bgcolor: "success.main",
                   }}
                 />
-                Built for SA Grade 11 & 12
+                Built for SA Grades 10–12 (FET phase)
               </Box>
             </motion.div>
 
@@ -79,7 +79,7 @@ export function Hero() {
                   lineHeight: 1.05,
                 }}
               >
-                The student success platform built for matric.
+                The student success platform for South African high school.
               </Typography>
             </motion.div>
 
@@ -98,7 +98,7 @@ export function Hero() {
               >
                 Aptiverse unifies SBA preparation, mastery tracking, wellbeing,
                 tutoring and bursaries into a single, calm workspace —
-                purpose-built for South African Grade 11 & 12 learners.
+                purpose-built for South African FET-phase learners (Grades 10–12).
               </Typography>
             </motion.div>
 

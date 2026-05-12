@@ -6,7 +6,7 @@ import { persist } from "zustand/middleware";
 export type Role = "student" | "parent" | "teacher" | "school_admin" | "tutor" | "admin" | "super_admin";
 
 export const ROLES: { value: Role; label: string; description: string }[] = [
-  { value: "student", label: "Student", description: "Grade 11-12 learner" },
+  { value: "student", label: "Student", description: "Grades 10–12 learner" },
   { value: "parent", label: "Parent / Guardian", description: "Supporting your child" },
   { value: "teacher", label: "Teacher", description: "Class educator" },
   { value: "school_admin", label: "School Admin", description: "School leadership" },

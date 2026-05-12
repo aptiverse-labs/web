@@ -20,7 +20,7 @@ export default function Page() {
       features={[
         { icon: <StorefrontIcon />, title: "Course marketplace", description: "Sell on-demand courses (curriculum-aligned) with one-time pricing.", accent: "primary" },
         { icon: <EventAvailableIcon />, title: "Smart booking", description: "Match with students by subject, level and timezone. Calendar synced.", accent: "secondary" },
-        { icon: <PaymentsIcon />, title: "Instant payouts", description: "Stripe-powered earnings dashboard with weekly payouts.", accent: "info" },
+        { icon: <PaymentsIcon />, title: "Instant payouts", description: "Earnings dashboard with weekly payouts to your bank — cards & EFT supported.", accent: "info" },
         { icon: <StarIcon />, title: "Reputation that compounds", description: "Verified reviews and an objective performance score.", accent: "warning" },
         { icon: <GroupsIcon />, title: "Group & 1:1 sessions", description: "Run masterclasses for 50, or quiet 1:1 deep-dives.", accent: "primary" },
         { icon: <VerifiedIcon />, title: "Verified tutor badge", description: "Background check + reference verification — trust by default.", accent: "success" },

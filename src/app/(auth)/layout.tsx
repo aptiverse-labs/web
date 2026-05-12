@@ -26,10 +26,10 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </Box>
         <Stack spacing={2}>
           <Typography variant="h2" component="p" sx={{ fontWeight: 700, lineHeight: 1.15 }}>
-            Grow with confidence — your matric, on your side.
+            Grow with confidence — high school, on your side.
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.92, maxWidth: 420 }}>
-            Join thousands of South African Grade 11 & 12 learners using Aptiverse for SBA prep, mastery tracking, wellbeing and bursaries.
+            Join thousands of South African FET-phase learners (Grades 10–12) using Aptiverse for SBA prep, mastery tracking, wellbeing and bursaries.
           </Typography>
         </Stack>
         <Typography variant="caption" sx={{ opacity: 0.85 }}>
