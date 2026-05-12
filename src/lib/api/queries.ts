@@ -542,6 +542,37 @@ export const useFeatureFlags = () =>
 // see plan info. Long staleTime — pricing rarely changes, and a stale read
 // is harmless (worst case the user sees yesterday's price on the billing
 // page, then a refresh fixes it).
+export type MembershipDto = {
+  subscriptionId: string;
+  planCode: string;
+  planName: string;
+  role: string;
+  status: string;
+  joinedAt: string;
+};
+
+export type UserEntitlementsDto = {
+  primaryPlanCode: string;
+  features: string[];
+  memberships: MembershipDto[];
+};
+
+// Live entitlements for the signed-in user. The NextAuth session has a
+// snapshot of features + planCode baked into the JWT at login time, but
+// it goes stale the moment a plan changes (subscription added, role
+// changed, admin gift, etc.). This query is the source of truth for
+// "what can this user do right now". The session value is the SSR-safe
+// fallback for the first paint.
+export const useMyEntitlements = () =>
+  useQuery<UserEntitlementsDto>({
+    queryKey: ["entitlements", "me"],
+    queryFn: () => apiClient.get<UserEntitlementsDto>("/api/entitlements/me"),
+    staleTime: 30_000,
+    // Refetch on focus so a tab left open picks up plan changes without
+    // requiring a hard refresh.
+    refetchOnWindowFocus: true,
+  });
+
 export type PlanQuotaDto = {
   quotaKey: string;
   perMonth: number; // -1 = unlimited

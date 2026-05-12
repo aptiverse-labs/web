@@ -44,8 +44,23 @@ export const componentOverrides = (theme: Theme): Components<Theme> => ({
       },
       containedPrimary: {
         backgroundColor: theme.palette.primary.main,
+        // Critical: MUI's default contained styles bind color → contrastText
+        // via the colour-specific class, but this override REPLACES that
+        // selector wholesale, so we must restate the color binding or text
+        // falls back to text.primary (near-black) and AA contrast tanks.
+        // Was visible as black-on-dark-green for `<Button variant="contained">`.
+        color: theme.palette.primary.contrastText,
         "&:hover": {
           backgroundColor: theme.palette.primary.dark,
+          color: theme.palette.primary.contrastText,
+        },
+      },
+      containedSecondary: {
+        backgroundColor: theme.palette.secondary.main,
+        color: theme.palette.secondary.contrastText,
+        "&:hover": {
+          backgroundColor: theme.palette.secondary.dark,
+          color: theme.palette.secondary.contrastText,
         },
       },
       outlined: {

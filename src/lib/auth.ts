@@ -110,12 +110,23 @@ export const authOptions: AuthOptions = {
       return true;
     },
 
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // Sign-in path — user is populated on first call after authorize().
       if (user) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const u = user as any;
         if (u.aptiverseToken) token.accessToken = u.aptiverseToken;
         if (u.aptiverseUser) token.aptiverse = u.aptiverseUser;
+      }
+      // Refresh path — `useSession().update({ aptiverseToken, aptiverseUser })`
+      // fires this with trigger === "update". Lets us swap in a freshly-issued
+      // JWT (e.g. after a plan change) without making the user re-login. See
+      // useRefreshSession() in lib/hooks/useRefreshSession.ts.
+      if (trigger === "update" && session) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const s = session as any;
+        if (s.aptiverseToken) token.accessToken = s.aptiverseToken;
+        if (s.aptiverseUser) token.aptiverse = s.aptiverseUser;
       }
       return token;
     },
