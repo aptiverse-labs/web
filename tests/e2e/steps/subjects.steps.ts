@@ -98,11 +98,20 @@ When(
 When("I remove the {string} subject", async ({ page, api }, subjectName: string) => {
   const slug = slugFor(subjectName);
 
-  // SubjectCard's remove icon button is labelled "Remove subject"
+  // Click the per-card icon-button (scoped to the card so we don't grab
+  // any other "Remove subject" label that exists on the page — see the
+  // confirm dialog below).
   const heading = page.getByRole("heading", { name: subjectName }).first();
   await heading.waitFor({ state: "visible" });
   const card = heading.locator("xpath=ancestor::*[contains(@class,'MuiCard-root')][1]");
   await card.getByRole("button", { name: /remove subject/i }).click();
+
+  // The IconButton opens a ConfirmDialog (destructive-action UX) with
+  // its own "Remove subject" confirm button. Click it inside the dialog
+  // so we don't re-match the card's icon-button by accident.
+  const dialog = page.getByRole("dialog");
+  await dialog.waitFor({ state: "visible", timeout: 5_000 });
+  await dialog.getByRole("button", { name: /remove subject/i }).click();
 
   // Poll API until the subject is actually gone before letting the
   // Then-step assert.

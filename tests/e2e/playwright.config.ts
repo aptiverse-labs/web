@@ -37,6 +37,13 @@ function setupProject(role: string) {
     // doesn't also match `school-admin.setup.ts`.
     testMatch: new RegExp(`(?:^|[\\\\/])${role}\\.setup\\.ts$`),
     use: { ...devices["Desktop Chrome"] },
+    // Setup is the cold-compile victim: each role lands on its own
+    // post-login route (/dashboard, /parent, /school-admin, …) and the
+    // very first hit on each forces Next to compile it from source.
+    // 60s is tight on a cold cache; bump to 180s so a single slow
+    // compile doesn't fail the entire suite. Steady-state runs hit
+    // none of this — the cap only matters for first-time-after-restart.
+    timeout: 180_000,
   };
 }
 
@@ -58,7 +65,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : [["list"]],
-  timeout: 60_000,
+  // 120s test timeout (was 60s). Generous enough that a first-hit
+  // Next.js dev compile of a route (e.g. /about, /school-admin) doesn't
+  // blow past the limit while the rest of the steady-state suite still
+  // finishes in 5-30s each.
+  timeout: 120_000,
   expect: { timeout: 10_000 },
 
   use: {
