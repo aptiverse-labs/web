@@ -298,6 +298,15 @@ export type CreateAssessmentInput = {
 
 export type UpdateAssessmentInput = Partial<CreateAssessmentInput>;
 
+// Refresh the navbar bell after any mutation whose server-side handler
+// can enqueue a notification (assessment submit, goal completion). The
+// producer is selective server-side, so we always invalidate — at most
+// one extra cheap unread-count round-trip per mutation.
+const invalidateNotifications = (qc: ReturnType<typeof useQueryClient>) => {
+  void qc.invalidateQueries({ queryKey: queryKeys.notifications() });
+  void qc.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+};
+
 export const useCreateAssessment = () => {
   const qc = useQueryClient();
   return useMutation({
@@ -317,6 +326,10 @@ export const useUpdateAssessment = () => {
     onSuccess: (_data, vars) => {
       void qc.invalidateQueries({ queryKey: queryKeys.assessments() });
       void qc.invalidateQueries({ queryKey: queryKeys.assessment(vars.id) });
+      // Server fires a "Draft submitted" notification on the transition
+      // into submitted; refresh the bell so the user sees it without a
+      // page reload.
+      invalidateNotifications(qc);
     },
   });
 };
@@ -377,6 +390,9 @@ export const useUpdateGoal = () => {
       apiClient.patch<Goal>(`/api/goals/${id}`, patch),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.goals() });
+      // Server fires a celebration notification when this PATCH pushes
+      // progress across the 100% line.
+      invalidateNotifications(qc);
     },
   });
 };
