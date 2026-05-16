@@ -26,8 +26,13 @@ import { signOut, useSession } from "next-auth/react";
 import { ColorModeToggle } from "@/components/common/ColorModeToggle";
 import { Logo } from "@/components/common/Logo";
 import { initials } from "@/lib/format";
-import { NOTIFICATIONS } from "@/lib/mockData";
+import {
+  useNotifications,
+  useUnreadNotificationsCount,
+  useMarkNotificationRead,
+} from "@/lib/api/queries";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SIDEBAR_WIDTH } from "./Sidebar";
 
 type Props = {
@@ -37,6 +42,7 @@ type Props = {
 export function AppTopBar({ onMobileMenuClick }: Props) {
   const [profileEl, setProfileEl] = useState<null | HTMLElement>(null);
   const [notifEl, setNotifEl] = useState<null | HTMLElement>(null);
+  const router = useRouter();
   const { data: session } = useSession();
   const u = (session?.user ?? {}) as { name?: string | null; email?: string | null; firstName?: string; lastName?: string };
   const displayName =
@@ -45,7 +51,28 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
       : (u.name ?? u.email ?? "Aptiverse");
   const subtitle = u.email ?? "";
 
-  const unreadCount = NOTIFICATIONS.filter((n) => !n.read).length;
+  // Bell badge counts unread server-side. Separate query from the list
+  // below so we can keep this badge refreshing on window focus without
+  // re-shipping the full 50-row list every time.
+  const unreadQuery = useUnreadNotificationsCount();
+  const unreadCount = unreadQuery.data?.count ?? 0;
+
+  // Recent notifications for the dropdown preview. Only fired once the
+  // user opens the menu — no point shipping the list with every page
+  // load when most users will never open this menu.
+  const recentQuery = useNotifications();
+  const recent = (recentQuery.data ?? []).slice(0, 5);
+  const markRead = useMarkNotificationRead();
+
+  const handleNotifClick = (
+    id: string,
+    read: boolean,
+    actionHref: string | null | undefined,
+  ) => {
+    if (!read) markRead.mutate(id);
+    setNotifEl(null);
+    if (actionHref) router.push(actionHref);
+  };
 
   return (
     <AppBar position="sticky">
@@ -122,8 +149,20 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
           <ColorModeToggle />
 
           <Tooltip title="Notifications">
-            <IconButton onClick={(e) => setNotifEl(e.currentTarget)} color="inherit">
-              <Badge badgeContent={unreadCount} color="error">
+            <IconButton
+              onClick={(e) => setNotifEl(e.currentTarget)}
+              color="inherit"
+              aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : "Notifications"}
+            >
+              <Badge
+                // Hide the badge when the count is zero or still loading
+                // (avoids a brief "0" flash before the first fetch lands).
+                badgeContent={unreadCount}
+                color="error"
+                overlap="circular"
+                invisible={unreadCount === 0}
+                max={99}
+              >
                 <NotificationsIcon />
               </Badge>
             </IconButton>
@@ -139,19 +178,65 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                 Notifications
               </Typography>
+              {unreadCount > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  {unreadCount} unread
+                </Typography>
+              )}
             </Box>
-            {NOTIFICATIONS.slice(0, 5).map((n) => (
-              <MenuItem key={n.id} sx={{ alignItems: "flex-start", py: 1.5, whiteSpace: "normal" }}>
+
+            {recentQuery.isLoading && (
+              <Box sx={{ px: 2, py: 3, textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  Loading…
+                </Typography>
+              </Box>
+            )}
+
+            {recentQuery.isSuccess && recent.length === 0 && (
+              <Box sx={{ px: 2, py: 3, textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  You&apos;re all caught up.
+                </Typography>
+              </Box>
+            )}
+
+            {recent.map((n) => (
+              <MenuItem
+                key={n.id}
+                onClick={() => handleNotifClick(n.id, n.read, n.actionHref)}
+                sx={{
+                  alignItems: "flex-start",
+                  py: 1.5,
+                  whiteSpace: "normal",
+                  bgcolor: n.read
+                    ? "transparent"
+                    : (t) =>
+                        t.palette.mode === "dark"
+                          ? "rgba(63,157,149,0.06)"
+                          : "rgba(15,105,99,0.04)",
+                }}
+              >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body2" sx={{ fontWeight: n.read ? 400 : 600 }}>
                     {n.title}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
                     {n.body}
                   </Typography>
                 </Box>
               </MenuItem>
             ))}
+
             <Divider />
             <MenuItem component={Link} href="/dashboard/notifications" onClick={() => setNotifEl(null)}>
               <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
