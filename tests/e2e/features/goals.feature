@@ -19,3 +19,18 @@ Feature: Goals
     Given I have a goal titled "Eat better"
     When I reset my academic profile
     Then the API should still report 1 goal
+
+  @notifications
+  Scenario: Completing a goal triggers a celebration notification
+    Given my notifications are all marked read
+    And I have a goal titled "Test sprint"
+    When I push that goal to 100% progress
+    Then the API should report 1 unread notification
+    And that notification should be titled "Goal achieved: Test sprint"
+
+  @notifications
+  Scenario: Re-PATCH on a goal already at 100% does not re-fire the celebration
+    Given my notifications are all marked read
+    And I have a goal titled "Steady" at 100% progress
+    When I push that goal to 100% progress
+    Then the API should report 0 unread notifications

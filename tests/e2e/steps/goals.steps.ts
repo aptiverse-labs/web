@@ -37,6 +37,25 @@ Given("I have a goal titled {string}", async ({ api }, title: string) => {
   });
 });
 
+// Seeds a goal already at 100% progress without going through the patch
+// path — used by the celebration-idempotency test. Setting progress on
+// CREATE doesn't trigger the producer (the producer only fires on a
+// PATCH transition from <100 to >=100), which is exactly what we need
+// to verify "PATCH-to-100 on an already-100 goal doesn't re-fire."
+Given(
+  "I have a goal titled {string} at 100% progress",
+  async ({ api }, title: string) => {
+    await api.post("/api/goals", {
+      title,
+      description: "",
+      target: "",
+      category: "academic",
+      progress: 100,
+      dueDate: new Date(Date.now() + 14 * 86400_000).toISOString(),
+    });
+  },
+);
+
 When("I reset my academic profile", async ({ api }) => {
   await api.post("/api/academic-planning/me/reset");
 });

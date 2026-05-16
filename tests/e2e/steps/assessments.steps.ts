@@ -59,3 +59,25 @@ Then(
     expect(rows.map((r) => r.title)).toContain(title);
   },
 );
+
+// Seeds an assessment via the API for the notification-producer tests.
+// We POST directly rather than driving the /new form because the test
+// is about the PATCH→submitted transition, not the create flow. Looks
+// up the enrolled subject by display name so the Given reads naturally.
+Given(
+  "I have an assessment {string} in subject {string} with status {string}",
+  async ({ api }, title: string, subjectName: string, status: string) => {
+    type EnrolledSubject = { subjectId: string; name: string };
+    const enrolled = await api.get<EnrolledSubject[]>("/api/academic-planning/subjects");
+    const match = enrolled.find((s) => s.name === subjectName);
+    expect(match, `student is not enrolled in subject '${subjectName}'`).toBeDefined();
+    await api.post("/api/academic-planning/assessments", {
+      subjectId: match!.subjectId,
+      title,
+      type: "test",
+      weight: 10,
+      dueDate: new Date(Date.now() + 14 * 86400_000).toISOString(),
+      status,
+    });
+  },
+);

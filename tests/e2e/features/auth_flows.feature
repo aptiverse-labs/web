@@ -21,3 +21,8 @@ Feature: Auth flow pages
   Scenario: Verify-email with invalid token shows the failure card
     When I open "/verify-email?userId=fake&token=expired"
     Then I should see "Couldn't verify"
+
+  @notifications
+  Scenario: Registering a new account creates a welcome notification
+    When I register a fresh student account
+    Then their first notification should start with "Welcome to Aptiverse"
