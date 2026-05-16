@@ -8,12 +8,16 @@ import Button from "@mui/material/Button";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNoneOutlined";
+import Link from "next/link";
 import { PageHeader } from "@/components/common/PageHeader";
 import { Dot } from "@/components/common/Dot";
 import { QueryStates } from "@/components/common/QueryStates";
-import { useNotifications } from "@/lib/api/queries";
-import type { Notification } from "@/lib/mockData";
-import { formatRelative } from "@/lib/format";
+import {
+  useNotifications,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+  type AppNotification,
+} from "@/lib/api/queries";
 import { RelativeTime } from "@/components/common/RelativeTime";
 
 const KIND_AVATAR: Record<string, { emoji: string; color: string }> = {
@@ -25,6 +29,11 @@ const KIND_AVATAR: Record<string, { emoji: string; color: string }> = {
 
 export default function NotificationsPage() {
   const query = useNotifications();
+  const markAll = useMarkAllNotificationsRead();
+
+  // Only enable "Mark all read" when there's something to mark — saves
+  // a noop POST and gives the button a clearer disabled state.
+  const hasUnread = (query.data ?? []).some((n) => !n.read);
 
   return (
     <>
@@ -32,7 +41,15 @@ export default function NotificationsPage() {
         title="Notifications"
         description="Reminders, celebrations, and gentle nudges."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Notifications" }]}
-        actions={<Button variant="outlined">Mark all read</Button>}
+        actions={
+          <Button
+            variant="outlined"
+            onClick={() => markAll.mutate()}
+            disabled={!hasUnread || markAll.isPending}
+          >
+            {markAll.isPending ? "Marking…" : "Mark all read"}
+          </Button>
+        }
       />
 
       <QueryStates
@@ -49,16 +66,36 @@ export default function NotificationsPage() {
   );
 }
 
-function NotificationsList({ notifications }: { notifications: Notification[] }) {
+function NotificationsList({ notifications }: { notifications: AppNotification[] }) {
+  const markRead = useMarkNotificationRead();
+
   return (
     <Card>
       <CardContent sx={{ p: 0 }}>
         <Stack divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />}>
           {notifications.map((n) => {
-            const k = KIND_AVATAR[n.kind];
+            const k = KIND_AVATAR[n.kind] ?? KIND_AVATAR.info;
+            const onView = () => {
+              if (!n.read) markRead.mutate(n.id);
+            };
             return (
-              <Stack key={n.id} direction="row" spacing={2} alignItems="flex-start" sx={{ p: 2.5 }}>
-                <Avatar sx={{ bgcolor: k.color, color: "white", width: 40, height: 40 }}>{k.emoji}</Avatar>
+              <Stack
+                key={n.id}
+                direction="row"
+                spacing={2}
+                alignItems="flex-start"
+                sx={{
+                  p: 2.5,
+                  bgcolor: n.read ? "transparent" : (t) =>
+                    t.palette.mode === "dark"
+                      ? "rgba(63,157,149,0.05)"
+                      : "rgba(15,105,99,0.03)",
+                  transition: "background-color 200ms ease",
+                }}
+              >
+                <Avatar sx={{ bgcolor: k.color, color: "primary.contrastText", width: 40, height: 40 }}>
+                  {k.emoji}
+                </Avatar>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Typography variant="subtitle2" sx={{ fontWeight: n.read ? 400 : 700 }}>
@@ -73,7 +110,25 @@ function NotificationsList({ notifications }: { notifications: Notification[] })
                     <RelativeTime iso={n.time} />
                   </Typography>
                 </Box>
-                <Button size="small">View</Button>
+                <Stack direction="row" spacing={0.5}>
+                  {n.actionHref ? (
+                    <Button
+                      component={Link}
+                      href={n.actionHref}
+                      size="small"
+                      variant={n.read ? "text" : "outlined"}
+                      onClick={onView}
+                    >
+                      View
+                    </Button>
+                  ) : (
+                    !n.read && (
+                      <Button size="small" variant="text" onClick={onView}>
+                        Dismiss
+                      </Button>
+                    )
+                  )}
+                </Stack>
               </Stack>
             );
           })}

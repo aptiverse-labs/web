@@ -471,11 +471,72 @@ export const useClasses = () =>
     queryFn: () => apiClient.get<ClassRecord[]>("/api/academic-planning/classes"),
   });
 
+export type AppNotification = Notification & { actionHref?: string | null };
+
 export const useNotifications = () =>
-  useQuery<Notification[]>({
+  useQuery<AppNotification[]>({
     queryKey: queryKeys.notifications(),
-    queryFn: () => apiClient.get<Notification[]>("/api/notifications"),
+    queryFn: () => apiClient.get<AppNotification[]>("/api/notifications"),
   });
+
+// Lightweight count for the navbar bell badge. Polled more aggressively
+// than the full list — short staleTime + refetch on focus so the badge
+// stays current without re-shipping all 50 rows.
+export const useUnreadNotificationsCount = () =>
+  useQuery<{ count: number }>({
+    queryKey: ["notifications", "unread-count"],
+    queryFn: () => apiClient.get<{ count: number }>("/api/notifications/unread-count"),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+
+// Mark a single notification as read. Optimistic so the bold + dot
+// disappear immediately while the PATCH is in flight.
+export const useMarkNotificationRead = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => apiClient.patch<void>(`/api/notifications/${id}/read`),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: queryKeys.notifications() });
+      const previous = qc.getQueryData<AppNotification[]>(queryKeys.notifications());
+      qc.setQueryData<AppNotification[]>(queryKeys.notifications(), (rows) =>
+        rows?.map((n) => (n.id === id ? { ...n, read: true } : n)) ?? rows,
+      );
+      return { previous };
+    },
+    onError: (_err, _id, ctx) => {
+      if (ctx?.previous) qc.setQueryData(queryKeys.notifications(), ctx.previous);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.notifications() });
+      void qc.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+    },
+  });
+};
+
+// Mark every unread as read in one shot — page-header "Mark all read".
+export const useMarkAllNotificationsRead = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiClient.post<{ marked: number }>("/api/notifications/mark-all-read"),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: queryKeys.notifications() });
+      const previous = qc.getQueryData<AppNotification[]>(queryKeys.notifications());
+      qc.setQueryData<AppNotification[]>(queryKeys.notifications(), (rows) =>
+        rows?.map((n) => ({ ...n, read: true })) ?? rows,
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(queryKeys.notifications(), ctx.previous);
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.notifications() });
+      void qc.invalidateQueries({ queryKey: ["notifications", "unread-count"] });
+    },
+  });
+};
 
 export const useStudyGroups = () =>
   useQuery<StudyGroup[]>({

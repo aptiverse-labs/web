@@ -10,7 +10,6 @@ import Grid from "@mui/material/Grid";
 import Link from "next/link";
 import { GradientBackdrop } from "@/components/common/GradientBackdrop";
 import { Section } from "@/components/common/Section";
-import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 
 
 export default function Page() {
@@ -40,27 +39,7 @@ export default function Page() {
         </Box>
       </GradientBackdrop>
 
-      <Section>
-        <Box
-          sx={{
-            aspectRatio: "16 / 9",
-            borderRadius: 3,
-            bgcolor: "action.hover",
-            display: "grid",
-            placeItems: "center",
-            color: "text.secondary",
-            border: 1,
-            borderColor: "divider",
-          }}
-        >
-          <Stack alignItems="center" spacing={1}>
-            <PlayCircleIcon sx={{ fontSize: 64, color: "primary.main" }} />
-            <Typography>Demo video placeholder</Typography>
-          </Stack>
-        </Box>
-      </Section>
-
-      <Section bg="paper" eyebrow="Interactive" title="Walk through every view">
+      <Section eyebrow="Interactive" title="Walk through every view">
         <Grid container spacing={3}>
           {[
             { title: "Student view", href: "/dashboard", body: "Practice tests, goals, the AI tutor, and your wellbeing space." },
