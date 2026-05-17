@@ -10,7 +10,8 @@
     "type-check": "tsc --noEmit",
     "e2e": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts",
     "e2e:headed": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts --headed",
-    "e2e:ui": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts --ui"
+    "e2e:ui": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts --ui",
+    "postinstall": "node scripts/copy-mathlive-fonts.mjs"
   },
   "dependencies": {
     "@emotion/cache": "^11.13.5",

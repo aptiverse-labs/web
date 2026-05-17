@@ -36,9 +36,17 @@ let registerPromise: Promise<void> | null = null;
 function ensureMathLive(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (registerPromise) return registerPromise;
-  registerPromise = import("mathlive").then(() => {
-    // Side-effect import is enough — mathlive auto-registers
-    // <math-field> on its own. Just await the chunk load.
+  registerPromise = import("mathlive").then((mod) => {
+    // MathLive auto-detects fonts from its script URL, which under
+    // Next.js + Turbopack chunking resolves to a 404. Point it at our
+    // public/ directory where the postinstall script copies the
+    // KaTeX fonts. Without this the math glyphs render in fallback
+    // fonts and the console fills with font-fetch warnings.
+    const MathfieldElement = (mod as unknown as { MathfieldElement?: { fontsDirectory: string } })
+      .MathfieldElement;
+    if (MathfieldElement) {
+      MathfieldElement.fontsDirectory = "/mathlive-fonts";
+    }
   });
   return registerPromise;
 }

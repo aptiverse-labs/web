@@ -44,6 +44,7 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { TasksEditor } from "@/components/workspace/TasksEditor";
 import { StepWorkingEditor } from "@/components/workspace/StepWorkingEditor";
 import { MathKeyboardStyles } from "@/components/workspace/MathKeyboardStyles";
+import { UploadsStrip } from "@/components/workspace/UploadsStrip";
 import {
   useAssessments,
   useSubjects,
@@ -874,10 +875,18 @@ function WorkingPanel({
   const useStructured =
     subjectCategory === "mathematics" || subjectCategory === "natural_science";
 
-  if (useStructured) {
-    return <StructuredWorking draft={draft} />;
-  }
-  return <PlainWorking draft={draft} subjectName={subjectName} />;
+  return (
+    <Stack spacing={3}>
+      {useStructured ? (
+        <StructuredWorking draft={draft} />
+      ) : (
+        <PlainWorking draft={draft} subjectName={subjectName} />
+      )}
+      {/* Attachments — works for every subject. Photograph paper
+          working, drop in a PDF brief, screenshot reference material. */}
+      {assessmentId && <UploadsStrip assessmentId={assessmentId} />}
+    </Stack>
+  );
 }
 
 function StructuredWorking({ draft }: { draft: ReturnType<typeof useWorkspaceDraft> }) {

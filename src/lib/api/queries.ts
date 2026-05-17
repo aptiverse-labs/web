@@ -172,6 +172,7 @@ export const queryKeys = {
   plans: () => ["entitlements", "plans"] as const,
   wellbeingSummary: () => ["wellbeing", "summary"] as const,
   moodTrend: (days: number) => ["wellbeing", "mood-trend", days] as const,
+  assessmentUploads: (assessmentId: string) => ["assessment-uploads", assessmentId] as const,
 };
 
 export const useSubjects = () =>
@@ -328,6 +329,75 @@ export const useUpdateAssessment = () => {
       // into submitted; refresh the bell so the user sees it without a
       // page reload.
       invalidateNotifications(qc);
+    },
+  });
+};
+
+// --- Assessment uploads (photos of working, reference PDFs, etc.) ------
+
+export type AssessmentUpload = {
+  id: string;
+  filename: string;
+  contentType: string;
+  sizeBytes: number;
+  url: string;
+  createdAt: string;
+};
+
+export const useAssessmentUploads = (assessmentId: string) =>
+  useQuery<AssessmentUpload[]>({
+    queryKey: queryKeys.assessmentUploads(assessmentId),
+    queryFn: () =>
+      apiClient.get<AssessmentUpload[]>(
+        `/api/academic-planning/assessments/${assessmentId}/uploads`,
+      ),
+    enabled: !!assessmentId,
+  });
+
+// Multipart upload of a single file. Bypasses apiClient because we
+// need FormData not JSON, but reuses the same NextAuth session token
+// the rest of the app reads.
+export const useUploadAssessmentFile = (assessmentId: string) => {
+  const qc = useQueryClient();
+  return useMutation<AssessmentUpload, Error, File>({
+    mutationFn: async (file) => {
+      const { getSession } = await import("next-auth/react");
+      const session = await getSession();
+      const token = (session as { accessToken?: string } | null)?.accessToken;
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5100";
+
+      const fd = new FormData();
+      fd.append("file", file);
+
+      const r = await fetch(
+        `${baseUrl}/api/academic-planning/assessments/${assessmentId}/uploads`,
+        {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          body: fd,
+        },
+      );
+      if (!r.ok) {
+        const text = await r.text();
+        throw new Error(text || `Upload failed (${r.status})`);
+      }
+      return (await r.json()) as AssessmentUpload;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.assessmentUploads(assessmentId) });
+    },
+  });
+};
+
+export const useDeleteAssessmentUpload = (assessmentId: string) => {
+  const qc = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: (uploadId) =>
+      apiClient.delete(
+        `/api/academic-planning/assessments/${assessmentId}/uploads/${uploadId}`,
+      ),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.assessmentUploads(assessmentId) });
     },
   });
 };
