@@ -128,8 +128,12 @@ export default function WorkspacePage() {
   }, [activeAssessments, activeId]);
 
   const activeAssessment = activeAssessments.find((a) => a.id === activeId);
+  // Match on the canonical subject slug — Subject.id is the enrolment
+  // row id, Subject.subjectId is the slug that Assessment.subjectId
+  // also stores. The old lookup compared the wrong fields and always
+  // came back undefined.
   const subject: Subject | undefined = (subjectsQuery.data ?? []).find(
-    (s) => s.id === activeAssessment?.subjectId,
+    (s) => s.subjectId === activeAssessment?.subjectId,
   );
 
   // Tabs for the active assessment's type. Reset to the first tab when
@@ -239,7 +243,7 @@ export default function WorkspacePage() {
     <>
       {safeTab === "notes"    && <NotesPanel    assessmentId={activeId} />}
       {safeTab === "draft"    && <DraftPanel    assessmentId={activeId} draftTitle={activeAssessment.title} />}
-      {safeTab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectCategory={subject?.category} />}
+      {safeTab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectSlug={subject?.subjectId} subjectCategory={subject?.category} />}
       {safeTab === "practice" && <PracticePanel assessment={activeAssessment} subject={subject} />}
     </>
   );
@@ -440,7 +444,7 @@ function PanelByKey({
   switch (tabKey) {
     case "notes":    return <NotesPanel    assessmentId={activeId} />;
     case "draft":    return <DraftPanel    assessmentId={activeId} draftTitle={assessment.title} />;
-    case "working":  return <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectCategory={subject?.category} />;
+    case "working":  return <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectSlug={subject?.subjectId} subjectCategory={subject?.category} />;
     case "practice": return <PracticePanel assessment={assessment} subject={subject} />;
   }
 }
@@ -840,14 +844,28 @@ function DraftPanel({ assessmentId, draftTitle }: { assessmentId: string | null;
   );
 }
 
-// Subject-aware symbol palette. Returns an empty list for any category
-// that doesn't routinely use these glyphs (languages, humanities,
-// commerce, etc.) — the palette renders nothing in those cases so the
-// Working surface stays clean.
-function symbolsForCategory(category?: string): string[] {
-  if (category === "mathematics") {
-    return ["×", "÷", "±", "≈", "≤", "≥", "≠", "²", "³", "½", "π", "θ", "Δ", "Σ", "√", "°", "∞", "→", "∝", "∫", "∂"];
+// Subject-aware symbol palette. Keyed by subject slug first so Maths
+// Lit (finance + measurement focused) doesn't get the calculus glyphs
+// Maths Core students need, then falls back to category for everything
+// else. Returns an empty list when there's no good case for a palette
+// (languages, humanities, commerce) so the surface stays clean.
+function symbolsForSubject(subjectId?: string, category?: string): string[] {
+  // Maths Lit: NSC syllabus is finance, data handling, measurement,
+  // probability. No calculus, no analytical geometry. Currency + percent
+  // + comparison + basic stats glyphs are what students actually reach
+  // for. R = Rand (everywhere on Maths Lit papers).
+  if (subjectId === "math_lit") {
+    return ["×", "÷", "±", "≈", "≤", "≥", "≠", "²", "³", "½", "¼", "¾", "%", "R", "π", "°"];
   }
+  if (subjectId === "math" || subjectId === "further_math" || subjectId === "ap_math") {
+    return ["×", "÷", "±", "≈", "≤", "≥", "≠", "²", "³", "π", "θ", "Δ", "Σ", "√", "°", "∞", "→", "∝", "∫", "∂", "ƒ"];
+  }
+  // Catch-all for any mathematics subject we haven't named explicitly.
+  if (category === "mathematics") {
+    return ["×", "÷", "±", "≈", "≤", "≥", "≠", "²", "³", "½", "π", "Δ", "Σ", "√", "°"];
+  }
+  // Physical / Life Sciences — wavelength, micro, ohm, equilibrium
+  // arrows, multiplication dot for units.
   if (category === "natural_science") {
     return ["×", "÷", "±", "≈", "≤", "≥", "²", "³", "π", "Δ", "λ", "μ", "Ω", "√", "°", "→", "↔", "⇌", "·"];
   }
@@ -862,10 +880,12 @@ function symbolsForCategory(category?: string): string[] {
 function WorkingPanel({
   assessmentId,
   subjectName,
+  subjectSlug,
   subjectCategory,
 }: {
   assessmentId: string | null;
   subjectName?: string;
+  subjectSlug?: string;
   subjectCategory?: string;
 }) {
   const draft = useWorkspaceDraft(assessmentId, "scratchpad");
@@ -873,7 +893,7 @@ function WorkingPanel({
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => { setValue(draft.initialContent); }, [draft.initialContent]);
 
-  const symbols = symbolsForCategory(subjectCategory);
+  const symbols = symbolsForSubject(subjectSlug, subjectCategory);
 
   // Insert at the current caret position. If the textarea isn't focused
   // (e.g. user tapped a symbol button on touch), append at the end so
