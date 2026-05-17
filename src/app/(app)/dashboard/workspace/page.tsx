@@ -405,11 +405,19 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      {/* DialogTitle renders an <h2>; inner Typographys explicitly use
+          <div>/<span> so we don't nest headings inside it (invalid HTML
+          + React hydration error). The visual styling stays the same. */}
       <DialogTitle sx={{ pb: 1 }}>
-        <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+        <Typography
+          component="div"
+          variant="overline"
+          color="text.secondary"
+          sx={{ letterSpacing: "0.08em", lineHeight: 1.2 }}
+        >
           Keyboard
         </Typography>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Typography component="span" variant="h6" sx={{ fontWeight: 600 }}>
           Shortcuts
         </Typography>
       </DialogTitle>
