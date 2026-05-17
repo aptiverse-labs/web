@@ -10,6 +10,8 @@ import Skeleton from "@mui/material/Skeleton";
 import CloseIcon from "@mui/icons-material/CloseOutlined";
 import AddPhotoIcon from "@mui/icons-material/AddPhotoAlternateOutlined";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdfOutlined";
+import Collapse from "@mui/material/Collapse";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMoreOutlined";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   useAssessmentUploads,
@@ -35,6 +37,10 @@ export function UploadsStrip({ assessmentId }: { assessmentId: string }) {
   const remove = useDeleteAssessmentUpload(assessmentId);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Collapsed by default once there are uploads — the strip can sit
+  // hidden until the student wants to revisit it. The first-run state
+  // (no uploads) stays expanded so the dropzone is visible and inviting.
+  const [open, setOpen] = useState(true);
 
   const uploads = list.data ?? [];
 
@@ -61,15 +67,45 @@ export function UploadsStrip({ assessmentId }: { assessmentId: string }) {
       <Stack
         direction="row"
         alignItems="center"
-        justifyContent="space-between"
-        sx={{ mb: 1 }}
+        spacing={0.5}
+        sx={{ mb: open ? 1 : 0 }}
       >
+        <IconButton
+          size="small"
+          onClick={() => setOpen((v) => !v)}
+          aria-label={open ? "Hide attachments" : "Show attachments"}
+          aria-expanded={open}
+          sx={{
+            color: "text.secondary",
+            transition: "transform 180ms ease",
+            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+          }}
+        >
+          <ExpandMoreIcon fontSize="small" />
+        </IconButton>
         <Typography
+          onClick={() => setOpen((v) => !v)}
           variant="caption"
           color="text.secondary"
-          sx={{ letterSpacing: "0.06em", fontWeight: 600, textTransform: "uppercase" }}
+          sx={{
+            letterSpacing: "0.06em",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            cursor: "pointer",
+            userSelect: "none",
+            flex: 1,
+          }}
         >
           Attachments
+          {uploads.length > 0 && (
+            <Typography
+              component="span"
+              variant="caption"
+              sx={{ ml: 0.75, color: "text.disabled", fontWeight: 500 }}
+            >
+              {uploads.length}
+            </Typography>
+          )}
         </Typography>
         <Button
           onClick={onPick}
@@ -99,6 +135,8 @@ export function UploadsStrip({ assessmentId }: { assessmentId: string }) {
           {error}
         </Typography>
       )}
+
+      <Collapse in={open} timeout="auto" unmountOnExit>
 
       {list.isLoading ? (
         <Stack direction="row" spacing={1}>
@@ -199,6 +237,7 @@ export function UploadsStrip({ assessmentId }: { assessmentId: string }) {
           </Box>
         </Stack>
       )}
+      </Collapse>
     </Box>
   );
 }
