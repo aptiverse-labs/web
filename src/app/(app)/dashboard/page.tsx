@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -37,7 +38,24 @@ import CloudOffOutlinedIcon from "@mui/icons-material/CloudOffOutlined";
 
 dayjs.extend(relativeTime);
 
+// Hidden hello for the matric (or curious dev) who hits F12. Fires
+// once per session, never on subsequent dashboard mounts. Specific to
+// Aptiverse, not generic AI-slop console copy. No tech-stack reveal.
+let easterEggFired = false;
+function devtoolsHello() {
+  if (easterEggFired || typeof window === "undefined") return;
+  easterEggFired = true;
+  // eslint-disable-next-line no-console
+  console.log(
+    "%cAptiverse%c · built for the matric stretch · hello@aptiverse.app",
+    "font: 700 16px sans-serif; color: #08534F; letter-spacing: -0.02em;",
+    "color: #5F5E58; font-size: 12px;",
+  );
+}
+
 export default function StudentDashboardPage() {
+  useEffect(devtoolsHello, []);
+
   const subjectsQuery = useSubjects();
   const assessmentsQuery = useAssessments();
   const goalsQuery = useGoals();
