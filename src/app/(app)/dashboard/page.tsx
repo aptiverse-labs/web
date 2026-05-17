@@ -26,7 +26,7 @@ import {
   useAssessments,
   useGoals,
 } from "@/lib/api/queries";
-import { type Subject } from "@/lib/mockData";
+import { type Goal, type Subject } from "@/lib/mockData";
 import { enter, enterStagger } from "@/lib/motion";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
 import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
@@ -696,11 +696,7 @@ function MasteryTrendCard({
   );
 }
 
-// ─── Active goals (softer treatment) ──────────────────────────────────
-// At-risk chip dropped from filled-warning to outlined: keeps the
-// honest signal (PRODUCT.md: Honesty before flash) without weaponising
-// it visually. A returning student with one at-risk goal opens the
-// page and sees an outlined chip, not a red lozenge in their face.
+// ─── Active goals ─────────────────────────────────────────────────────
 
 function ActiveGoalsCard({
   goals,
@@ -709,7 +705,7 @@ function ActiveGoalsCard({
   onRetry,
   isEmpty,
 }: {
-  goals: { id: string; title: string; progress: number; status: string }[];
+  goals: Goal[];
   loading: boolean;
   isError: boolean;
   onRetry: () => void;
@@ -726,8 +722,12 @@ function ActiveGoalsCard({
             sx={{ mb: 2 }}
           >
             <Box>
+              {/* Overline used to read "In progress" but the list
+                  includes at-risk goals, which aren't really "in
+                  progress" in the positive sense. "Tracking" is
+                  honest cover for both states. */}
               <Typography variant="overline" color="text.secondary">
-                In progress
+                Tracking
               </Typography>
               <Typography variant="h5" sx={{ fontWeight: 600 }}>
                 Active goals
@@ -744,8 +744,8 @@ function ActiveGoalsCard({
           </Stack>
           {loading ? (
             <Stack spacing={1.5}>
-              <Skeleton variant="rounded" height={36} />
-              <Skeleton variant="rounded" height={36} />
+              <Skeleton variant="rounded" height={56} />
+              <Skeleton variant="rounded" height={56} />
             </Stack>
           ) : isError ? (
             <CardError onRetry={onRetry} what="your goals" />
@@ -754,47 +754,95 @@ function ActiveGoalsCard({
               No active goals yet. Set one to start tracking.
             </Typography>
           ) : (
-            <Stack spacing={2}>
-              {goals.map((g) => {
-                const atRisk = g.status === "at_risk";
-                return (
-                  <Box key={g.id}>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      sx={{ mb: 0.5, gap: 1 }}
-                    >
-                      <Typography
-                        variant="body2"
-                        sx={{ fontWeight: 500, flex: 1, minWidth: 0 }}
-                        noWrap
-                      >
-                        {g.title}
-                      </Typography>
-                      <Chip
-                        label={`${g.progress}%`}
-                        size="small"
-                        variant="outlined"
-                        color={atRisk ? "warning" : "default"}
-                        sx={{
-                          fontWeight: 600,
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      />
-                    </Stack>
-                    <LinearProgress
-                      variant="determinate"
-                      value={g.progress}
-                      color={atRisk ? "warning" : "primary"}
-                    />
-                  </Box>
-                );
-              })}
+            <Stack spacing={1.5}>
+              {goals.map((g) => (
+                <GoalRow key={g.id} g={g} />
+              ))}
             </Stack>
           )}
         </CardContent>
       </Card>
     </motion.div>
+  );
+}
+
+// Goal row clarifies three things the previous version didn't:
+//   1. What is the percentage progress AGAINST? -- surface the target
+//      string under the title so "62%" reads as "62% of [target]".
+//   2. What does "at_risk" mean? -- pair the warning colour with the
+//      words "Falling behind" so colour isn't the only signal
+//      (DESIGN.md: colour is never the only signal).
+//   3. Why am I looking at this if I can't act on it? -- wrap the
+//      whole row as a Link to /dashboard/goals/{id}, matching the SBA
+//      row's interaction model. Hover state matches too.
+
+function GoalRow({ g }: { g: Goal }) {
+  const atRisk = g.status === "at_risk";
+  return (
+    <Box
+      component={Link}
+      href={`/dashboard/goals/${g.id}`}
+      sx={{
+        display: "block",
+        textDecoration: "none",
+        color: "inherit",
+        px: 1.5,
+        py: 1.25,
+        mx: -1.5,
+        borderRadius: 1.5,
+        transition:
+          "background-color 180ms cubic-bezier(0.165, 0.84, 0.44, 1)",
+        "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.04) },
+      }}
+    >
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="flex-start"
+        sx={{ mb: 0.75, gap: 1 }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 600 }}
+            noWrap
+          >
+            {g.title}
+          </Typography>
+          {g.target && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", mt: 0.25 }}
+              noWrap
+            >
+              Target: {g.target}
+            </Typography>
+          )}
+        </Box>
+        <Stack alignItems="flex-end" spacing={0.25} sx={{ flexShrink: 0 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
+          >
+            {g.progress}%
+          </Typography>
+          {atRisk && (
+            <Typography
+              variant="caption"
+              sx={{ color: "warning.dark", fontWeight: 600 }}
+            >
+              Falling behind
+            </Typography>
+          )}
+        </Stack>
+      </Stack>
+      <LinearProgress
+        variant="determinate"
+        value={g.progress}
+        color={atRisk ? "warning" : "primary"}
+        aria-label={`${g.title}: ${g.progress}% complete${atRisk ? ", falling behind" : ""}`}
+      />
+    </Box>
   );
 }
