@@ -42,6 +42,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TasksEditor } from "@/components/workspace/TasksEditor";
+import { MathEditor } from "@/components/workspace/MathEditor";
 import { UploadsStrip } from "@/components/workspace/UploadsStrip";
 import {
   useAssessments,
@@ -244,7 +245,7 @@ export default function WorkspacePage() {
     <>
       {safeTab === "notes"    && <NotesPanel    assessmentId={activeId} />}
       {safeTab === "draft"    && <DraftPanel    assessmentId={activeId} draftTitle={activeAssessment.title} />}
-      {safeTab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />}
+      {safeTab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectCategory={subject?.category} />}
       {safeTab === "practice" && <PracticePanel assessment={activeAssessment} subject={subject} />}
     </>
   );
@@ -445,7 +446,7 @@ function PanelByKey({
   switch (tabKey) {
     case "notes":    return <NotesPanel    assessmentId={activeId} />;
     case "draft":    return <DraftPanel    assessmentId={activeId} draftTitle={assessment.title} />;
-    case "working":  return <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />;
+    case "working":  return <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectCategory={subject?.category} />;
     case "practice": return <PracticePanel assessment={assessment} subject={subject} />;
   }
 }
@@ -859,56 +860,84 @@ function DraftPanel({ assessmentId, draftTitle }: { assessmentId: string | null;
 // Both modes use the same `scratchpad` draft channel. The structured
 // editor persists as JSON; legacy plain-text scratchpads are migrated
 // in-place when the editor first parses them.
-// Working surface — plain text scratchpad for reasoning + observations,
-// paired with photo upload for the actual handwritten working.
+// Working surface.
 //
-// Maths/science students don't need a WYSIWYG equation editor here;
-// they do the maths on paper and photograph it (see UploadsStrip).
-// The textarea is for "what I tried", "step by step in words", or
-// quick equations typed inline. Same surface for every subject —
-// simpler beats clever.
+// Maths + natural-science subjects get the Aptiverse-built MathEditor:
+// LaTeX source on the left, KaTeX-rendered preview on the right, with
+// a small toolbar of template buttons (fraction, root, exponent, etc.)
+// for students who don't know LaTeX by hand. Real 2D maths in the
+// preview — no WYSIWYG editor surface to fight.
+//
+// Other subjects get a plain mono textarea — they don't need maths
+// rendering, and shipping it would be bundle weight for nothing.
+//
+// Both modes share the `scratchpad` draft channel; both pair with the
+// UploadsStrip below so students can attach a photo of handwritten
+// working alongside whatever they type.
 function WorkingPanel({
   assessmentId,
   subjectName,
+  subjectCategory,
 }: {
   assessmentId: string | null;
   subjectName?: string;
+  subjectCategory?: string;
 }) {
   const draft = useWorkspaceDraft(assessmentId, "scratchpad");
   const [value, setValue] = useState(draft.initialContent);
   useEffect(() => { setValue(draft.initialContent); }, [draft.initialContent]);
 
+  const showMathEditor =
+    subjectCategory === "mathematics" || subjectCategory === "natural_science";
+
   return (
     <Stack spacing={3}>
-      <Stack spacing={1.5}>
-        <TextField
-          fullWidth
-          multiline
-          minRows={12}
-          placeholder={
-            subjectName
-              ? `${subjectName} — type out your reasoning, observations, or what you tried on paper.`
-              : "Type out your reasoning, observations, or what you tried on paper."
-          }
-          value={value}
-          onChange={(e) => { setValue(e.target.value); draft.queueSave(e.target.value); }}
-          sx={{
-            "& .MuiOutlinedInput-root": { bgcolor: "transparent", border: 0 },
-            "& fieldset": { border: 0 },
-            "& textarea": {
-              fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
-              fontSize: "0.95rem",
-              lineHeight: 1.6,
-            },
-          }}
-        />
-        <Stack direction="row" justifyContent="flex-end">
-          <AutosaveBadge state={draft.state} />
+      {showMathEditor ? (
+        <Stack spacing={1.5}>
+          <MathEditor
+            value={value}
+            onChange={(v) => {
+              setValue(v);
+              draft.queueSave(v);
+            }}
+          />
+          <Stack direction="row" justifyContent="flex-end">
+            <AutosaveBadge state={draft.state} />
+          </Stack>
         </Stack>
-      </Stack>
+      ) : (
+        <Stack spacing={1.5}>
+          <TextField
+            fullWidth
+            multiline
+            minRows={12}
+            placeholder={
+              subjectName
+                ? `${subjectName} — type out your reasoning, observations, or what you tried on paper.`
+                : "Type out your reasoning, observations, or what you tried on paper."
+            }
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              draft.queueSave(e.target.value);
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": { bgcolor: "transparent", border: 0 },
+              "& fieldset": { border: 0 },
+              "& textarea": {
+                fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
+                fontSize: "0.95rem",
+                lineHeight: 1.6,
+              },
+            }}
+          />
+          <Stack direction="row" justifyContent="flex-end">
+            <AutosaveBadge state={draft.state} />
+          </Stack>
+        </Stack>
+      )}
       {/* Attachments — photograph paper working, drop in a PDF brief,
-          screenshot reference material. The primary capture surface
-          for handwritten maths. */}
+          screenshot reference material. */}
       {assessmentId && <UploadsStrip assessmentId={assessmentId} />}
     </Stack>
   );
