@@ -727,21 +727,21 @@ function FocusTimer({ assessmentId }: { assessmentId: string }) {
 // EDITOR PANELS
 // ============================================================
 
+// Autosave indicator. Only renders when there's something the student
+// needs to know about — a failed save. Saving / Saved / Idle states
+// stay silent; the student trusts that autosave works because their
+// previous keystrokes haven't disappeared. Showing a constant green
+// "Saved" badge is noise (the user flagged it).
 function AutosaveBadge({ state }: { state: AutosaveState }) {
-  let label: string;
-  let color: "default" | "success" | "warning" | "error" = "default";
-  if (state.status === "saving") {
-    label = "Saving…"; color = "warning";
-  } else if (state.status === "saved" && state.lastSavedAt) {
-    label = `Saved ${dayjs(state.lastSavedAt).format("HH:mm")}`; color = "success";
-  } else if (state.status === "dirty") {
-    label = "Unsaved"; color = "warning";
-  } else if (state.status === "error") {
-    label = "Save failed"; color = "error";
-  } else {
-    label = "Idle";
-  }
-  return <Chip label={label} size="small" color={color === "default" ? undefined : color} variant="outlined" />;
+  if (state.status !== "error") return null;
+  return (
+    <Chip
+      label="Save failed — check your connection"
+      size="small"
+      color="error"
+      variant="outlined"
+    />
+  );
 }
 
 // Plain-text notes — works for any subject.
