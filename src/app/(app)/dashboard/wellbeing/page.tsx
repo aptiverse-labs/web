@@ -15,22 +15,13 @@ import { motion } from "framer-motion";
 import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useWellbeingSummary, useMoodTrend } from "@/lib/api/queries";
+import { enter, enterStagger } from "@/lib/motion";
 import type { MoodPoint, WellbeingSummary } from "@/lib/mockData";
 import SelfImprovementIcon from "@mui/icons-material/SelfImprovementOutlined";
 import PsychologyIcon from "@mui/icons-material/PsychologyOutlined";
-import HeadphonesIcon from "@mui/icons-material/HeadphonesOutlined";
 import MenuBookIcon from "@mui/icons-material/MenuBookOutlined";
 import EditNoteIcon from "@mui/icons-material/EditNoteOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
-
-// One enter animation, used everywhere on the page so motion stays
-// internally consistent. Spring + 8px rise, short stagger — the
-// emil-kowalski rubric: motion has intent, never decorates.
-const enter = {
-  initial: { opacity: 0, y: 8 },
-  animate: { opacity: 1, y: 0 },
-  transition: { type: "spring", stiffness: 300, damping: 30 } as const,
-};
 
 const STRESS_COPY: Record<WellbeingSummary["stressSignal"], { label: string; hint: string }> = {
   none:     { label: "No signal yet", hint: "Check in to start tracking" },
@@ -353,12 +344,7 @@ function QuickTools() {
       <Grid container spacing={2.5}>
         {TOOLS.map((t, i) => (
           <Grid key={t.title} size={{ xs: 12, sm: 6, md: 3 }}>
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30, delay: i * 0.04 }}
-              style={{ height: "100%" }}
-            >
+            <motion.div {...enterStagger(i)} style={{ height: "100%" }}>
               <Card sx={{ height: "100%" }}>
                 <CardActionArea component={Link} href={t.href} sx={{ height: "100%" }}>
                   <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 1.5, height: "100%" }}>

@@ -21,6 +21,29 @@ export const componentOverrides = (theme: Theme): Components<Theme> => ({
         backgroundColor: alpha(theme.palette.primary.main, 0.18),
         color: theme.palette.text.primary,
       },
+      // Consistent focus ring across every focusable element. Browsers'
+      // defaults vary wildly — Chrome's is a thick blue rectangle, Safari's
+      // is hairline, Firefox's is dotted. Replace with a calm 2px ring in
+      // the primary colour with an offset so it doesn't crowd the element.
+      // :focus-visible (not :focus) — only shows for keyboard navigation,
+      // not on click.
+      "*:focus-visible": {
+        outline: `2px solid ${theme.palette.primary.main}`,
+        outlineOffset: 2,
+        borderRadius: 4,
+      },
+      // Accessibility floor: anyone with reduced-motion preference set
+      // collapses every transition + animation to ~0. We don't enumerate
+      // motion per-component; this catches framer-motion, CSS transitions,
+      // and MUI's built-in animations in one rule.
+      "@media (prefers-reduced-motion: reduce)": {
+        "*, *::before, *::after": {
+          animationDuration: "0.001ms !important",
+          animationIterationCount: "1 !important",
+          transitionDuration: "0.001ms !important",
+          scrollBehavior: "auto !important",
+        },
+      },
     },
   },
   MuiButton: {
