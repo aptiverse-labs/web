@@ -21,6 +21,11 @@ import Skeleton from "@mui/material/Skeleton";
 import Drawer from "@mui/material/Drawer";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import PlayArrowIcon from "@mui/icons-material/PlayArrowOutlined";
@@ -30,6 +35,9 @@ import SmartToyIcon from "@mui/icons-material/SmartToyOutlined";
 import SendIcon from "@mui/icons-material/SendOutlined";
 import CloseIcon from "@mui/icons-material/CloseOutlined";
 import ChecklistIcon from "@mui/icons-material/ChecklistOutlined";
+import ViewColumnIcon from "@mui/icons-material/ViewColumnOutlined";
+import ViewStreamIcon from "@mui/icons-material/ViewStreamOutlined";
+import KeyboardIcon from "@mui/icons-material/KeyboardOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TasksEditor } from "@/components/workspace/TasksEditor";
@@ -42,6 +50,31 @@ import dayjs from "dayjs";
 
 const TABS = ["Notes", "Essay"] as const;
 type TabKey = (typeof TABS)[number];
+
+// Editor view mode. Tabbed shows one panel at a time; split renders
+// Notes + Essay side-by-side in the center column. Split mode is
+// desktop-only — the toggle hides on narrow screens.
+type ViewMode = "tabbed" | "split";
+
+const AI_TUTOR_INPUT_ID = "workspace-ai-tutor-input";
+
+// Reads the current platform so we render the right modifier glyph
+// on the shortcut cheatsheet. macOS gets ⌘, everyone else gets Ctrl.
+function platformModifier(): { key: "metaKey" | "ctrlKey"; label: string } {
+  if (typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)) {
+    return { key: "metaKey", label: "⌘" };
+  }
+  return { key: "ctrlKey", label: "Ctrl" };
+}
+
+// Returns true if the event originated from an editable element — used
+// to suppress single-letter shortcuts like "?" while the user is typing
+// in an input, textarea, or contenteditable.
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable;
+}
 
 export default function WorkspacePage() {
   const theme = useTheme();
@@ -72,8 +105,61 @@ export default function WorkspacePage() {
   );
 
   const [tab, setTab] = useState<TabKey>("Notes");
+  const [viewMode, setViewMode] = useState<ViewMode>("tabbed");
   const [aiOpen, setAiOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
+  // Keyboard shortcuts. Each handler is a no-op when the user is typing
+  // into an editable element (so "?" inside the essay doesn't pop the
+  // cheatsheet). Modifier-prefixed shortcuts run from anywhere.
+  useEffect(() => {
+    const mod = platformModifier();
+    const onKey = (e: KeyboardEvent) => {
+      const editing = isEditableTarget(e.target);
+
+      // ? — open the shortcut cheatsheet. Only when not typing.
+      if (!editing && e.key === "?" && !e[mod.key] && !e.altKey) {
+        e.preventDefault();
+        setShortcutsOpen(true);
+        return;
+      }
+
+      if (!e[mod.key]) return;
+
+      // ⌘1 / ⌘2 — switch tabs.
+      if (e.key === "1") {
+        e.preventDefault();
+        setViewMode("tabbed");
+        setTab("Notes");
+        return;
+      }
+      if (e.key === "2") {
+        e.preventDefault();
+        setViewMode("tabbed");
+        setTab("Essay");
+        return;
+      }
+
+      // ⌘\ — toggle split view (desktop-only by design; on narrow
+      // screens it falls back to tabbed mode anyway).
+      if (e.key === "\\") {
+        e.preventDefault();
+        if (isDesktop) setViewMode((v) => (v === "split" ? "tabbed" : "split"));
+        return;
+      }
+
+      // ⌘K — focus the AI tutor input. On mobile, open the drawer first.
+      if (e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (!isDesktop) setAiOpen(true);
+        // setTimeout 0 lets the drawer mount before we focus.
+        setTimeout(() => document.getElementById(AI_TUTOR_INPUT_ID)?.focus(), 0);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isDesktop]);
 
   if (assessmentsQuery.isLoading || subjectsQuery.isLoading) {
     return (
@@ -178,21 +264,85 @@ export default function WorkspacePage() {
         {/* Editor */}
         <Card sx={{ minHeight: { xs: 480, md: 620 } }}>
           <CardContent sx={{ p: 0, pb: "0 !important" }}>
-            <Tabs
-              value={tab}
-              onChange={(_, v) => setTab(v)}
-              variant="scrollable"
-              scrollButtons={false}
-              sx={{ borderBottom: 1, borderColor: "divider", px: { xs: 1, sm: 2 } }}
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+              sx={{ borderBottom: 1, borderColor: "divider", px: { xs: 1, sm: 2 }, pr: { xs: 1, sm: 1.5 } }}
             >
-              {TABS.map((t) => (
-                <Tab key={t} label={t} value={t} />
-              ))}
-            </Tabs>
-            <Box sx={{ p: { xs: 2, sm: 3 } }}>
-              {tab === "Notes" && <NotesPanel assessmentId={activeId} />}
-              {tab === "Essay" && <EssayPanel assessmentId={activeId} essayTitle={activeAssessment.title} />}
-            </Box>
+              {viewMode === "tabbed" ? (
+                <Tabs
+                  value={tab}
+                  onChange={(_, v) => setTab(v)}
+                  variant="scrollable"
+                  scrollButtons={false}
+                >
+                  {TABS.map((t) => (
+                    <Tab key={t} label={t} value={t} />
+                  ))}
+                </Tabs>
+              ) : (
+                <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em", py: 1.5 }}>
+                  Notes + Essay
+                </Typography>
+              )}
+
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                {isDesktop && (
+                  <ToggleButtonGroup
+                    value={viewMode}
+                    exclusive
+                    size="small"
+                    onChange={(_, v: ViewMode | null) => v && setViewMode(v)}
+                    sx={{ "& .MuiToggleButton-root": { px: 1, border: 0 } }}
+                  >
+                    <ToggleButton value="tabbed" aria-label="Tabbed view">
+                      <Tooltip title="Tabbed view">
+                        <ViewStreamIcon fontSize="small" />
+                      </Tooltip>
+                    </ToggleButton>
+                    <ToggleButton value="split" aria-label="Split view (Notes + Essay)">
+                      <Tooltip title="Split view (Notes + Essay)">
+                        <ViewColumnIcon fontSize="small" />
+                      </Tooltip>
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                )}
+                <Tooltip title="Keyboard shortcuts (?)">
+                  <IconButton size="small" onClick={() => setShortcutsOpen(true)} aria-label="Keyboard shortcuts">
+                    <KeyboardIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            </Stack>
+
+            {viewMode === "split" && isDesktop ? (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  // Subtle vertical divider between the two panes.
+                  "& > :first-of-type": {
+                    borderRight: 1,
+                    borderColor: "divider",
+                  },
+                }}
+              >
+                <Box sx={{ p: { xs: 2, sm: 3 } }}>
+                  <PaneHeader label="Notes" />
+                  <NotesPanel assessmentId={activeId} />
+                </Box>
+                <Box sx={{ p: { xs: 2, sm: 3 } }}>
+                  <PaneHeader label="Essay" />
+                  <EssayPanel assessmentId={activeId} essayTitle={activeAssessment.title} />
+                </Box>
+              </Box>
+            ) : (
+              <Box sx={{ p: { xs: 2, sm: 3 } }}>
+                {tab === "Notes" && <NotesPanel assessmentId={activeId} />}
+                {tab === "Essay" && <EssayPanel assessmentId={activeId} essayTitle={activeAssessment.title} />}
+              </Box>
+            )}
           </CardContent>
         </Card>
 
@@ -201,6 +351,8 @@ export default function WorkspacePage() {
           <RightRail assessment={activeAssessment} subject={subject} />
         </Box>
       </Box>
+
+      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
       {/* Mobile drawers */}
       <Drawer
@@ -226,6 +378,75 @@ export default function WorkspacePage() {
         </Box>
       </Drawer>
     </>
+  );
+}
+
+function PaneHeader({ label }: { label: string }) {
+  return (
+    <Typography
+      variant="overline"
+      color="text.secondary"
+      sx={{ letterSpacing: "0.08em", display: "block", mb: 1.5 }}
+    >
+      {label}
+    </Typography>
+  );
+}
+
+function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const mod = platformModifier();
+  const rows: { keys: string[]; label: string }[] = [
+    { keys: [mod.label, "1"],  label: "Open Notes" },
+    { keys: [mod.label, "2"],  label: "Open Essay" },
+    { keys: [mod.label, "\\"], label: "Toggle split view (desktop)" },
+    { keys: [mod.label, "K"],  label: "Focus AI tutor input" },
+    { keys: ["?"],             label: "Show this cheatsheet" },
+  ];
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle sx={{ pb: 1 }}>
+        <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+          Keyboard
+        </Typography>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          Shortcuts
+        </Typography>
+      </DialogTitle>
+      <DialogContent>
+        <Stack spacing={1.5}>
+          {rows.map((r) => (
+            <Stack key={r.label} direction="row" justifyContent="space-between" alignItems="center">
+              <Typography variant="body2">{r.label}</Typography>
+              <Stack direction="row" spacing={0.5}>
+                {r.keys.map((k) => (
+                  <Box
+                    key={k}
+                    component="kbd"
+                    sx={{
+                      px: 0.75,
+                      py: 0.25,
+                      borderRadius: 1,
+                      border: 1,
+                      borderColor: "divider",
+                      fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
+                      fontSize: "0.7rem",
+                      fontWeight: 600,
+                      minWidth: 22,
+                      textAlign: "center",
+                      lineHeight: "20px",
+                      color: "text.secondary",
+                    }}
+                  >
+                    {k}
+                  </Box>
+                ))}
+              </Stack>
+            </Stack>
+          ))}
+        </Stack>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -453,7 +674,15 @@ function EssayPanel({ assessmentId, essayTitle }: { assessmentId: string | null;
     setValue(draft.initialContent);
   }, [draft.initialContent]);
 
-  const wordCount = value.trim() ? value.trim().split(/\s+/).length : 0;
+  // Reading stats. 200 wpm is the standard "average adult silent
+  // reading" benchmark — close enough for a student to judge whether
+  // their essay's on length.
+  const trimmed = value.trim();
+  const wordCount = trimmed ? trimmed.split(/\s+/).length : 0;
+  const sentenceCount = trimmed
+    ? (trimmed.match(/[.!?]+(\s|$)/g) ?? []).length || 1
+    : 0;
+  const readMinutes = wordCount === 0 ? 0 : Math.max(1, Math.round(wordCount / 200));
 
   const submit = async () => {
     if (!assessmentId) return;
@@ -493,10 +722,22 @@ function EssayPanel({ assessmentId, essayTitle }: { assessmentId: string | null;
         justifyContent="space-between"
         alignItems={{ xs: "stretch", sm: "center" }}
       >
-        <Stack direction="row" spacing={1} alignItems="center">
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
           <Typography variant="caption" color="text.secondary">
             {wordCount} {wordCount === 1 ? "word" : "words"}
           </Typography>
+          {sentenceCount > 0 && (
+            <>
+              <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
+              <Typography variant="caption" color="text.secondary">
+                {sentenceCount} {sentenceCount === 1 ? "sentence" : "sentences"}
+              </Typography>
+              <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
+              <Typography variant="caption" color="text.secondary">
+                ~{readMinutes} min read
+              </Typography>
+            </>
+          )}
           <AutosaveBadge state={draft.state} />
         </Stack>
         <Stack direction="row" spacing={1}>
@@ -682,6 +923,7 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
               }
             }}
             disabled={ask.isPending}
+            inputProps={{ id: AI_TUTOR_INPUT_ID }}
           />
           <IconButton
             color="primary"
