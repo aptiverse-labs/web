@@ -187,6 +187,16 @@ export default function WorkspacePage() {
   const [contextOpen, setContextOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
+  // Focus mode: the workspace transforms when a Pomodoro session is
+  // running. Context cards (SBA, Tasks) and the AI tutor rail fade
+  // away; the math/writing surface takes the freed space. The student
+  // explicitly committed to a focus session by pressing Start; the
+  // page gets out of the way until they pause or finish.
+  //
+  // Mobile is unaffected: the rails are already drawer-only on xs/sm.
+  const [pomodoroState, setPomodoroState] = useState<PomodoroState | null>(null);
+  const focusMode = isDesktop && pomodoroState?.kind === "running";
+
   // Split view only makes sense with at least two tabs AND on desktop.
   const splitEligible = isDesktop && tabs.length >= 2;
   useEffect(() => {
@@ -360,13 +370,24 @@ export default function WorkspacePage() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "300px 1fr 340px" },
+          gridTemplateColumns: {
+            xs: "1fr",
+            // Focus mode: drop the right rail, narrow the left.
+            md: focusMode ? "220px 1fr" : "300px 1fr 340px",
+          },
           gap: { xs: 2, md: 3 },
           alignItems: "start",
+          transition:
+            "grid-template-columns 220ms cubic-bezier(0.25, 1, 0.5, 1)",
         }}
       >
         <Box sx={{ display: { xs: "none", md: "block" } }}>
-          <LeftRail assessment={activeAssessment} subject={subject} />
+          <LeftRail
+            assessment={activeAssessment}
+            subject={subject}
+            focusMode={focusMode}
+            onPomodoroStateChange={setPomodoroState}
+          />
         </Box>
 
         <Card sx={{ minHeight: { xs: 420, md: 620 } }}>
@@ -412,6 +433,26 @@ export default function WorkspacePage() {
                     </ToggleButton>
                   </ToggleButtonGroup>
                 )}
+                {focusMode && (
+                  <>
+                    <Chip
+                      label="Focus mode"
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      sx={{ fontWeight: 600 }}
+                    />
+                    <Tooltip title="AI tutor">
+                      <IconButton
+                        size="small"
+                        onClick={() => setAiOpen(true)}
+                        aria-label="Open AI tutor"
+                      >
+                        <SmartToyIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </>
+                )}
                 <Tooltip title="Keyboard shortcuts (?)">
                   <IconButton size="small" onClick={() => setShortcutsOpen(true)} aria-label="Keyboard shortcuts">
                     <KeyboardIcon fontSize="small" />
@@ -428,9 +469,11 @@ export default function WorkspacePage() {
           </CardContent>
         </Card>
 
-        <Box sx={{ display: { xs: "none", md: "block" } }}>
-          <RightRail assessment={activeAssessment} subject={subject} />
-        </Box>
+        {!focusMode && (
+          <Box sx={{ display: { xs: "none", md: "block" } }}>
+            <RightRail assessment={activeAssessment} subject={subject} />
+          </Box>
+        )}
       </Box>
 
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
@@ -448,7 +491,10 @@ export default function WorkspacePage() {
       </Drawer>
       <Drawer
         anchor="right"
-        open={!isDesktop && aiOpen}
+        // Drawer works for two cases now: mobile (rails always
+        // drawer-only) and desktop-in-focus-mode (right rail hidden
+        // but student still needs AI tutor access).
+        open={(focusMode || !isDesktop) && aiOpen}
         onClose={() => setAiOpen(false)}
         PaperProps={{ sx: { width: { xs: "100vw", sm: 380 } } }}
       >
@@ -571,7 +617,20 @@ function DrawerHeader({ title, onClose }: { title: string; onClose: () => void }
 // LEFT RAIL — active SBA · pomodoro · tasks (real)
 // ============================================================
 
-function LeftRail({ assessment, subject }: { assessment: Assessment; subject: Subject | undefined }) {
+function LeftRail({
+  assessment,
+  subject,
+  focusMode = false,
+  onPomodoroStateChange,
+}: {
+  assessment: Assessment;
+  subject: Subject | undefined;
+  /** When true, the SBA context card + Tasks card are hidden so the
+   *  rail collapses to just the Focus timer. The student is in a
+   *  focus session; reference context can wait. */
+  focusMode?: boolean;
+  onPomodoroStateChange?: (state: PomodoroState) => void;
+}) {
   const daysOut = dayjs(assessment.dueDate).diff(dayjs(), "day");
   const dueChip =
     daysOut < 0
@@ -584,41 +643,48 @@ function LeftRail({ assessment, subject }: { assessment: Assessment; subject: Su
 
   return (
     <Stack spacing={2.5} sx={{ position: { md: "sticky" }, top: { md: 88 } }}>
-      <Card>
-        <CardContent sx={{ p: 2.5 }}>
-          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
-            Active SBA
-          </Typography>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 0.5 }}>
-            {assessment.title}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {subject?.name ?? assessment.subjectId} · {assessment.type}
-          </Typography>
-          <Stack direction="row" spacing={0.75} sx={{ mt: 1.5 }} flexWrap="wrap" useFlexGap>
-            <Chip label={dueChip.label} size="small" color={dueChip.color} variant="outlined" />
-            <Chip label={`Weight ${assessment.weight}%`} size="small" variant="outlined" />
-          </Stack>
-        </CardContent>
-      </Card>
+      {!focusMode && (
+        <Card>
+          <CardContent sx={{ p: 2.5 }}>
+            <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+              Active SBA
+            </Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 0.5 }}>
+              {assessment.title}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {subject?.name ?? assessment.subjectId} · {assessment.type}
+            </Typography>
+            <Stack direction="row" spacing={0.75} sx={{ mt: 1.5 }} flexWrap="wrap" useFlexGap>
+              <Chip label={dueChip.label} size="small" color={dueChip.color} variant="outlined" />
+              <Chip label={`Weight ${assessment.weight}%`} size="small" variant="outlined" />
+            </Stack>
+          </CardContent>
+        </Card>
+      )}
 
-      <FocusTimer assessmentId={assessment.id} />
+      <FocusTimer
+        assessmentId={assessment.id}
+        onStateChange={onPomodoroStateChange}
+      />
 
-      <Card>
-        <CardContent sx={{ p: 2.5 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 2 }}>
-            <Box>
-              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
-                Plan
-              </Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                Tasks
-              </Typography>
-            </Box>
-          </Stack>
-          <TasksEditor assessmentId={assessment.id} tasks={assessment.tasks ?? []} compact />
-        </CardContent>
-      </Card>
+      {!focusMode && (
+        <Card>
+          <CardContent sx={{ p: 2.5 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 2 }}>
+              <Box>
+                <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+                  Plan
+                </Typography>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  Tasks
+                </Typography>
+              </Box>
+            </Stack>
+            <TasksEditor assessmentId={assessment.id} tasks={assessment.tasks ?? []} compact />
+          </CardContent>
+        </Card>
+      )}
     </Stack>
   );
 }
@@ -638,10 +704,28 @@ type PomodoroState =
   | { kind: "running"; endsAt: number }
   | { kind: "paused";  remaining: number };
 
-function FocusTimer({ assessmentId }: { assessmentId: string }) {
+function FocusTimer({
+  assessmentId,
+  onStateChange,
+}: {
+  assessmentId: string;
+  /** Fires whenever the local Pomodoro state changes. Used by the
+   *  workspace page to detect entering / exiting focus mode. */
+  onStateChange?: (state: PomodoroState) => void;
+}) {
   const storageKey = `${POMODORO_STORAGE_PREFIX}${assessmentId}`;
   const [state, setState] = useState<PomodoroState>({ kind: "idle", remaining: POMODORO_SECONDS });
   const [now, setNow] = useState(() => Date.now());
+
+  // Report state changes upward. Use a ref to avoid spurious re-fires
+  // when the parent passes a new callback identity each render.
+  const onStateChangeRef = useRef(onStateChange);
+  useEffect(() => {
+    onStateChangeRef.current = onStateChange;
+  });
+  useEffect(() => {
+    onStateChangeRef.current?.(state);
+  }, [state]);
 
   // Restore from localStorage on mount + on assessment switch.
   useEffect(() => {
