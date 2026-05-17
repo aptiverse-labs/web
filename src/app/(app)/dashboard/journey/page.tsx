@@ -10,156 +10,158 @@ import Typography from "@mui/material/Typography";
 import LinearProgress from "@mui/material/LinearProgress";
 import Button from "@mui/material/Button";
 import Link from "next/link";
+import dayjs from "dayjs";
 import { motion } from "framer-motion";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryStates } from "@/components/common/QueryStates";
-import { useSubjects } from "@/lib/api/queries";
-import type { Subject } from "@/lib/mockData";
+import { useSubjects, useAssessments } from "@/lib/api/queries";
+import type { Subject, Assessment } from "@/lib/mockData";
 import { enter, enterStagger } from "@/lib/motion";
 import RouteIcon from "@mui/icons-material/RouteOutlined";
 import CheckCircleIcon from "@mui/icons-material/CheckCircleOutlined";
 import TrendingUpIcon from "@mui/icons-material/TrendingUpOutlined";
-import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUncheckedOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
 
-type Topic = { name: string; mastery: number; subject: string; subjectId: string };
-
-const MASTERED_THRESHOLD = 70;
-const IN_PROGRESS_THRESHOLD = 40;
+const PASS_MARK = 50;
 
 export default function JourneyPage() {
-  const query = useSubjects();
+  const subjectsQuery = useSubjects();
+  const assessmentsQuery = useAssessments();
 
+  const isLoading = subjectsQuery.isLoading || assessmentsQuery.isLoading;
+  const isError = subjectsQuery.isError || assessmentsQuery.isError;
+
+  // QueryStates only takes one query; this page genuinely needs two, so
+  // we combine the states manually here rather than fight the helper.
   return (
     <>
       <PageHeader
         title="Your learning journey"
-        description="Each landmark is a topic mastered. Growth, not ranking — celebrate every step."
+        description="Every assessment is a landmark. Each one logged becomes part of the picture of how you're growing."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Journey" }]}
       />
 
-      <QueryStates
-        query={query}
-        empty={{
-          icon: <RouteIcon />,
-          title: "Your journey starts with a subject",
-          description: "Add your subjects to see topics tracked as you move from upcoming → in progress → mastered.",
-          action: (
-            <Button component={Link} href="/dashboard/subjects" variant="contained" endIcon={<ArrowForwardIcon />}>
-              Add subjects
-            </Button>
-          ),
-        }}
-      >
-        {(subjects) => <JourneyView subjects={subjects} />}
-      </QueryStates>
+      {isLoading ? (
+        <LoadingSkeleton />
+      ) : isError ? (
+        <ErrorCard onRetry={() => { subjectsQuery.refetch(); assessmentsQuery.refetch(); }} />
+      ) : (
+        <JourneyView
+          subjects={subjectsQuery.data ?? []}
+          assessments={assessmentsQuery.data ?? []}
+        />
+      )}
     </>
   );
 }
 
-function JourneyView({ subjects }: { subjects: Subject[] }) {
-  const topics: Topic[] = useMemo(
+// ─── Main view ───────────────────────────────────────────────────────
+
+type SubjectRow = {
+  subject: Subject;
+  total: number;
+  graded: number;
+  submitted: number;
+  upcoming: number;
+  averageMark: number | null;     // mean of actual marks across graded
+  predictedMark: number | null;   // mean of predicted marks across non-graded
+  recentAssessments: Assessment[];
+};
+
+function JourneyView({ subjects, assessments }: { subjects: Subject[]; assessments: Assessment[] }) {
+  if (subjects.length === 0) {
+    return <NoSubjectsYet />;
+  }
+
+  const rows = useMemo<SubjectRow[]>(
     () =>
-      subjects.flatMap((s) =>
-        (s.topics ?? []).map((t) => ({
-          name: t.name,
-          mastery: t.mastery,
-          subject: s.name,
-          subjectId: s.id,
-        })),
-      ),
-    [subjects],
+      subjects.map((s) => {
+        const mine = assessments.filter((a) => a.subjectId === s.subjectId);
+        const graded = mine.filter((a) => a.status === "graded" && a.actualMark != null);
+        const upcoming = mine.filter((a) => a.status !== "graded");
+        const submitted = mine.filter((a) => a.status === "submitted");
+        const predicted = mine.filter((a) => a.predictedMark != null);
+
+        return {
+          subject: s,
+          total: mine.length,
+          graded: graded.length,
+          submitted: submitted.length,
+          upcoming: upcoming.length,
+          averageMark:
+            graded.length > 0
+              ? Math.round(graded.reduce((acc, a) => acc + (a.actualMark ?? 0), 0) / graded.length)
+              : null,
+          predictedMark:
+            predicted.length > 0
+              ? Math.round(
+                  predicted.reduce((acc, a) => acc + (a.predictedMark ?? 0), 0) / predicted.length,
+                )
+              : null,
+          recentAssessments: [...mine]
+            .sort((a, b) => +new Date(b.dueDate) - +new Date(a.dueDate))
+            .slice(0, 3),
+        };
+      }),
+    [subjects, assessments],
   );
 
-  const mastered   = topics.filter((t) => t.mastery >= MASTERED_THRESHOLD);
-  const inProgress = topics.filter((t) => t.mastery >= IN_PROGRESS_THRESHOLD && t.mastery < MASTERED_THRESHOLD);
-  const upcoming   = topics.filter((t) => t.mastery < IN_PROGRESS_THRESHOLD);
+  const totalAssessments  = rows.reduce((acc, r) => acc + r.total, 0);
+  const totalGraded       = rows.reduce((acc, r) => acc + r.graded, 0);
+  const totalUpcoming     = rows.reduce((acc, r) => acc + r.upcoming, 0);
+  const overallAverage = (() => {
+    const allGraded = assessments.filter((a) => a.status === "graded" && a.actualMark != null);
+    if (allGraded.length === 0) return null;
+    return Math.round(
+      allGraded.reduce((acc, a) => acc + (a.actualMark ?? 0), 0) / allGraded.length,
+    );
+  })();
 
-  const total = topics.length;
-  const masteredPct = total > 0 ? Math.round((mastered.length / total) * 100) : 0;
-  const overallAvg = total > 0
-    ? Math.round(topics.reduce((acc, t) => acc + t.mastery, 0) / total)
-    : 0;
+  // Next-up: the next not-yet-graded assessment ordered by due date.
+  const nextUp = [...assessments]
+    .filter((a) => a.status !== "graded")
+    .sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))[0];
+  const nextUpSubject = nextUp ? subjects.find((s) => s.subjectId === nextUp.subjectId) : undefined;
 
-  // The "what to look at next" beat: the lowest-mastery topic in the
-  // in-progress band. If nothing's in progress, pull the highest-mastery
-  // upcoming topic instead — that's the next one to nudge.
-  const nextUp =
-    inProgress.length > 0
-      ? [...inProgress].sort((a, b) => a.mastery - b.mastery)[0]
-      : upcoming.length > 0
-        ? [...upcoming].sort((a, b) => b.mastery - a.mastery)[0]
-        : undefined;
-
-  if (total === 0) {
-    return <NoTopicsYet />;
+  if (totalAssessments === 0) {
+    return <NoAssessmentsYet subjectCount={subjects.length} />;
   }
 
   return (
     <Stack spacing={3}>
-      <JourneyHero
-        total={total}
-        mastered={mastered.length}
-        inProgress={inProgress.length}
-        upcoming={upcoming.length}
-        masteredPct={masteredPct}
-        overallAvg={overallAvg}
+      <Hero
+        subjectCount={subjects.length}
+        totalAssessments={totalAssessments}
+        totalGraded={totalGraded}
+        totalUpcoming={totalUpcoming}
+        overallAverage={overallAverage}
         nextUp={nextUp}
+        nextUpSubjectName={nextUpSubject?.name}
       />
 
-      <Grid container spacing={2.5}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Column
-            tone="mastered"
-            label="Mastered"
-            count={mastered.length}
-            topics={mastered}
-            emptyHint="Nothing mastered yet — every expert started where you are now."
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Column
-            tone="progress"
-            label="In progress"
-            count={inProgress.length}
-            topics={inProgress}
-            emptyHint="Nothing in progress — pick a topic from upcoming to start."
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Column
-            tone="upcoming"
-            label="Upcoming"
-            count={upcoming.length}
-            topics={upcoming}
-            emptyHint="You've started on every topic — beautiful."
-          />
-        </Grid>
-      </Grid>
-
-      <BySubjectBreakdown subjects={subjects} />
+      <SubjectTrack rows={rows} />
     </Stack>
   );
 }
 
-// ─── Hero: the at-a-glance summary + next-up suggestion ──────────────
+// ─── Hero — overall picture + what's next ────────────────────────────
 
-function JourneyHero({
-  total,
-  mastered,
-  inProgress,
-  upcoming,
-  masteredPct,
-  overallAvg,
+function Hero({
+  subjectCount,
+  totalAssessments,
+  totalGraded,
+  totalUpcoming,
+  overallAverage,
   nextUp,
+  nextUpSubjectName,
 }: {
-  total: number;
-  mastered: number;
-  inProgress: number;
-  upcoming: number;
-  masteredPct: number;
-  overallAvg: number;
-  nextUp?: Topic;
+  subjectCount: number;
+  totalAssessments: number;
+  totalGraded: number;
+  totalUpcoming: number;
+  overallAverage: number | null;
+  nextUp?: Assessment;
+  nextUpSubjectName?: string;
 }) {
   return (
     <motion.div {...enter}>
@@ -168,32 +170,35 @@ function JourneyHero({
           <Grid container spacing={3} alignItems="center">
             <Grid size={{ xs: 12, md: 7 }}>
               <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
-                Overall mastery
+                Your average across graded assessments
               </Typography>
               <Stack direction="row" alignItems="baseline" spacing={1} sx={{ mt: 0.5, mb: 1.5 }}>
                 <Typography variant="h3" component="div" sx={{ fontWeight: 600, lineHeight: 1.05 }}>
-                  {masteredPct}
+                  {overallAverage != null ? overallAverage : "—"}
                 </Typography>
                 <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 500 }}>
-                  % of topics mastered
+                  {overallAverage != null ? "%" : "no marks yet"}
                 </Typography>
               </Stack>
 
-              <LinearProgress
-                variant="determinate"
-                value={masteredPct}
-                sx={{ height: 8, borderRadius: 999, mb: 2.5 }}
-              />
+              {overallAverage != null && (
+                <LinearProgress
+                  variant="determinate"
+                  value={Math.min(overallAverage, 100)}
+                  color={overallAverage >= PASS_MARK ? "primary" : "warning"}
+                  sx={{ height: 8, borderRadius: 999, mb: 2.5 }}
+                />
+              )}
 
               <Grid container spacing={2.5}>
                 <Grid size={4}>
-                  <SmallStat label="Mastered" value={`${mastered}`} sub={`of ${total}`} />
+                  <SmallStat label="Subjects" value={`${subjectCount}`} sub={subjectCount === 1 ? "enrolled" : "enrolled"} />
                 </Grid>
                 <Grid size={4}>
-                  <SmallStat label="In progress" value={`${inProgress}`} sub="moving" />
+                  <SmallStat label="Graded" value={`${totalGraded}`} sub={`of ${totalAssessments}`} />
                 </Grid>
                 <Grid size={4}>
-                  <SmallStat label="Upcoming" value={`${upcoming}`} sub="to start" />
+                  <SmallStat label="Upcoming" value={`${totalUpcoming}`} sub="to go" />
                 </Grid>
               </Grid>
             </Grid>
@@ -219,35 +224,36 @@ function JourneyHero({
                     </Typography>
                   </Stack>
                   <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {nextUp.name}
+                    {nextUp.title}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-                    {nextUp.subject} · {nextUp.mastery}% mastery · average across all topics is {overallAvg}%
+                    {nextUpSubjectName ?? "—"} · due {dayjs(nextUp.dueDate).format("DD MMM")}
+                    {nextUp.predictedMark != null ? ` · prediction ${nextUp.predictedMark}%` : ""}
                   </Typography>
                   <Stack direction="row" spacing={1}>
                     <Button
                       component={Link}
-                      href={`/dashboard/practice?topic=${encodeURIComponent(nextUp.name)}`}
+                      href={`/dashboard/assessments/${nextUp.id}`}
                       variant="contained"
                       size="small"
                       endIcon={<ArrowForwardIcon />}
                     >
-                      Practice this
+                      Open assessment
                     </Button>
                     <Button
                       component={Link}
-                      href={`/dashboard/subjects/${nextUp.subjectId}`}
+                      href="/dashboard/workspace"
                       variant="text"
                       size="small"
                     >
-                      Open subject
+                      Workspace
                     </Button>
                   </Stack>
                 </Box>
               ) : (
                 <Box sx={{ textAlign: "center", py: 4 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Every topic is mastered. Take a victory lap.
+                    No upcoming assessments. Everything caught up.
                   </Typography>
                 </Box>
               )}
@@ -277,178 +283,38 @@ function SmallStat({ label, value, sub }: { label: string; value: string; sub: s
   );
 }
 
-// ─── Column: one of mastered / in-progress / upcoming ────────────────
+// ─── Per-subject track ───────────────────────────────────────────────
 
-function Column({
-  tone,
-  label,
-  count,
-  topics,
-  emptyHint,
-}: {
-  tone: "mastered" | "progress" | "upcoming";
-  label: string;
-  count: number;
-  topics: Topic[];
-  emptyHint: string;
-}) {
-  const sorted = [...topics].sort((a, b) =>
-    tone === "upcoming" ? b.mastery - a.mastery : b.mastery - a.mastery,
-  );
-  const accentColor = tone === "mastered" ? "success.main" : tone === "progress" ? "primary.main" : "text.secondary";
-  const Icon =
-    tone === "mastered" ? CheckCircleIcon : tone === "progress" ? TrendingUpIcon : RadioButtonUncheckedIcon;
-
-  return (
-    <motion.div {...enter} style={{ height: "100%" }}>
-      <Card sx={{ height: "100%" }}>
-        <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Icon fontSize="small" sx={{ color: accentColor }} />
-              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
-                {label}
-              </Typography>
-            </Stack>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              {count}
-            </Typography>
-          </Stack>
-
-          {sorted.length === 0 ? (
-            <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-              {emptyHint}
-            </Typography>
-          ) : (
-            <Stack spacing={1}>
-              {sorted.map((t, i) => (
-                <motion.div key={`${t.subjectId}-${t.name}`} {...enterStagger(i)}>
-                  <Box
-                    sx={{
-                      p: 1.5,
-                      borderRadius: 1.5,
-                      border: 1,
-                      borderColor: tone === "upcoming" ? "divider" : "divider",
-                      transition: "border-color 150ms ease, background-color 150ms ease",
-                      "&:hover": {
-                        borderColor: tone === "mastered" ? "success.main" : tone === "progress" ? "primary.main" : "text.secondary",
-                      },
-                    }}
-                  >
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }} noWrap>
-                        {t.name}
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontWeight: 600, color: accentColor, flexShrink: 0, ml: 1 }}>
-                        {t.mastery}%
-                      </Typography>
-                    </Stack>
-                    <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
-                      {t.subject}
-                    </Typography>
-                  </Box>
-                </motion.div>
-              ))}
-            </Stack>
-          )}
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-}
-
-// ─── Per-subject mastery rollup ──────────────────────────────────────
-
-function BySubjectBreakdown({ subjects }: { subjects: Subject[] }) {
-  const rows = subjects
-    .map((s) => {
-      const topics = s.topics ?? [];
-      const avg = topics.length > 0
-        ? Math.round(topics.reduce((acc, t) => acc + t.mastery, 0) / topics.length)
-        : 0;
-      const masteredCount = topics.filter((t) => t.mastery >= MASTERED_THRESHOLD).length;
-      return {
-        id: s.id,
-        name: s.name,
-        topicsCount: topics.length,
-        masteredCount,
-        avg,
-      };
-    })
-    .filter((r) => r.topicsCount > 0)
-    .sort((a, b) => b.avg - a.avg);
-
-  if (rows.length === 0) return null;
+function SubjectTrack({ rows }: { rows: SubjectRow[] }) {
+  const sorted = [...rows].sort((a, b) => b.total - a.total);
 
   return (
     <motion.div {...enter}>
       <Card>
         <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 2 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 2.5 }}>
             <Box>
               <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
-                Per subject
+                Subject by subject
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
                 Where you stand
               </Typography>
             </Box>
+            <Button
+              component={Link}
+              href="/dashboard/assessments"
+              endIcon={<ArrowForwardIcon />}
+              size="small"
+            >
+              All assessments
+            </Button>
           </Stack>
 
-          <Stack spacing={1.5}>
-            {rows.map((r, i) => (
-              <motion.div key={r.id} {...enterStagger(i)}>
-                <Box
-                  component={Link}
-                  href={`/dashboard/subjects/${r.id}`}
-                  sx={{
-                    display: "block",
-                    p: 2,
-                    borderRadius: 1.5,
-                    border: 1,
-                    borderColor: "divider",
-                    textDecoration: "none",
-                    color: "inherit",
-                    transition: "border-color 150ms ease",
-                    "&:hover": { borderColor: "text.secondary" },
-                  }}
-                >
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        {r.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {r.masteredCount} of {r.topicsCount} mastered
-                      </Typography>
-                    </Box>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: 600,
-                        color: r.avg >= MASTERED_THRESHOLD
-                          ? "success.main"
-                          : r.avg >= IN_PROGRESS_THRESHOLD
-                            ? "primary.main"
-                            : "text.secondary",
-                      }}
-                    >
-                      {r.avg}%
-                    </Typography>
-                  </Stack>
-                  <LinearProgress
-                    variant="determinate"
-                    value={r.avg}
-                    color={
-                      r.avg >= MASTERED_THRESHOLD
-                        ? "success"
-                        : r.avg >= IN_PROGRESS_THRESHOLD
-                          ? "primary"
-                          : "secondary"
-                    }
-                    sx={{ height: 6, borderRadius: 999 }}
-                  />
-                </Box>
+          <Stack spacing={2}>
+            {sorted.map((row, i) => (
+              <motion.div key={row.subject.id} {...enterStagger(i)}>
+                <SubjectRowCard row={row} />
               </motion.div>
             ))}
           </Stack>
@@ -458,47 +324,220 @@ function BySubjectBreakdown({ subjects }: { subjects: Subject[] }) {
   );
 }
 
-// ─── Sub-empty: subjects exist but no topics on them yet ─────────────
+function SubjectRowCard({ row }: { row: SubjectRow }) {
+  const { subject: s, total, graded, upcoming, averageMark, predictedMark } = row;
+  const hasMarks = averageMark != null;
+  const aboveBar = hasMarks && averageMark! >= PASS_MARK;
+  const headlineValue = hasMarks ? `${averageMark}%` : predictedMark != null ? `${predictedMark}%` : "—";
+  const headlineHint = hasMarks
+    ? `${graded} graded`
+    : predictedMark != null
+      ? "Your prediction"
+      : "No marks yet";
 
-function NoTopicsYet() {
+  return (
+    <Box
+      component={Link}
+      href={`/dashboard/subjects/${s.id}`}
+      sx={{
+        display: "block",
+        p: 2.5,
+        borderRadius: 2,
+        border: 1,
+        borderColor: "divider",
+        color: "inherit",
+        textDecoration: "none",
+        transition: "border-color 150ms ease",
+        "&:hover": { borderColor: "text.secondary" },
+      }}
+    >
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            {s.name}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+            Grade {s.grade}{s.teacher ? ` · ${s.teacher}` : ""}
+          </Typography>
+        </Box>
+        <Box sx={{ textAlign: "right" }}>
+          <Stack direction="row" alignItems="baseline" spacing={0.5} justifyContent="flex-end">
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+                lineHeight: 1.1,
+                color: hasMarks
+                  ? aboveBar ? "success.main" : "warning.main"
+                  : "text.primary",
+              }}
+            >
+              {headlineValue}
+            </Typography>
+          </Stack>
+          <Typography variant="caption" color="text.secondary">
+            {headlineHint}
+          </Typography>
+        </Box>
+      </Stack>
+
+      {hasMarks && (
+        <LinearProgress
+          variant="determinate"
+          value={Math.min(averageMark!, 100)}
+          color={aboveBar ? "success" : "warning"}
+          sx={{ height: 6, borderRadius: 999, mt: 1.5 }}
+        />
+      )}
+
+      <Stack direction="row" spacing={1} sx={{ mt: 1.5 }} flexWrap="wrap" useFlexGap>
+        <MiniChip icon={<CheckCircleIcon fontSize="inherit" />} label={`${graded} graded`} tone="success" />
+        <MiniChip label={`${upcoming} upcoming`} tone="primary" />
+        <MiniChip label={`${total} total`} tone="muted" />
+      </Stack>
+    </Box>
+  );
+}
+
+function MiniChip({
+  icon,
+  label,
+  tone,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  tone: "success" | "primary" | "muted";
+}) {
+  const color = tone === "success" ? "success.main" : tone === "primary" ? "primary.main" : "text.secondary";
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={0.5}
+      sx={{
+        px: 1,
+        py: 0.25,
+        borderRadius: 1,
+        border: 1,
+        borderColor: "divider",
+        color,
+        fontSize: "0.75rem",
+      }}
+    >
+      {icon}
+      <Typography variant="caption" sx={{ fontWeight: 500, color: "inherit" }}>
+        {label}
+      </Typography>
+    </Stack>
+  );
+}
+
+// ─── Empty states ─────────────────────────────────────────────────────
+
+function NoSubjectsYet() {
   return (
     <motion.div {...enter}>
       <Card>
         <CardContent sx={{ p: 6, textAlign: "center" }}>
-          <Box
-            sx={{
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              mx: "auto",
-              mb: 2,
-              display: "grid",
-              placeItems: "center",
-              bgcolor: (t) =>
-                t.palette.mode === "dark"
-                  ? "rgba(116, 181, 174, 0.12)"
-                  : "rgba(15, 105, 99, 0.08)",
-              color: "primary.main",
-            }}
-          >
-            <RouteIcon />
-          </Box>
+          <CenterIcon><RouteIcon /></CenterIcon>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-            Your subjects don't have topics tracked yet
+            Your journey starts with a subject
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: "auto", mb: 3 }}>
-            Mastery is tracked as you log marks against SBA tasks. Add an assessment with a topic tag to seed your first landmark.
+            Add your subjects so we can track each assessment as a landmark on your way through the year.
           </Typography>
-          <Button
-            component={Link}
-            href="/dashboard/assessments/new"
-            variant="contained"
-            endIcon={<ArrowForwardIcon />}
-          >
-            Log an assessment
+          <Button component={Link} href="/dashboard/subjects" variant="contained" endIcon={<ArrowForwardIcon />}>
+            Add subjects
           </Button>
         </CardContent>
       </Card>
     </motion.div>
+  );
+}
+
+function NoAssessmentsYet({ subjectCount }: { subjectCount: number }) {
+  return (
+    <motion.div {...enter}>
+      <Card>
+        <CardContent sx={{ p: 6, textAlign: "center" }}>
+          <CenterIcon><RouteIcon /></CenterIcon>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+            Log your first assessment
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 460, mx: "auto", mb: 3 }}>
+            You're enrolled in {subjectCount} subject{subjectCount === 1 ? "" : "s"}. Each SBA you log becomes a landmark here — predicted, then graded, then the next one.
+          </Typography>
+          <Stack direction="row" spacing={1.5} justifyContent="center">
+            <Button component={Link} href="/dashboard/assessments/new" variant="contained" endIcon={<ArrowForwardIcon />}>
+              Log an assessment
+            </Button>
+            <Button component={Link} href="/dashboard/subjects" variant="text">
+              See subjects
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+function CenterIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      sx={{
+        width: 56,
+        height: 56,
+        borderRadius: "50%",
+        mx: "auto",
+        mb: 2,
+        display: "grid",
+        placeItems: "center",
+        bgcolor: (t) =>
+          t.palette.mode === "dark"
+            ? "rgba(116, 181, 174, 0.12)"
+            : "rgba(15, 105, 99, 0.08)",
+        color: "primary.main",
+      }}
+    >
+      {children}
+    </Box>
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <Stack spacing={3}>
+      <Card>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ height: 240, bgcolor: "action.hover", borderRadius: 1 }} />
+        </CardContent>
+      </Card>
+      <Card>
+        <CardContent sx={{ p: 3 }}>
+          <Stack spacing={2}>
+            <Box sx={{ height: 88, bgcolor: "action.hover", borderRadius: 1 }} />
+            <Box sx={{ height: 88, bgcolor: "action.hover", borderRadius: 1 }} />
+          </Stack>
+        </CardContent>
+      </Card>
+    </Stack>
+  );
+}
+
+function ErrorCard({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Card>
+      <CardContent sx={{ p: 6, textAlign: "center" }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+          Couldn't load your journey
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          Check your connection and try again.
+        </Typography>
+        <Button variant="outlined" onClick={onRetry}>
+          Try again
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
