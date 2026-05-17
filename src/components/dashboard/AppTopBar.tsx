@@ -4,7 +4,6 @@ import { useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
-import InputBase from "@mui/material/InputBase";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import Avatar from "@mui/material/Avatar";
@@ -17,7 +16,6 @@ import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
 import MenuIcon from "@mui/icons-material/Menu";
-import SearchIcon from "@mui/icons-material/Search";
 import NotificationsIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import LogoutIcon from "@mui/icons-material/LogoutOutlined";
 import SettingsIcon from "@mui/icons-material/SettingsOutlined";
@@ -107,40 +105,6 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
           }}
         >
           <Logo size={30} />
-        </Box>
-
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            bgcolor: "action.hover",
-            borderRadius: 2,
-            px: 1.5,
-            py: 0.5,
-            width: { xs: 0, sm: 320, md: 380 },
-            opacity: { xs: 0, sm: 1 },
-            transition: "opacity 200ms",
-          }}
-        >
-          <SearchIcon fontSize="small" sx={{ color: "text.secondary", mr: 1 }} />
-          <InputBase
-            placeholder="Search subjects, SBAs, tutors…"
-            sx={{ flex: 1, fontSize: "0.875rem" }}
-          />
-          <Box
-            sx={{
-              display: { xs: "none", md: "block" },
-              border: 1,
-              borderColor: "divider",
-              borderRadius: 1,
-              px: 0.75,
-              py: 0.25,
-              fontSize: "0.7rem",
-              color: "text.secondary",
-            }}
-          >
-            ⌘K
-          </Box>
         </Box>
 
         <Box sx={{ flex: 1 }} />

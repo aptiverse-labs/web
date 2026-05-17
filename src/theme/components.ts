@@ -130,11 +130,11 @@ export const componentOverrides = (theme: Theme): Components<Theme> => ({
     defaultProps: { elevation: 0, color: "transparent" },
     styleOverrides: {
       root: {
-        backdropFilter: "blur(10px)",
-        backgroundColor:
-          theme.palette.mode === "dark"
-            ? "rgba(11, 15, 20, 0.78)"
-            : "rgba(255, 255, 255, 0.78)",
+        // Solid surface, no backdrop-filter blur. Glassmorphism reads as
+        // dated and adds render cost on lower-end devices — the
+        // emil-kowalski rubric bans it outright. The 1px divider plus the
+        // sidebar's vertical border do the affordance work instead.
+        backgroundColor: theme.palette.background.paper,
         borderBottom: `1px solid ${theme.palette.divider}`,
       },
     },

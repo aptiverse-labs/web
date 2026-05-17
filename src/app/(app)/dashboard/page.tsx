@@ -8,25 +8,17 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import LinearProgress from "@mui/material/LinearProgress";
-import Avatar from "@mui/material/Avatar";
 import IconButton from "@mui/material/IconButton";
 import Chip from "@mui/material/Chip";
 import Skeleton from "@mui/material/Skeleton";
-import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
-import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarChart";
 import Link from "next/link";
 import dayjs from "dayjs";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
-import QuizIcon from "@mui/icons-material/QuizOutlined";
-import FlagIcon from "@mui/icons-material/FlagOutlined";
-import SchoolIcon from "@mui/icons-material/School";
-import FavoriteIcon from "@mui/icons-material/FavoriteBorder";
-import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
-import { StatCard } from "@/components/common/StatCard";
+import { motion } from "framer-motion";
+import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { ProgressRing } from "@/components/common/ProgressRing";
 import { StatusChip } from "@/components/common/StatusChip";
 import { RelativeTime } from "@/components/common/RelativeTime";
+import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import {
   useSubjects,
   useAssessments,
@@ -34,6 +26,12 @@ import {
   useNotifications,
 } from "@/lib/api/queries";
 import { type Notification, type Subject } from "@/lib/mockData";
+import { enter, enterStagger } from "@/lib/motion";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
+import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
+import CelebrationIcon from "@mui/icons-material/CelebrationOutlined";
+import WarningAmberIcon from "@mui/icons-material/WarningAmberOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 export default function StudentDashboardPage() {
   const subjectsQuery = useSubjects();
@@ -66,24 +64,39 @@ export default function StudentDashboardPage() {
     <>
       <WelcomeBanner />
 
-      <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard
+      <Grid container spacing={2.5} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 6, md: 3 }}>
+          <Stat
             label="Predicted average"
-            value={predictedAverage != null ? `${predictedAverage}%` : "—"}
-            hint={subjects.length === 0 ? "Add subjects to see" : undefined}
-            icon={<SchoolIcon />}
-            color="primary"
+            value={predictedAverage != null ? `${predictedAverage}` : "—"}
+            unit={predictedAverage != null ? "%" : undefined}
+            hint={subjects.length === 0 ? "Add subjects to see" : "Across your subjects"}
+            index={0}
           />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Active goals" value={activeGoals.length} hint={goals.length === 0 ? "Set one to start" : `${goals.length} total`} icon={<FlagIcon />} color="secondary" />
+        <Grid size={{ xs: 6, md: 3 }}>
+          <Stat
+            label="Subjects"
+            value={`${subjects.length}`}
+            hint={subjects.length === 0 ? "Set up your timetable" : "Currently enrolled"}
+            index={1}
+          />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="APS (live)" value="—" hint="Not yet computed" icon={<QuizIcon />} color="info" />
+        <Grid size={{ xs: 6, md: 3 }}>
+          <Stat
+            label="Active goals"
+            value={`${activeGoals.length}`}
+            hint={goals.length === 0 ? "Set one to start" : `${goals.length} total`}
+            index={2}
+          />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Wellbeing" value="—" hint="Check in via Diary" icon={<FavoriteIcon />} color="success" />
+        <Grid size={{ xs: 6, md: 3 }}>
+          <Stat
+            label="Upcoming SBAs"
+            value={`${upcoming.length}`}
+            hint={upcoming.length === 0 ? "Nothing on the horizon" : "Sorted by due date"}
+            index={3}
+          />
         </Grid>
       </Grid>
 
@@ -102,43 +115,12 @@ export default function StudentDashboardPage() {
 
         <Grid size={{ xs: 12, lg: 4 }}>
           <Stack spacing={3}>
-            <Card>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Today's focus
-                </Typography>
-                <Stack alignItems="center" spacing={1.5}>
-                  <ProgressRing value={0} size={140} thickness={10} caption="of daily target" />
-                  <Typography variant="caption" color="text.secondary">
-                    Start a focus session to begin tracking today's minutes.
-                  </Typography>
-                  <Button fullWidth component={Link} href="/dashboard/workspace" variant="contained">
-                    Start focus session
-                  </Button>
-                </Stack>
-              </CardContent>
-            </Card>
-
+            <TodaysFocusCard />
             <ActiveGoalsCard
               goals={activeGoals}
               loading={goalsQuery.isLoading}
               isEmpty={!goalsQuery.isLoading && activeGoals.length === 0}
             />
-
-            <Card>
-              <CardContent sx={{ p: 3 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-                  <Typography variant="h6">Mood this week</Typography>
-                  <Button size="small" component={Link} href="/dashboard/diary">
-                    Check in
-                  </Button>
-                </Stack>
-                <Typography variant="body2" color="text.secondary">
-                  No mood data yet. Log a diary entry to start seeing your weekly trend.
-                </Typography>
-              </CardContent>
-            </Card>
-
             <RecentNotificationsCard
               notifications={notifications}
               loading={notificationsQuery.isLoading}
@@ -151,53 +133,118 @@ export default function StudentDashboardPage() {
   );
 }
 
-function MasteryTrendCard({ subjects, loading }: { subjects: Subject[]; loading: boolean }) {
+// ─── Stat tile (no icon swatch — keeps the row calm at 4-up) ─────────
+
+function Stat({
+  label,
+  value,
+  unit,
+  hint,
+  index = 0,
+}: {
+  label: string;
+  value: string;
+  unit?: string;
+  hint?: string;
+  index?: number;
+}) {
   return (
-    <Card>
-      <CardContent sx={{ p: 3 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 2 }}>
-          <Box>
-            <Typography variant="h6">Mastery trend</Typography>
-            <Typography variant="body2" color="text.secondary">
-              How you're growing across your subjects this year
+    <motion.div {...enterStagger(index)} style={{ height: "100%" }}>
+      <Card sx={{ height: "100%" }}>
+        <CardContent>
+          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+            {label}
+          </Typography>
+          <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ mt: 0.5 }}>
+            <Typography variant="h4" component="div" sx={{ fontWeight: 600, lineHeight: 1.1 }}>
+              {value}
             </Typography>
-          </Box>
-          <Button component={Link} href="/dashboard/mastery" endIcon={<ArrowForwardIcon />} size="small">
-            Details
-          </Button>
-        </Stack>
-        {loading ? (
-          <Skeleton variant="rounded" height={300} />
-        ) : subjects.length === 0 ? (
-          <Box sx={{ py: 6, textAlign: "center" }}>
-            <Typography variant="body2" color="text.secondary">
-              No subjects yet — add some to see your term-over-term trend.
+            {unit && (
+              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                {unit}
+              </Typography>
+            )}
+          </Stack>
+          {hint && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {hint}
             </Typography>
-          </Box>
-        ) : subjects.every((s) => !s.termAverages || s.termAverages.length === 0) ? (
-          <Box sx={{ py: 6, textAlign: "center" }}>
-            <Typography variant="body2" color="text.secondary">
-              Log marks against your subjects to see your term-over-term trend appear here.
-            </Typography>
-          </Box>
-        ) : (
-          <LineChart
-            height={300}
-            xAxis={[{ data: ["T1", "T2", "T3", "T4"], scaleType: "point" }]}
-            series={subjects
-              .filter((s) => s.termAverages && s.termAverages.length > 0)
-              .slice(0, 5)
-              .map((s) => ({
-                data: (s.termAverages ?? []).map((t) => t.mark),
-                label: s.name,
-              }))}
-            margin={{ top: 16, right: 24, bottom: 32, left: 40 }}
-          />
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
+
+// ─── Mastery trend (full-width on lg/xl) ──────────────────────────────
+
+function MasteryTrendCard({ subjects, loading }: { subjects: Subject[]; loading: boolean }) {
+  const withData = subjects.filter((s) => s.termAverages && s.termAverages.length > 0);
+  const empty = !loading && (subjects.length === 0 || withData.length === 0);
+
+  return (
+    <motion.div {...enter}>
+      <Card>
+        <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+                Mastery
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Term-over-term
+              </Typography>
+            </Box>
+            <Button
+              component={Link}
+              href="/dashboard/mastery"
+              endIcon={<ArrowForwardIcon />}
+              size="small"
+            >
+              Details
+            </Button>
+          </Stack>
+          {loading ? (
+            <Skeleton variant="rounded" height={280} />
+          ) : empty ? (
+            <Box sx={{ py: 6, textAlign: "center" }}>
+              <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, mx: "auto" }}>
+                {subjects.length === 0
+                  ? "Add subjects, then log a few marks against them — your term-over-term trend lives here."
+                  : "Log marks against your subjects to see your trend appear."}
+              </Typography>
+            </Box>
+          ) : (
+            <LineChart
+              height={280}
+              xAxis={[{ data: ["T1", "T2", "T3", "T4"], scaleType: "point" }]}
+              series={withData
+                .slice(0, 5)
+                .map((s) => ({
+                  data: (s.termAverages ?? []).map((t) => t.mark),
+                  label: s.name,
+                  curve: "monotoneX",
+                }))}
+              margin={{ top: 16, right: 24, bottom: 32, left: 40 }}
+            />
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// ─── Upcoming assessments list ────────────────────────────────────────
+
+type UpcomingItem = {
+  id: string;
+  title: string;
+  subjectId?: string;
+  type: string;
+  weight: number;
+  dueDate: string;
+  predictedMark?: number | null;
+};
 
 function UpcomingAssessmentsCard({
   upcoming,
@@ -205,102 +252,146 @@ function UpcomingAssessmentsCard({
   loading,
   isEmpty,
 }: {
-  upcoming: ReturnType<typeof Array.prototype.filter>;
+  upcoming: UpcomingItem[];
   subjects: Subject[];
   loading: boolean;
   isEmpty: boolean;
 }) {
   return (
-    <Card>
-      <CardContent sx={{ p: 3 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-          <Box>
-            <Typography variant="h6">Upcoming assessments</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Sorted by due date — predicted marks updated daily
-            </Typography>
-          </Box>
-          <Button component={Link} href="/dashboard/assessments" endIcon={<ArrowForwardIcon />} size="small">
-            All assessments
-          </Button>
-        </Stack>
-        {loading ? (
-          <Stack spacing={1}>
-            <Skeleton variant="rounded" height={64} />
-            <Skeleton variant="rounded" height={64} />
-            <Skeleton variant="rounded" height={64} />
+    <motion.div {...enter}>
+      <Card>
+        <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+                Up next
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Upcoming SBAs
+              </Typography>
+            </Box>
+            <Button
+              component={Link}
+              href="/dashboard/assessments"
+              endIcon={<ArrowForwardIcon />}
+              size="small"
+            >
+              All
+            </Button>
           </Stack>
-        ) : isEmpty ? (
-          <Box sx={{ py: 4, textAlign: "center" }}>
-            <Typography variant="body2" color="text.secondary">
-              Nothing on the horizon. Enjoy the breather, or get ahead.
-            </Typography>
-          </Box>
-        ) : (
-          <Stack spacing={1.5}>
-            {upcoming.map((a: { id: string; title: string; subjectId?: string; type: string; weight: number; dueDate: string; predictedMark?: number | null }) => {
-              const subject = subjects.find((s) => s.id === a.subjectId);
-              const daysLeft = dayjs(a.dueDate).diff(dayjs(), "day");
-              const urgent = daysLeft <= 3;
-              return (
-                <Box
-                  key={a.id}
-                  sx={{
-                    p: 2,
-                    borderRadius: 2,
-                    border: 1,
-                    borderColor: "divider",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                  }}
-                >
+          {loading ? (
+            <Stack spacing={1.25}>
+              <Skeleton variant="rounded" height={68} />
+              <Skeleton variant="rounded" height={68} />
+              <Skeleton variant="rounded" height={68} />
+            </Stack>
+          ) : isEmpty ? (
+            <Box sx={{ py: 5, textAlign: "center" }}>
+              <Typography variant="body2" color="text.secondary">
+                Nothing on the horizon — enjoy the breather, or get ahead.
+              </Typography>
+            </Box>
+          ) : (
+            <Stack spacing={1.25}>
+              {upcoming.map((a) => {
+                const subject = subjects.find((s) => s.id === a.subjectId);
+                const daysLeft = dayjs(a.dueDate).diff(dayjs(), "day");
+                const urgent = daysLeft >= 0 && daysLeft <= 3;
+                return (
                   <Box
+                    key={a.id}
                     sx={{
-                      width: 44,
-                      height: 44,
+                      p: 2,
                       borderRadius: 1.5,
-                      display: "grid",
-                      placeItems: "center",
-                      bgcolor: "action.hover",
-                      color: "primary.main",
-                      flexShrink: 0,
+                      border: 1,
+                      borderColor: "divider",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      transition: "border-color 150ms ease",
+                      "&:hover": { borderColor: "text.secondary" },
                     }}
                   >
-                    <AssignmentIcon />
+                    <Box
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 1,
+                        display: "grid",
+                        placeItems: "center",
+                        color: "primary.main",
+                        bgcolor: (t) =>
+                          t.palette.mode === "dark"
+                            ? "rgba(116, 181, 174, 0.12)"
+                            : "rgba(15, 105, 99, 0.08)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      <AssignmentIcon fontSize="small" />
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }} noWrap>
+                        {a.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {subject?.name ?? "—"} · {a.type} · {a.weight}%
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Predicted
+                      </Typography>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        {a.predictedMark != null ? `${a.predictedMark}%` : "—"}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={urgent ? `${daysLeft}d` : dayjs(a.dueDate).format("DD MMM")}
+                      size="small"
+                      color={urgent ? "warning" : "default"}
+                      variant={urgent ? "filled" : "outlined"}
+                      sx={{ fontWeight: 600 }}
+                    />
                   </Box>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      {a.title}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {subject?.name ?? "—"} · {a.type} · weighting {a.weight}%
-                    </Typography>
-                  </Box>
-                  <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
-                    <Typography variant="caption" color="text.secondary">
-                      Predicted
-                    </Typography>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "primary.main" }}>
-                      {a.predictedMark ?? "—"}%
-                    </Typography>
-                  </Box>
-                  <Chip
-                    label={urgent ? `${daysLeft}d left` : `Due ${dayjs(a.dueDate).format("DD MMM")}`}
-                    size="small"
-                    color={urgent ? "warning" : "default"}
-                    variant={urgent ? "filled" : "outlined"}
-                    sx={{ fontWeight: 600 }}
-                  />
-                </Box>
-              );
-            })}
-          </Stack>
-        )}
-      </CardContent>
-    </Card>
+                );
+              })}
+            </Stack>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
+
+// ─── Today's focus (empty-state honest) ───────────────────────────────
+
+function TodaysFocusCard() {
+  return (
+    <motion.div {...enter}>
+      <Card>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+            Today
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+            Focus session
+          </Typography>
+          <Stack alignItems="center" spacing={1.5}>
+            <ProgressRing value={0} size={132} thickness={10} caption="of daily target" />
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
+              Start a session to begin tracking today's minutes.
+            </Typography>
+            <Button fullWidth component={Link} href="/dashboard/workspace" variant="contained">
+              Start focus session
+            </Button>
+          </Stack>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+// ─── Active goals (compact list) ──────────────────────────────────────
 
 function ActiveGoalsCard({
   goals,
@@ -312,46 +403,79 @@ function ActiveGoalsCard({
   isEmpty: boolean;
 }) {
   return (
-    <Card>
-      <CardContent sx={{ p: 3 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
-          <Typography variant="h6">Active goals</Typography>
-          <IconButton size="small" component={Link} href="/dashboard/goals">
-            <ArrowForwardIcon fontSize="small" />
-          </IconButton>
-        </Stack>
-        {loading ? (
-          <Stack spacing={1.5}>
-            <Skeleton variant="rounded" height={36} />
-            <Skeleton variant="rounded" height={36} />
-            <Skeleton variant="rounded" height={36} />
+    <motion.div {...enter}>
+      <Card>
+        <CardContent sx={{ p: 3 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 1.5 }}>
+            <Box>
+              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+                In progress
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Active goals
+              </Typography>
+            </Box>
+            <IconButton size="small" component={Link} href="/dashboard/goals" aria-label="All goals">
+              <ArrowForwardIcon fontSize="small" />
+            </IconButton>
           </Stack>
-        ) : isEmpty ? (
-          <Typography variant="body2" color="text.secondary">
-            No active goals — set one to start tracking.
-          </Typography>
-        ) : (
-          <Stack spacing={2}>
-            {goals.map((g) => (
-              <Box key={g.id}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    {g.title}
-                  </Typography>
-                  <StatusChip kind={g.status === "at_risk" ? "warning" : "primary"} label={`${g.progress}%`} />
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={g.progress}
-                  color={g.status === "at_risk" ? "warning" : "primary"}
-                />
-              </Box>
-            ))}
-          </Stack>
-        )}
-      </CardContent>
-    </Card>
+          {loading ? (
+            <Stack spacing={1.5}>
+              <Skeleton variant="rounded" height={36} />
+              <Skeleton variant="rounded" height={36} />
+            </Stack>
+          ) : isEmpty ? (
+            <Typography variant="body2" color="text.secondary">
+              No active goals — set one to start tracking.
+            </Typography>
+          ) : (
+            <Stack spacing={2}>
+              {goals.map((g) => (
+                <Box key={g.id}>
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mb: 0.5 }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {g.title}
+                    </Typography>
+                    <StatusChip
+                      kind={g.status === "at_risk" ? "warning" : "primary"}
+                      label={`${g.progress}%`}
+                    />
+                  </Stack>
+                  <LinearProgress
+                    variant="determinate"
+                    value={g.progress}
+                    color={g.status === "at_risk" ? "warning" : "primary"}
+                  />
+                </Box>
+              ))}
+            </Stack>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
+}
+
+// ─── Recent notifications (no emoji — real icons) ────────────────────
+
+function notificationIcon(kind: string) {
+  switch (kind) {
+    case "celebration": return <CelebrationIcon fontSize="small" />;
+    case "alert":       return <WarningAmberIcon fontSize="small" />;
+    case "reminder":    return <InfoOutlinedIcon fontSize="small" />;
+    default:            return <InfoOutlinedIcon fontSize="small" />;
+  }
+}
+
+function notificationTint(kind: string): "primary" | "secondary" | "warning" {
+  if (kind === "celebration") return "secondary";
+  if (kind === "alert")       return "warning";
+  return "primary";
 }
 
 function RecentNotificationsCard({
@@ -364,59 +488,72 @@ function RecentNotificationsCard({
   isEmpty: boolean;
 }) {
   return (
-    <Card>
-      <CardContent sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ mb: 1.5 }}>
-          Recent
-        </Typography>
-        {loading ? (
-          <Stack spacing={1.25}>
-            <Skeleton variant="rounded" height={48} />
-            <Skeleton variant="rounded" height={48} />
-            <Skeleton variant="rounded" height={48} />
+    <motion.div {...enter}>
+      <Card>
+        <CardContent sx={{ p: 3 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 1.5 }}>
+            <Box>
+              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+                Recent
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                Activity
+              </Typography>
+            </Box>
+            <IconButton
+              size="small"
+              component={Link}
+              href="/dashboard/notifications"
+              aria-label="All notifications"
+            >
+              <ArrowForwardIcon fontSize="small" />
+            </IconButton>
           </Stack>
-        ) : isEmpty ? (
-          <Typography variant="body2" color="text.secondary">
-            No notifications yet. You're all caught up.
-          </Typography>
-        ) : (
-          <Stack spacing={1.5}>
-            {notifications.slice(0, 3).map((n) => (
-              <Stack key={n.id} direction="row" spacing={1.5} alignItems="flex-start">
-                <Avatar
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    bgcolor:
-                      n.kind === "celebration"
-                        ? "secondary.main"
-                        : n.kind === "alert"
-                          ? "warning.main"
-                          : "primary.main",
-                    color:
-                      n.kind === "celebration"
-                        ? "secondary.contrastText"
-                        : n.kind === "alert"
-                          ? "warning.contrastText"
-                          : "primary.contrastText",
-                    fontSize: "0.75rem",
-                  }}
-                >
-                  {n.kind === "celebration" ? "🎉" : n.kind === "alert" ? "!" : "i"}
-                </Avatar>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ fontWeight: n.read ? 400 : 600 }}>
-                    {n.title}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    <RelativeTime iso={n.time} />
-                  </Typography>
-                </Box>
-              </Stack>
-            ))}
-          </Stack>
-        )}
-      </CardContent>
-    </Card>
+          {loading ? (
+            <Stack spacing={1.25}>
+              <Skeleton variant="rounded" height={48} />
+              <Skeleton variant="rounded" height={48} />
+              <Skeleton variant="rounded" height={48} />
+            </Stack>
+          ) : isEmpty ? (
+            <Typography variant="body2" color="text.secondary">
+              You're all caught up.
+            </Typography>
+          ) : (
+            <Stack spacing={1.75}>
+              {notifications.slice(0, 3).map((n) => {
+                const tint = notificationTint(n.kind);
+                return (
+                  <Stack key={n.id} direction="row" spacing={1.5} alignItems="flex-start">
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 1,
+                        display: "grid",
+                        placeItems: "center",
+                        color: `${tint}.main`,
+                        bgcolor: (t) => `${t.palette[tint].main}1A`,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {notificationIcon(n.kind)}
+                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" sx={{ fontWeight: n.read ? 400 : 600 }}>
+                        {n.title}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        <RelativeTime iso={n.time} />
+                      </Typography>
+                    </Box>
+                  </Stack>
+                );
+              })}
+            </Stack>
+          )}
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
