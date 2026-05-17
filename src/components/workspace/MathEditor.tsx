@@ -9,6 +9,7 @@ import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
 import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
+import GlobalStyles from "@mui/material/GlobalStyles";
 import MoreHorizIcon from "@mui/icons-material/MoreHorizOutlined";
 import AddIcon from "@mui/icons-material/AddOutlined";
 import CloseIcon from "@mui/icons-material/CloseOutlined";
@@ -106,16 +107,38 @@ const MORE_GROUPS: { title: string; items: Template[] }[] = [
   },
 ];
 
-// MathLive loader — fonts + keyboard policy set once on first import.
+// MathLive loader — fonts, keyboard kill-switch set once on first import.
 let registerPromise: Promise<void> | null = null;
 function ensureMathLive(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (registerPromise) return registerPromise;
   registerPromise = import("mathlive").then((mod) => {
-    type Globals = { MathfieldElement?: { fontsDirectory: string } };
+    type Globals = {
+      MathfieldElement?: { fontsDirectory: string };
+      mathVirtualKeyboard?: {
+        layouts: unknown;
+        visible: boolean;
+        hide?: () => void;
+      };
+    };
     const g = mod as unknown as Globals;
     if (g.MathfieldElement) {
       g.MathfieldElement.fontsDirectory = "/mathlive-fonts";
+    }
+    // Belt-and-suspenders kill-switch for the virtual keyboard.
+    // Per-field policy='off' should be enough but in practice the
+    // global has snuck the keyboard open in past versions (focus
+    // race, "show" called by something else). Set the global state
+    // hidden + trim its layouts as a fallback so even if it does
+    // surface it's not a fully-loaded 4-tab keyboard.
+    const mvk =
+      g.mathVirtualKeyboard ??
+      (window as unknown as { mathVirtualKeyboard?: Globals["mathVirtualKeyboard"] })
+        .mathVirtualKeyboard;
+    if (mvk) {
+      try { mvk.layouts = ["numeric"]; } catch { /* ignore */ }
+      try { mvk.visible = false; } catch { /* ignore */ }
+      try { mvk.hide?.(); } catch { /* ignore */ }
     }
   });
   return registerPromise;
@@ -221,6 +244,17 @@ export function MathEditor({ value, onChange }: Props) {
 
   return (
     <Stack spacing={1.5}>
+      {/* Nuke MathLive's virtual keyboard wherever it tries to render.
+          Per-field policy='off' is the proper API answer; this is the
+          backstop so any version regression or race can't drop the
+          stock 4-tab iOS-y keyboard back into the page. */}
+      <GlobalStyles
+        styles={{
+          ".ML__keyboard": { display: "none !important" },
+          ".ML__keyboard--visible": { display: "none !important" },
+          ".MLK__container": { display: "none !important" },
+        }}
+      />
       <Toolbar onInsert={insertTemplate} onMore={(e) => setMoreEl(e.currentTarget)} />
 
       <Stack spacing={0.75}>
@@ -321,12 +355,15 @@ function MathLine({
       const field = document.createElement("math-field") as MathFieldEl;
       field.setAttribute("math-virtual-keyboard-policy", "off");
       field.setAttribute("smart-mode", "true");
-      // Belt-and-suspenders: clear MathLive's built-in menu items and
-      // disable the LaTeX-command popover. Our toolbar covers every
-      // structure a student needs; MathLive's own context menu and
-      // backslash-completion add nothing and confuse the surface.
-      // Wrapped in try/catch because the property names + their
-      // presence change across MathLive versions.
+      // Force the kill-switch via every API surface MathLive exposes —
+      // attribute, property, and the global. Some versions read one but
+      // not the other; cover them all.
+      try {
+        (field as unknown as { mathVirtualKeyboardPolicy?: string })
+          .mathVirtualKeyboardPolicy = "off";
+      } catch {
+        // ignore
+      }
       try {
         (field as unknown as { menuItems?: unknown[] }).menuItems = [];
       } catch {
