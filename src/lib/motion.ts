@@ -10,26 +10,34 @@
 
 import type { Transition, Variants } from "framer-motion";
 
-// Standard entry: 8px rise, fade in. Spring tuned to feel calm — fast
-// enough to not feel sluggish, slow enough to read.
+// ease-out-quart per the impeccable animate brief. Cubic-bezier curve
+// recommended for "natural deceleration"; product register prefers
+// 150-250ms duration. Was a spring at stiffness 300, damping 30,
+// which has a damping ratio of ~0.87 and a small (~5%) overshoot --
+// not bounce-y in the cartoon sense, but not strictly compliant with
+// the "no bounce or elastic" rule either. A tween with ease-out-quart
+// is critically damped: it eases in, doesn't overshoot, doesn't ring.
+const EASE_OUT_QUART = [0.25, 1, 0.5, 1] as const;
+const ENTER_DURATION = 0.22;
+
+// Standard entry: 8px rise, fade in.
 //
 // Use as: <motion.div {...enter}>...</motion.div>
 export const enter = {
   initial: { opacity: 0, y: 8 } as const,
   animate: { opacity: 1, y: 0 } as const,
-  transition: { type: "spring", stiffness: 300, damping: 30 } satisfies Transition,
+  transition: { duration: ENTER_DURATION, ease: EASE_OUT_QUART } satisfies Transition,
 };
 
 // Staggered entry for lists / grids. Build with: enterStagger(index).
-// Keep the per-item delay short — 40ms is enough to read as a wave,
+// Keep the per-item delay short -- 40ms is enough to read as a wave,
 // 100ms+ becomes an animation people sit through.
 export const enterStagger = (index: number) => ({
   initial: { opacity: 0, y: 8 } as const,
   animate: { opacity: 1, y: 0 } as const,
   transition: {
-    type: "spring",
-    stiffness: 300,
-    damping: 30,
+    duration: ENTER_DURATION,
+    ease: EASE_OUT_QUART,
     delay: Math.min(index, 8) * 0.04,
   } satisfies Transition,
 });

@@ -27,7 +27,7 @@ import {
   useGoals,
 } from "@/lib/api/queries";
 import { type Goal, type Subject } from "@/lib/mockData";
-import { enter, enterStagger } from "@/lib/motion";
+import { enter } from "@/lib/motion";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
 import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
@@ -197,86 +197,93 @@ function UpcomingAssessmentsCard({
   const [hero, ...rest] = upcoming;
 
   return (
-    <motion.div {...enter}>
-      <Card sx={{ mb: 3 }}>
-        {/* Primary surface gets more breathing room than the
-            secondary cards below (which stay at the standard
-            { xs: 2.5, sm: 3 }). Same padding everywhere is
-            monotony; the size difference encodes hierarchy. */}
-        <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="flex-end"
-            sx={{ mb: 2.5 }}
+    // Card itself doesn't animate on every page visit -- product
+    // register: "No page-load choreography; users are in a task."
+    // The hero ROW (the page's focal moment) gets the signature
+    // entrance instead, inside the populated branch below.
+    <Card sx={{ mb: 3 }}>
+      {/* Primary surface gets more breathing room than the
+          secondary cards below (which stay at the standard
+          { xs: 2.5, sm: 3 }). Same padding everywhere is
+          monotony; the size difference encodes hierarchy. */}
+      <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-end"
+          sx={{ mb: 2.5 }}
+        >
+          <Box>
+            <Typography variant="overline" color="text.secondary">
+              Up next
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Upcoming SBAs
+            </Typography>
+          </Box>
+          <Button
+            component={Link}
+            href="/dashboard/assessments"
+            endIcon={<ArrowForwardIcon />}
+            size="small"
           >
-            <Box>
-              <Typography variant="overline" color="text.secondary">
-                Up next
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Upcoming SBAs
-              </Typography>
-            </Box>
-            <Button
-              component={Link}
-              href="/dashboard/assessments"
-              endIcon={<ArrowForwardIcon />}
-              size="small"
-            >
-              All
-            </Button>
-          </Stack>
+            All
+          </Button>
+        </Stack>
 
-          {loading ? (
-            <Stack spacing={1.25}>
-              <Skeleton variant="rounded" height={120} />
-              <Skeleton variant="rounded" height={56} />
-              <Skeleton variant="rounded" height={56} />
-            </Stack>
-          ) : isError ? (
-            <CardError onRetry={onRetry} what="your upcoming SBAs" />
-          ) : isEmpty ? (
-            <Box sx={{ py: 5, textAlign: "center" }}>
-              <Typography variant="body2" color="text.secondary">
-                Nothing on the horizon. Enjoy the breather, or get ahead.
-              </Typography>
-            </Box>
-          ) : (
-            <>
-              {hero && (
+        {loading ? (
+          <Stack spacing={1.25}>
+            <Skeleton variant="rounded" height={120} />
+            <Skeleton variant="rounded" height={56} />
+            <Skeleton variant="rounded" height={56} />
+          </Stack>
+        ) : isError ? (
+          <CardError onRetry={onRetry} what="your upcoming SBAs" />
+        ) : isEmpty ? (
+          <Box sx={{ py: 5, textAlign: "center" }}>
+            <Typography variant="body2" color="text.secondary">
+              Nothing on the horizon. Enjoy the breather, or get ahead.
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            {hero && (
+              // The hero row is the page's one signature entrance:
+              // a single 220ms fade-and-rise when the data arrives.
+              // Conveys "this is the answer to what's next" without
+              // making the whole page choreograph itself.
+              <motion.div {...enter}>
                 <HeroUpcomingRow
                   a={hero}
                   subject={subjects.find((s) => s.id === hero.subjectId)}
                 />
-              )}
+              </motion.div>
+            )}
 
-              {rest.length > 0 && (
-                <>
-                  {/* Asymmetric divider rhythm: more space above
-                      the rule (the hero block needs its breath),
-                      tighter below (compact rows are dense). The
-                      previous my: 2 was uniform monotony. */}
-                  <Divider sx={{ mt: 3, mb: 1.5 }} />
-                  <Stack spacing={0.5}>
-                    {rest.map((a, i) => (
-                      <motion.div key={a.id} {...enterStagger(i)}>
-                        <CompactUpcomingRow
-                          a={a}
-                          subject={subjects.find((s) => s.id === a.subjectId)}
-                        />
-                      </motion.div>
-                    ))}
-                  </Stack>
-                </>
-              )}
-            </>
-          )}
+            {rest.length > 0 && (
+              <>
+                {/* Asymmetric divider rhythm: more space above
+                    the rule (the hero block needs its breath),
+                    tighter below (compact rows are dense). The
+                    previous my: 2 was uniform monotony. */}
+                <Divider sx={{ mt: 3, mb: 1.5 }} />
+                <Stack spacing={0.5}>
+                  {rest.map((a) => (
+                    <CompactUpcomingRow
+                      key={a.id}
+                      a={a}
+                      subject={subjects.find((s) => s.id === a.subjectId)}
+                    />
+                  ))}
+                </Stack>
+              </>
+            )}
+          </>
+        )}
 
-          <LastSynced at={dataUpdatedAt} />
-        </CardContent>
-      </Card>
-    </motion.div>
+        <LastSynced at={dataUpdatedAt} />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -555,156 +562,154 @@ function MasteryTrendCard({
       : null;
 
   return (
-    <motion.div {...enter}>
-      <Card sx={{ height: "100%" }}>
-        <CardContent sx={{ p: { xs: 2.5, sm: 3 }, height: "100%" }}>
+    <Card sx={{ height: "100%" }}>
+      <CardContent sx={{ p: { xs: 2.5, sm: 3 }, height: "100%" }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-end"
+          sx={{ mb: 2 }}
+        >
+          <Box>
+            <Typography variant="overline" color="text.secondary">
+              Mastery
+            </Typography>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Term-over-term
+            </Typography>
+          </Box>
+          <Button
+            component={Link}
+            href="/dashboard/mastery"
+            endIcon={<ArrowForwardIcon />}
+            size="small"
+          >
+            Details
+          </Button>
+        </Stack>
+
+        {isError && <CardError onRetry={onRetry} what="your mastery trend" />}
+
+        {!isError && predictedAverage != null && (
           <Stack
             direction="row"
-            justifyContent="space-between"
             alignItems="flex-end"
+            spacing={2}
             sx={{ mb: 2 }}
           >
             <Box>
-              <Typography variant="overline" color="text.secondary">
-                Mastery
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Term-over-term
-              </Typography>
-            </Box>
-            <Button
-              component={Link}
-              href="/dashboard/mastery"
-              endIcon={<ArrowForwardIcon />}
-              size="small"
-            >
-              Details
-            </Button>
-          </Stack>
-
-          {isError && <CardError onRetry={onRetry} what="your mastery trend" />}
-
-          {!isError && predictedAverage != null && (
-            <Stack
-              direction="row"
-              alignItems="flex-end"
-              spacing={2}
-              sx={{ mb: 2 }}
-            >
-              <Box>
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                  <Typography variant="caption" color="text.secondary">
-                    Predicted next term
-                  </Typography>
-                  <Tooltip
-                    arrow
-                    enterTouchDelay={0}
-                    title="Weighted average of your current term marks, projected forward using the remaining assessment weights for each subject. Updates as new marks are logged."
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <Typography variant="caption" color="text.secondary">
+                  Predicted next term
+                </Typography>
+                <Tooltip
+                  arrow
+                  enterTouchDelay={0}
+                  title="Weighted average of your current term marks, projected forward using the remaining assessment weights for each subject. Updates as new marks are logged."
+                >
+                  <IconButton
+                    size="small"
+                    sx={{ p: 0.25 }}
+                    aria-label="How predicted average is calculated"
                   >
-                    <IconButton
-                      size="small"
-                      sx={{ p: 0.25 }}
-                      aria-label="How predicted average is calculated"
-                    >
-                      <InfoOutlinedIcon sx={{ fontSize: "1rem" }} />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-                <Stack direction="row" alignItems="baseline" spacing={0.75}>
-                  <Typography
-                    component="div"
-                    sx={{
-                      // Display-style numeral. Larger than h4 (1.25rem)
-                      // so the predicted mark is the page's bold focal
-                      // figure. Clamp keeps it readable across breakpoints.
-                      fontSize: { xs: "2.25rem", sm: "2.75rem" },
-                      fontWeight: 600,
-                      lineHeight: 1,
-                      letterSpacing: "-0.02em",
-                      color: "primary.main",
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {predictedAverage}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: "1rem",
-                      fontWeight: 500,
-                      color: "primary.main",
-                      lineHeight: 1,
-                    }}
-                  >
-                    %
-                  </Typography>
-                </Stack>
-              </Box>
-              {delta != null && delta !== 0 && (
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  spacing={0.25}
+                    <InfoOutlinedIcon sx={{ fontSize: "1rem" }} />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+              <Stack direction="row" alignItems="baseline" spacing={0.75}>
+                <Typography
+                  component="div"
                   sx={{
-                    color: delta > 0 ? "success.main" : "warning.main",
-                    pb: 0.75,
+                    // Display-style numeral. Larger than h4 (1.25rem)
+                    // so the predicted mark is the page's bold focal
+                    // figure. Clamp keeps it readable across breakpoints.
+                    fontSize: { xs: "2.25rem", sm: "2.75rem" },
+                    fontWeight: 600,
+                    lineHeight: 1,
+                    letterSpacing: "-0.02em",
+                    color: "primary.main",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {delta > 0 ? (
-                    <ArrowDropUpIcon fontSize="small" />
-                  ) : (
-                    <ArrowDropDownIcon fontSize="small" />
-                  )}
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontWeight: 600,
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {Math.abs(delta)}pt
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    vs current
-                  </Typography>
-                </Stack>
-              )}
-            </Stack>
-          )}
-
-          {loading ? (
-            <Skeleton variant="rounded" height={240} />
-          ) : isError ? null : empty ? (
-            <Box sx={{ py: 6, textAlign: "center" }}>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                sx={{ maxWidth: 360, mx: "auto" }}
-              >
-                {subjects.length === 0
-                  ? "Add subjects, then log a few marks against them. Your term-over-term trend lives here."
-                  : "Log marks against your subjects to see your trend appear."}
-              </Typography>
+                  {predictedAverage}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: "1rem",
+                    fontWeight: 500,
+                    color: "primary.main",
+                    lineHeight: 1,
+                  }}
+                >
+                  %
+                </Typography>
+              </Stack>
             </Box>
-          ) : (
-            <LineChart
-              height={240}
-              xAxis={[
-                { data: ["T1", "T2", "T3", "T4"], scaleType: "point" },
-              ]}
-              series={withData.slice(0, 5).map((s, i) => ({
-                data: (s.termAverages ?? []).map((t) => t.mark),
-                label: s.name,
-                curve: "monotoneX",
-                color: tealRamp[i],
-              }))}
-              margin={{ top: 16, right: 16, bottom: 32, left: 32 }}
-            />
-          )}
+            {delta != null && delta !== 0 && (
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.25}
+                sx={{
+                  color: delta > 0 ? "success.main" : "warning.main",
+                  pb: 0.75,
+                }}
+              >
+                {delta > 0 ? (
+                  <ArrowDropUpIcon fontSize="small" />
+                ) : (
+                  <ArrowDropDownIcon fontSize="small" />
+                )}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {Math.abs(delta)}pt
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  vs current
+                </Typography>
+              </Stack>
+            )}
+          </Stack>
+        )}
 
-          <LastSynced at={dataUpdatedAt} />
-        </CardContent>
-      </Card>
-    </motion.div>
+        {loading ? (
+          <Skeleton variant="rounded" height={240} />
+        ) : isError ? null : empty ? (
+          <Box sx={{ py: 6, textAlign: "center" }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ maxWidth: 360, mx: "auto" }}
+            >
+              {subjects.length === 0
+                ? "Add subjects, then log a few marks against them. Your term-over-term trend lives here."
+                : "Log marks against your subjects to see your trend appear."}
+            </Typography>
+          </Box>
+        ) : (
+          <LineChart
+            height={240}
+            xAxis={[
+              { data: ["T1", "T2", "T3", "T4"], scaleType: "point" },
+            ]}
+            series={withData.slice(0, 5).map((s, i) => ({
+              data: (s.termAverages ?? []).map((t) => t.mark),
+              label: s.name,
+              curve: "monotoneX",
+              color: tealRamp[i],
+            }))}
+            margin={{ top: 16, right: 16, bottom: 32, left: 32 }}
+          />
+        )}
+
+        <LastSynced at={dataUpdatedAt} />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -724,57 +729,55 @@ function ActiveGoalsCard({
   isEmpty: boolean;
 }) {
   return (
-    <motion.div {...enter}>
-      <Card sx={{ height: "100%" }}>
-        <CardContent sx={{ p: { xs: 2.5, sm: 3 }, height: "100%" }}>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="flex-end"
-            sx={{ mb: 2 }}
-          >
-            <Box>
-              {/* Overline used to read "In progress" but the list
-                  includes at-risk goals, which aren't really "in
-                  progress" in the positive sense. "Tracking" is
-                  honest cover for both states. */}
-              <Typography variant="overline" color="text.secondary">
-                Tracking
-              </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                Active goals
-              </Typography>
-            </Box>
-            <Button
-              component={Link}
-              href="/dashboard/goals"
-              endIcon={<ArrowForwardIcon />}
-              size="small"
-            >
-              All
-            </Button>
-          </Stack>
-          {loading ? (
-            <Stack spacing={1.5}>
-              <Skeleton variant="rounded" height={56} />
-              <Skeleton variant="rounded" height={56} />
-            </Stack>
-          ) : isError ? (
-            <CardError onRetry={onRetry} what="your goals" />
-          ) : isEmpty ? (
-            <Typography variant="body2" color="text.secondary">
-              No active goals yet. Set one to start tracking.
+    <Card sx={{ height: "100%" }}>
+      <CardContent sx={{ p: { xs: 2.5, sm: 3 }, height: "100%" }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-end"
+          sx={{ mb: 2 }}
+        >
+          <Box>
+            {/* Overline used to read "In progress" but the list
+                includes at-risk goals, which aren't really "in
+                progress" in the positive sense. "Tracking" is
+                honest cover for both states. */}
+            <Typography variant="overline" color="text.secondary">
+              Tracking
             </Typography>
-          ) : (
-            <Stack spacing={1.5}>
-              {goals.map((g) => (
-                <GoalRow key={g.id} g={g} />
-              ))}
-            </Stack>
-          )}
-        </CardContent>
-      </Card>
-    </motion.div>
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Active goals
+            </Typography>
+          </Box>
+          <Button
+            component={Link}
+            href="/dashboard/goals"
+            endIcon={<ArrowForwardIcon />}
+            size="small"
+          >
+            All
+          </Button>
+        </Stack>
+        {loading ? (
+          <Stack spacing={1.5}>
+            <Skeleton variant="rounded" height={56} />
+            <Skeleton variant="rounded" height={56} />
+          </Stack>
+        ) : isError ? (
+          <CardError onRetry={onRetry} what="your goals" />
+        ) : isEmpty ? (
+          <Typography variant="body2" color="text.secondary">
+            No active goals yet. Set one to start tracking.
+          </Typography>
+        ) : (
+          <Stack spacing={1.5}>
+            {goals.map((g) => (
+              <GoalRow key={g.id} g={g} />
+            ))}
+          </Stack>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
