@@ -29,16 +29,6 @@ import {
   type AcademicProfile,
 } from "@/lib/mockData";
 
-export type PastPaper = {
-  id: string;
-  year: number;
-  subject: string;
-  paper: string;
-  board: string;
-  topic: string;
-  solved: boolean;
-};
-
 export type Counsellor = {
   id: string;
   name: string;
@@ -445,12 +435,6 @@ export const useCourses = () =>
   useQuery<Course[]>({
     queryKey: queryKeys.courses(),
     queryFn: () => apiClient.get<Course[]>("/api/marketplace/courses"),
-  });
-
-export const usePastPapers = () =>
-  useQuery<PastPaper[]>({
-    queryKey: queryKeys.pastPapers(),
-    queryFn: () => apiClient.get<PastPaper[]>("/api/practice/past-papers"),
   });
 
 export const useDiaryEntries = () =>
