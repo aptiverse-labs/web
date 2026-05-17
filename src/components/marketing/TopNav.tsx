@@ -16,6 +16,7 @@ import Divider from "@mui/material/Divider";
 import MenuIcon from "@mui/icons-material/Menu";
 import CloseIcon from "@mui/icons-material/Close";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Logo } from "@/components/common/Logo";
 import { ColorModeToggle } from "@/components/common/ColorModeToggle";
 
@@ -30,6 +31,7 @@ const NAV_LINKS: { label: string; href: string }[] = [
 
 export function TopNav() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <>
@@ -62,28 +64,34 @@ export function TopNav() {
             alignItems="center"
             sx={{ ml: 5, display: { xs: "none", md: "flex" } }}
           >
-            {NAV_LINKS.map((l) => (
-              <Box
-                key={l.href}
-                component={Link}
-                href={l.href}
-                sx={{
-                  fontSize: "0.875rem",
-                  fontWeight: 500,
-                  color: "text.secondary",
-                  textDecoration: "none",
-                  transition: "color 150ms",
-                  "&:hover": { color: "text.primary" },
-                }}
-              >
-                {l.label}
-              </Box>
-            ))}
+            {NAV_LINKS.map((l) => {
+              const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
+              return (
+                <Box
+                  key={l.href}
+                  component={Link}
+                  href={l.href}
+                  aria-current={active ? "page" : undefined}
+                  sx={{
+                    fontSize: "0.875rem",
+                    fontWeight: active ? 600 : 500,
+                    color: active ? "text.primary" : "text.secondary",
+                    textDecoration: "none",
+                    // Ease-out-quart so colour fade reads as deceleration,
+                    // not the default linear-ish browser easing.
+                    transition: "color 200ms cubic-bezier(0.165, 0.84, 0.44, 1)",
+                    "&:hover": { color: "text.primary" },
+                  }}
+                >
+                  {l.label}
+                </Box>
+              );
+            })}
           </Stack>
 
           <Box sx={{ flex: 1 }} />
 
-          <Stack direction="row" spacing={1.25} alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center">
             <ColorModeToggle />
             <Button
               component={Link}
@@ -107,8 +115,14 @@ export function TopNav() {
         </Toolbar>
       </AppBar>
 
-      <Drawer anchor="right" open={open} onClose={() => setOpen(false)} sx={{ display: { md: "none" } }}>
-        <Box sx={{ width: 320, p: 2 }}>
+      <Drawer
+        anchor="right"
+        open={open}
+        onClose={() => setOpen(false)}
+        slotProps={{ paper: { "aria-label": "Site navigation" } }}
+        sx={{ display: { md: "none" } }}
+      >
+        <Box sx={{ width: { xs: "min(320px, 88vw)", sm: 320 }, p: 2 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
             <Logo />
             <IconButton onClick={() => setOpen(false)} aria-label="Close menu">
@@ -116,14 +130,28 @@ export function TopNav() {
             </IconButton>
           </Stack>
           <Divider />
-          <List>
-            {NAV_LINKS.map((l) => (
-              <ListItem key={l.href} disablePadding>
-                <ListItemButton component={Link} href={l.href} onClick={() => setOpen(false)}>
-                  <ListItemText primary={l.label} primaryTypographyProps={{ fontWeight: 500 }} />
-                </ListItemButton>
-              </ListItem>
-            ))}
+          <List component="nav" aria-label="Site navigation">
+            {NAV_LINKS.map((l) => {
+              const active = pathname === l.href || pathname.startsWith(`${l.href}/`);
+              return (
+                <ListItem key={l.href} disablePadding>
+                  <ListItemButton
+                    component={Link}
+                    href={l.href}
+                    onClick={() => setOpen(false)}
+                    selected={active}
+                    aria-current={active ? "page" : undefined}
+                  >
+                    <ListItemText
+                      primary={l.label}
+                      slotProps={{
+                        primary: { sx: { fontWeight: active ? 600 : 500 } },
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              );
+            })}
           </List>
           <Stack direction="row" spacing={1.25} sx={{ mt: 2 }}>
             <Button component={Link} href="/login" fullWidth variant="outlined">

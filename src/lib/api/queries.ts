@@ -571,10 +571,11 @@ export const useClasses = () =>
 
 export type AppNotification = Notification & { actionHref?: string | null };
 
-export const useNotifications = () =>
+export const useNotifications = (options?: { enabled?: boolean }) =>
   useQuery<AppNotification[]>({
     queryKey: queryKeys.notifications(),
     queryFn: () => apiClient.get<AppNotification[]>("/api/notifications"),
+    enabled: options?.enabled,
   });
 
 // Lightweight count for the navbar bell badge. Polled more aggressively

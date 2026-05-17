@@ -59,7 +59,7 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
   // Recent notifications for the dropdown preview. Only fired once the
   // user opens the menu — no point shipping the list with every page
   // load when most users will never open this menu.
-  const recentQuery = useNotifications();
+  const recentQuery = useNotifications({ enabled: !!notifEl });
   const recent = (recentQuery.data ?? []).slice(0, 5);
   const markRead = useMarkNotificationRead();
 
@@ -245,13 +245,18 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
             </Avatar>
           </IconButton>
 
-          <Menu open={!!profileEl} anchorEl={profileEl} onClose={() => setProfileEl(null)}>
+          <Menu
+            open={!!profileEl}
+            anchorEl={profileEl}
+            onClose={() => setProfileEl(null)}
+            slotProps={{ paper: { sx: { minWidth: 220, maxWidth: 280 } } }}
+          >
             <Box sx={{ px: 2, pt: 1.5, pb: 1 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }} noWrap>
                 {displayName}
               </Typography>
               {subtitle && (
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
                   {subtitle}
                 </Typography>
               )}
