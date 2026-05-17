@@ -42,15 +42,31 @@ type Template = {
   hint?: string;
 };
 
-const PRIMARY: Template[] = [
-  { label: "a⁄b",  latex: "\\frac{#?}{#?}",                   hint: "Fraction" },
-  { label: "√",    latex: "\\sqrt{#?}",                        hint: "Square root" },
-  { label: "xⁿ",   latex: "^{#?}",                             hint: "Power / exponent" },
-  { label: "xₙ",   latex: "_{#?}",                             hint: "Subscript" },
-  { label: "( )",  latex: "\\left(#?\\right)",                 hint: "Auto-sized brackets" },
-  { label: "π",    latex: "\\pi",                              hint: "Pi" },
+// Two rows. The top row is structures (fraction, root, exponent,
+// brackets) — things you can't easily type. The bottom row is the
+// everyday operators (+ − × ÷ =) that the OS keyboard doesn't have
+// in a math-friendly form. Most-used keys are one tap, no popover hunt.
+const PRIMARY_ROWS: Template[][] = [
+  [
+    { label: "a⁄b",  latex: "\\frac{#?}{#?}",     hint: "Fraction" },
+    { label: "√",    latex: "\\sqrt{#?}",          hint: "Square root" },
+    { label: "xⁿ",   latex: "^{#?}",               hint: "Power / exponent" },
+    { label: "xₙ",   latex: "_{#?}",               hint: "Subscript" },
+    { label: "( )",  latex: "\\left(#?\\right)",   hint: "Auto-sized brackets" },
+    { label: "π",    latex: "\\pi",                hint: "Pi" },
+  ],
+  [
+    { label: "+",    latex: "+",                   hint: "Plus" },
+    { label: "−",    latex: "-",                   hint: "Minus" },
+    { label: "×",    latex: "\\times",             hint: "Times" },
+    { label: "÷",    latex: "\\div",               hint: "Divide" },
+    { label: "=",    latex: "=",                   hint: "Equals" },
+    { label: "≤",    latex: "\\le",                hint: "Less than or equal" },
+  ],
 ];
 
+// Less-common stuff stays in the More popover. Operators that were
+// promoted to PRIMARY_ROWS are removed here so we don't double-list.
 const MORE_GROUPS: { title: string; items: Template[] }[] = [
   {
     title: "Calculus & stats",
@@ -64,14 +80,11 @@ const MORE_GROUPS: { title: string; items: Template[] }[] = [
     ],
   },
   {
-    title: "Operators",
+    title: "More operators",
     items: [
-      { label: "×",   latex: "\\times"  },
-      { label: "÷",   latex: "\\div"    },
       { label: "±",   latex: "\\pm"     },
       { label: "·",   latex: "\\cdot"   },
       { label: "≈",   latex: "\\approx" },
-      { label: "≤",   latex: "\\le"     },
       { label: "≥",   latex: "\\ge"     },
       { label: "≠",   latex: "\\ne"     },
       { label: "→",   latex: "\\to"     },
@@ -491,39 +504,51 @@ function Toolbar({
   onMore: (e: React.MouseEvent<HTMLElement>) => void;
 }) {
   return (
-    <Stack
-      direction="row"
-      spacing={0.75}
-      sx={{
-        overflowX: "auto",
-        pb: 0.5,
-        scrollbarWidth: "none",
-        "&::-webkit-scrollbar": { display: "none" },
-      }}
-    >
-      {PRIMARY.map((tpl) => (
-        <ToolButton key={tpl.latex} template={tpl} onInsert={onInsert} />
-      ))}
-      <Box sx={{ flex: 1 }} />
-      <Tooltip title="More symbols">
-        <IconButton
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={onMore}
-          aria-label="More symbols"
+    <Stack spacing={0.75}>
+      {PRIMARY_ROWS.map((row, i) => (
+        <Stack
+          key={i}
+          direction="row"
+          spacing={0.75}
           sx={{
-            height: 44,
-            width: 44,
-            borderRadius: 1,
-            border: 1,
-            borderColor: "divider",
-            color: "text.secondary",
-            flexShrink: 0,
-            "&:hover": { borderColor: "primary.main", color: "primary.main", bgcolor: "transparent" },
+            overflowX: "auto",
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
           }}
         >
-          <MoreHorizIcon />
-        </IconButton>
-      </Tooltip>
+          {row.map((tpl) => (
+            <ToolButton key={tpl.latex} template={tpl} onInsert={onInsert} />
+          ))}
+          {i === 0 && (
+            <>
+              <Box sx={{ flex: 1 }} />
+              <Tooltip title="More symbols">
+                <IconButton
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={onMore}
+                  aria-label="More symbols"
+                  sx={{
+                    height: 44,
+                    width: 44,
+                    borderRadius: 1,
+                    border: 1,
+                    borderColor: "divider",
+                    color: "text.secondary",
+                    flexShrink: 0,
+                    "&:hover": {
+                      borderColor: "primary.main",
+                      color: "primary.main",
+                      bgcolor: "transparent",
+                    },
+                  }}
+                >
+                  <MoreHorizIcon />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
+        </Stack>
+      ))}
     </Stack>
   );
 }
