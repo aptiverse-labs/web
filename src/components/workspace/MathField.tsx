@@ -51,13 +51,17 @@ function ensureMathLive(): Promise<void> {
       m.MathfieldElement.fontsDirectory = "/mathlive-fonts";
     }
 
-    if (m.mathVirtualKeyboard) {
-      // Trim the on-screen keyboard to layouts a Grade 10–12 student
-      // actually uses. The default 4 tabs (`123` / `∞≠∈` / `abc` / `αβγ`)
-      // shoved a lot of seldom-needed glyphs in front of them — set
-      // theory and Latin letters live on their physical keyboard or
-      // are out of syllabus. Numbers + Greek is enough.
-      m.mathVirtualKeyboard.layouts = ["numeric", "greek"];
+    // Trim the on-screen keyboard to the layouts a Grade 10–12 student
+    // actually uses. The default 4 tabs (`123` / `∞≠∈` / `abc` / `αβγ`)
+    // surface set theory and Latin letters they don't need on-screen.
+    // Numbers + Greek is enough; the rest sits on the physical / OS
+    // keyboard. Try the named export first, fall back to the global
+    // (MathLive sets `window.mathVirtualKeyboard` on side-effect import).
+    const target =
+      m.mathVirtualKeyboard ??
+      (window as unknown as { mathVirtualKeyboard?: { layouts: unknown } }).mathVirtualKeyboard;
+    if (target) {
+      target.layouts = ["numeric", "greek"];
     }
   });
   return registerPromise;
@@ -92,6 +96,10 @@ export function MathField({
 
       const field = document.createElement("math-field") as HTMLElement;
       field.setAttribute("smart-mode", "true");
+      // Don't auto-open the on-screen keyboard. Desktop users have a
+      // physical keyboard and don't want a virtual one in the way; touch
+      // users tap the keyboard glyph on the math-field when they want it.
+      field.setAttribute("math-virtual-keyboard-policy", "manual");
       if (placeholder) field.setAttribute("placeholder", placeholder);
       if (readonly) field.setAttribute("readonly", "");
       if (ariaLabel) field.setAttribute("aria-label", ariaLabel);
@@ -147,13 +155,6 @@ export function MathField({
           color: "text.primary",
           fontSize: "1rem",
           display: "block",
-          // When the on-screen keyboard pops, browser scroll-into-view
-          // should leave headroom below the focused field equal to the
-          // keyboard height (MathLive's keyboard caps around ~340px,
-          // give it a bit more for the iOS toolbar). Without this the
-          // field ends up underneath the keyboard.
-          scrollMarginBottom: { xs: "360px", sm: "300px" },
-          scrollMarginTop: { xs: "12px", sm: "12px" },
 
           // MathLive ships its own CSS variables for caret / selection
           // / placeholder colours that don't inherit from MUI. Without
