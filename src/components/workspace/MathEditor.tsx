@@ -129,19 +129,33 @@ function parseLines(raw: string): string[] {
 }
 
 function serializeLines(lines: string[]): string {
-  // Trim trailing empty lines so a series of accidental Enters at the
-  // end doesn't bloat the persisted value, but keep internal empties
-  // (a student can intentionally leave a blank line between sections).
-  const trimmed = [...lines];
-  while (trimmed.length > 1 && trimmed[trimmed.length - 1] === "") trimmed.pop();
-  return trimmed.join("\n");
+  // Faithful round-trip — no trimming. An empty trailing line is the
+  // line the student just added (or is about to type into); stripping
+  // it here meant Add-line did nothing because the parent value never
+  // changed.
+  return lines.join("\n");
 }
 
 export function MathEditor({ value, onChange }: Props) {
-  const lines = parseLines(value);
+  // Local source of truth. Was deriving from `value` on every render,
+  // which collapsed under our own onChange echo — adding an empty line
+  // serialized to the same string the parent already had, no
+  // re-render, no new line.
+  const [lines, setLinesState] = useState<string[]>(() => parseLines(value));
   const fieldsRef = useRef<(MathFieldEl | null)[]>([]);
   const focusedIdxRef = useRef<number>(0);
   const [moreEl, setMoreEl] = useState<HTMLElement | null>(null);
+
+  // Sync external value changes (assessment switch, undo from outside)
+  // back into local state. Compare against our serialised form so our
+  // own emissions don't reset the array we just updated.
+  useEffect(() => {
+    const ourSerialized = serializeLines(lines);
+    if (value !== ourSerialized) {
+      setLinesState(parseLines(value));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
 
   // Pending focus: after we add a line, focus it on next paint.
   const pendingFocusRef = useRef<number | null>(null);
@@ -157,6 +171,7 @@ export function MathEditor({ value, onChange }: Props) {
   const setLines = (next: string[]) => {
     // Keep fieldsRef length in sync with the new lines length.
     fieldsRef.current = next.map((_, i) => fieldsRef.current[i] ?? null);
+    setLinesState(next);
     onChange(serializeLines(next));
   };
 
