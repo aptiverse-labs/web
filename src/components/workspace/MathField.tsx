@@ -37,15 +37,27 @@ function ensureMathLive(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (registerPromise) return registerPromise;
   registerPromise = import("mathlive").then((mod) => {
-    // MathLive auto-detects fonts from its script URL, which under
-    // Next.js + Turbopack chunking resolves to a 404. Point it at our
-    // public/ directory where the postinstall script copies the
-    // KaTeX fonts. Without this the math glyphs render in fallback
-    // fonts and the console fills with font-fetch warnings.
-    const MathfieldElement = (mod as unknown as { MathfieldElement?: { fontsDirectory: string } })
-      .MathfieldElement;
-    if (MathfieldElement) {
-      MathfieldElement.fontsDirectory = "/mathlive-fonts";
+    type MathfieldGlobals = {
+      MathfieldElement?: { fontsDirectory: string };
+      mathVirtualKeyboard?: { layouts: unknown };
+    };
+    const m = mod as unknown as MathfieldGlobals;
+
+    if (m.MathfieldElement) {
+      // MathLive auto-detects fonts from its script URL, which under
+      // Next.js + Turbopack chunking resolves to a 404. Point it at
+      // public/mathlive-fonts/ where the postinstall script copies
+      // the KaTeX fonts.
+      m.MathfieldElement.fontsDirectory = "/mathlive-fonts";
+    }
+
+    if (m.mathVirtualKeyboard) {
+      // Trim the on-screen keyboard to layouts a Grade 10–12 student
+      // actually uses. The default 4 tabs (`123` / `∞≠∈` / `abc` / `αβγ`)
+      // shoved a lot of seldom-needed glyphs in front of them — set
+      // theory and Latin letters live on their physical keyboard or
+      // are out of syllabus. Numbers + Greek is enough.
+      m.mathVirtualKeyboard.layouts = ["numeric", "greek"];
     }
   });
   return registerPromise;
@@ -135,6 +147,13 @@ export function MathField({
           color: "text.primary",
           fontSize: "1rem",
           display: "block",
+          // When the on-screen keyboard pops, browser scroll-into-view
+          // should leave headroom below the focused field equal to the
+          // keyboard height (MathLive's keyboard caps around ~340px,
+          // give it a bit more for the iOS toolbar). Without this the
+          // field ends up underneath the keyboard.
+          scrollMarginBottom: { xs: "360px", sm: "300px" },
+          scrollMarginTop: { xs: "12px", sm: "12px" },
 
           // MathLive ships its own CSS variables for caret / selection
           // / placeholder colours that don't inherit from MUI. Without

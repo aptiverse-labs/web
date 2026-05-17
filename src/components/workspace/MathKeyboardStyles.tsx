@@ -3,130 +3,140 @@
 import GlobalStyles from "@mui/material/GlobalStyles";
 import { useTheme } from "@mui/material/styles";
 
-// MathLive's virtual keyboard renders as a sibling of the math-field
-// (attached to document.body), so it lives outside the scope of any
-// MathField sx prop. These globals theme it to match Aptiverse —
-// primary teal accents instead of MathLive's default bright cyan,
-// keycap colours matched to the page palette, divider borders.
+// Themes MathLive's virtual keyboard to match Aptiverse and trims it
+// down to a sensible footprint.
 //
-// Mount this component once, anywhere in the tree, when the workspace
-// (or any future page that exposes MathLive) renders. The styles tear
-// down with the component, so they don't leak into pages that don't
-// use the keyboard.
+// The keyboard renders as a viewport-fixed sibling of the math-field
+// (it's appended to document.body), so its styles sit OUTSIDE the
+// MathField component's sx scope. These styles inject the right CSS
+// variables and a few targeted class overrides at the global level.
+//
+// MathLive 0.109 uses `--ml-virtual-keyboard-*` prefixed variables.
+// Earlier versions used `--keyboard-*` / `--keycap-*` — we set both
+// so the styles work if mathlive bumps versions.
 export function MathKeyboardStyles() {
   const t = useTheme();
   const isDark = t.palette.mode === "dark";
 
-  // Tinted neutral one step away from background.paper — gives the
-  // keycap surface enough contrast against the keyboard container.
-  const keycapBg = isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)";
-  const keycapBgHover = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)";
-  const keycapBorder = t.palette.divider;
+  const surface = t.palette.background.paper;
+  const border = t.palette.divider;
+  const text = t.palette.text.primary;
+  const mutedText = t.palette.text.secondary;
   const accent = t.palette.primary.main;
-  const toolbarBg = t.palette.background.default;
+
+  // Tinted neutrals — keycaps need to read above the keyboard background
+  // (which is background.paper); slightly elevated does the work.
+  const keyBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
+  const keyBgHover = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)";
 
   return (
     <GlobalStyles
       styles={{
-        // Top-level keyboard wrapper. Some MathLive versions wrap in
-        // body.ML__keyboard--visible; using both selectors covers it.
-        "body, :root, .ML__keyboard": {
-          "--keyboard-background":               t.palette.background.paper,
-          "--keyboard-text":                     t.palette.text.primary,
+        // ─── Variables — 0.109 prefix ─────────────────────────────
+        "body, :root": {
+          "--ml-virtual-keyboard-background":                          surface,
+          "--ml-virtual-keyboard-background-border":                   border,
+          "--ml-virtual-keyboard-text":                                text,
+          "--ml-virtual-keyboard-toolbar-background":                  surface,
+          "--ml-virtual-keyboard-toolbar-text":                        mutedText,
+          "--ml-virtual-keyboard-toolbar-text-active":                 accent,
+          "--ml-virtual-keyboard-toolbar-background-hover":            keyBgHover,
+          "--ml-virtual-keyboard-toolbar-background-selected":         "transparent",
+          "--ml-virtual-keyboard-keycap-background":                   keyBg,
+          "--ml-virtual-keyboard-keycap-background-active":            keyBgHover,
+          "--ml-virtual-keyboard-keycap-background-pressed":           accent,
+          "--ml-virtual-keyboard-keycap-text":                         text,
+          "--ml-virtual-keyboard-keycap-text-active":                  text,
+          "--ml-virtual-keyboard-keycap-text-pressed":                 t.palette.primary.contrastText,
+          "--ml-virtual-keyboard-keycap-secondary-text":               mutedText,
+          "--ml-virtual-keyboard-keycap-secondary-text-active":        accent,
+          "--ml-virtual-keyboard-keycap-shift-background":             keyBgHover,
+          "--ml-virtual-keyboard-keycap-shift-text":                   text,
+
+          // ─── Variables — older prefix (defence in depth) ─────────
+          "--keyboard-background":               surface,
+          "--keyboard-text":                     text,
           "--keyboard-accent-color":             accent,
-          "--keyboard-border":                   keycapBorder,
-
-          "--keyboard-toolbar-background":       toolbarBg,
-          "--keyboard-toolbar-text":             t.palette.text.secondary,
-          "--keyboard-toolbar-text-active":      t.palette.text.primary,
-          "--keyboard-toolbar-background-selected":
-            isDark ? "rgba(116,181,174,0.12)" : "rgba(15,105,99,0.08)",
-          "--keyboard-toolbar-background-hover": keycapBgHover,
-
-          "--keyboardrow-background":            t.palette.background.paper,
-          "--keyboard-row-background":           t.palette.background.paper,
-
-          "--keycap-background":                 keycapBg,
-          "--keycap-background-active":          keycapBgHover,
-          "--keycap-background-hover":           keycapBgHover,
+          "--keyboard-border":                   border,
+          "--keyboard-toolbar-background":       surface,
+          "--keyboard-toolbar-text":             mutedText,
+          "--keyboard-toolbar-text-active":      accent,
+          "--keyboardrow-background":            surface,
+          "--keyboard-row-background":           surface,
+          "--keycap-background":                 keyBg,
+          "--keycap-background-active":          keyBgHover,
+          "--keycap-background-hover":           keyBgHover,
           "--keycap-background-pressed":         accent,
-          "--keycap-foreground":                 t.palette.text.primary,
-          "--keycap-text":                       t.palette.text.primary,
-          "--keycap-text-active":                t.palette.text.primary,
+          "--keycap-foreground":                 text,
+          "--keycap-text":                       text,
           "--keycap-text-pressed":               t.palette.primary.contrastText,
-          "--keycap-text-hover":                 t.palette.text.primary,
-          "--keycap-secondary-text":             t.palette.text.secondary,
+          "--keycap-secondary-text":             mutedText,
           "--keycap-secondary-text-active":      accent,
-          "--keycap-border":                     keycapBorder,
-          "--keycap-border-bottom-color":        keycapBorder,
-
-          "--keycap-modifier-background":        keycapBgHover,
-          "--keycap-modifier-text":              t.palette.text.primary,
-          "--keycap-modifier-border":            keycapBorder,
-          "--keycap-modifier-border-bottom":     keycapBorder,
-
-          "--keycap-shift-background":           keycapBgHover,
-          "--keycap-shift-color":                t.palette.text.primary,
-          "--keycap-shift-text":                 t.palette.text.primary,
-
-          "--keyboard-shift-background":         keycapBgHover,
-          "--keyboard-shift-text":               t.palette.text.primary,
+          "--keycap-border":                     border,
+          "--keycap-border-bottom-color":        border,
+          "--keycap-modifier-background":        keyBgHover,
+          "--keycap-modifier-text":              text,
+          "--keycap-modifier-border":            border,
+          "--keycap-shift-background":           keyBgHover,
+          "--keycap-shift-color":                text,
+          "--keycap-shift-text":                 text,
         },
 
-        // MathLive applies inline backgrounds on a few inner divs that
-        // override our variables. Catch them by class so the surfaces
-        // actually flip in dark mode.
+        // ─── Direct class overrides for the bits the variables miss
         ".ML__keyboard": {
-          backgroundColor: `${t.palette.background.paper} !important`,
-          borderTop: `1px solid ${keycapBorder} !important`,
+          backgroundColor: `${surface} !important`,
+          borderTop: `1px solid ${border} !important`,
           boxShadow: isDark
-            ? "0 -8px 24px rgba(0,0,0,0.4)"
-            : "0 -8px 24px rgba(0,0,0,0.06)",
+            ? "0 -8px 24px rgba(0,0,0,0.5) !important"
+            : "0 -8px 24px rgba(0,0,0,0.08) !important",
+          // Keep the keyboard from eating the entire phone screen.
+          // ~58vh on portrait phones still shows ~3 lines of editor
+          // above; tablet/desktop stays at MathLive's default.
+          maxHeight: "min(58vh, 360px) !important",
         },
-        ".ML__keyboard .MLK__rows, .ML__keyboard .MLK__layer, .ML__keyboard .MLK__plate": {
-          backgroundColor: `${t.palette.background.paper} !important`,
+        ".ML__keyboard .MLK__plate, .ML__keyboard .MLK__layer, .ML__keyboard .MLK__rows": {
+          backgroundColor: `${surface} !important`,
         },
 
-        // Toolbar (123 / ∞≠∈ / abc / αβγ tabs) — make non-active
-        // tabs less shouty, give the active tab the teal underline
-        // rather than bright blue text.
-        ".ML__keyboard .MLK__toolbar, .ML__keyboard .ML__keyboard--toolbar": {
-          backgroundColor: `${toolbarBg} !important`,
-          borderBottom: `1px solid ${keycapBorder} !important`,
+        // Toolbar tabs (123 / αβγ) — neutral text by default, accent
+        // when active. Underline rather than fill.
+        ".ML__keyboard .MLK__tab, .ML__keyboard .action": {
+          color: `${mutedText} !important`,
+          background: "transparent !important",
         },
-        ".ML__keyboard .MLK__toolbar .action, .ML__keyboard .action": {
-          color: `${t.palette.text.secondary} !important`,
-        },
-        ".ML__keyboard .MLK__toolbar .selected, .ML__keyboard .action.selected": {
+        ".ML__keyboard .MLK__tab.is-active, .ML__keyboard .action.selected, .ML__keyboard .MLK__tab[aria-selected='true']": {
           color: `${accent} !important`,
+          background: "transparent !important",
+          borderBottom: `2px solid ${accent} !important`,
         },
 
-        // Keycaps — uniform background, divider borders, our radius.
+        // Keycaps — uniform fill, divider borders, our 8px radius.
         ".ML__keyboard .MLK__keycap, .ML__keyboard .keycap": {
-          backgroundColor: `${keycapBg} !important`,
-          color: `${t.palette.text.primary} !important`,
-          border: `1px solid ${keycapBorder} !important`,
+          backgroundColor: `${keyBg} !important`,
+          color: `${text} !important`,
+          border: `1px solid ${border} !important`,
           borderRadius: "8px !important",
           boxShadow: "none !important",
           fontWeight: 500,
         },
         ".ML__keyboard .MLK__keycap:hover, .ML__keyboard .keycap:hover": {
-          backgroundColor: `${keycapBgHover} !important`,
+          backgroundColor: `${keyBgHover} !important`,
         },
         ".ML__keyboard .MLK__keycap:active, .ML__keyboard .MLK__keycap.is-pressed, .ML__keyboard .keycap.is-pressed": {
           backgroundColor: `${accent} !important`,
           color: `${t.palette.primary.contrastText} !important`,
+          borderColor: `${accent} !important`,
         },
-        // The little secondary hint above keys (y above x, ln above e).
+        // Small hint glyph above keys (y above x, ln above e, sin above π)
         ".ML__keyboard .MLK__keycap aside, .ML__keyboard .keycap aside, .ML__keyboard .MLK__keycap small": {
-          color: `${t.palette.text.secondary} !important`,
+          color: `${mutedText} !important`,
           fontWeight: 500,
         },
 
-        // Modifier / shift / utility keys — slightly heavier than a
-        // normal keycap so the cluster reads at a glance.
+        // Modifier keys (shift, backspace, arrows, enter) — slightly
+        // heavier surface so the cluster reads at a glance.
         ".ML__keyboard .MLK__keycap.MLK__modifier, .ML__keyboard .action": {
-          backgroundColor: `${keycapBgHover} !important`,
+          backgroundColor: `${keyBgHover} !important`,
         },
       }}
     />

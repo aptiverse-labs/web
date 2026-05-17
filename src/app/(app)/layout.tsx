@@ -1,7 +1,6 @@
 "use client";
 
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { AIHelpBot } from "@/components/dashboard/AIHelpBot";
 import { useAutoRefreshSession } from "@/lib/hooks/useAutoRefreshSession";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -9,10 +8,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // overnight doesn't kick the user to /login on the next click.
   useAutoRefreshSession();
 
-  return (
-    <DashboardShell>
-      {children}
-      <AIHelpBot />
-    </DashboardShell>
-  );
+  // The floating AIHelpBot button was dropped — a persistent global
+  // help affordance that overlapped page content failed the taste
+  // rubric (fake affordance / chrome-on-content). Help lives in
+  // /dashboard/help and contextually inside features (the AI tutor
+  // in the workspace right rail).
+  return <DashboardShell>{children}</DashboardShell>;
 }
