@@ -27,7 +27,9 @@ import DialogContent from "@mui/material/DialogContent";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { useTheme } from "@mui/material/styles";
+import Breadcrumbs from "@mui/material/Breadcrumbs";
+import { alpha, useTheme } from "@mui/material/styles";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import PlayArrowIcon from "@mui/icons-material/PlayArrowOutlined";
 import PauseIcon from "@mui/icons-material/PauseOutlined";
 import RestartAltIcon from "@mui/icons-material/RestartAltOutlined";
@@ -318,31 +320,148 @@ export default function WorkspacePage() {
     </Box>
   );
 
+  // Hero-treatment chip for the active SBA's due date.
+  const heroDaysOut = activeAssessment
+    ? dayjs(activeAssessment.dueDate).diff(dayjs(), "day")
+    : null;
+  const heroDueChip =
+    heroDaysOut == null
+      ? null
+      : heroDaysOut < 0
+        ? { label: "Overdue", color: "error" as const }
+        : heroDaysOut === 0
+          ? { label: "Due today", color: "warning" as const }
+          : heroDaysOut <= 3
+            ? { label: `Due in ${heroDaysOut} days`, color: "warning" as const }
+            : { label: `Due in ${heroDaysOut} days`, color: "default" as const };
+
   return (
-    <>
-      <PageHeader
-        title="Workspace"
-        description="Plan, practice, write. Autosave on."
-        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Workspace" }]}
-        actions={
-          <TextField
-            select
-            size="small"
-            value={activeId ?? ""}
-            onChange={(e) => setActiveId(e.target.value)}
-            sx={{ minWidth: { xs: "100%", sm: 280 } }}
-          >
-            {activeAssessments.map((a) => {
-              const subj = (subjectsQuery.data ?? []).find((s) => s.id === a.subjectId);
-              return (
-                <MenuItem key={a.id} value={a.id}>
-                  {subj?.name ?? a.subjectId} · {a.title}
-                </MenuItem>
-              );
-            })}
-          </TextField>
-        }
-      />
+    // Atmospheric backdrop. Warm radial gradient via ::before pseudo,
+    // anchored top-right, secondary at 4-6% alpha. Same pattern as the
+    // dashboard's atmospheric craft -- the workspace's idle state
+    // picks up the same "Aptiverse, not generic notes app" texture.
+    <Box
+      sx={{
+        position: "relative",
+        ml: { xs: -2, sm: -3, lg: -5 },
+        mr: { xs: -2, sm: -3, lg: -5 },
+        mt: { xs: -3, md: -4 },
+        px: { xs: 2, sm: 3, lg: 5 },
+        pt: { xs: 3, md: 4 },
+        pb: { xs: 3, md: 4 },
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          background: (t) =>
+            `radial-gradient(60% 50% at 100% 0%, ${alpha(
+              t.palette.secondary.main,
+              t.palette.mode === "dark" ? 0.06 : 0.04,
+            )}, transparent 70%)`,
+          zIndex: 0,
+        },
+        "& > *": { position: "relative", zIndex: 1 },
+      }}
+    >
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        sx={{ mb: 1.5, fontSize: "0.8125rem" }}
+      >
+        <Link href="/dashboard" style={{ color: "inherit", opacity: 0.7 }}>
+          Dashboard
+        </Link>
+        <Typography variant="body2" color="text.primary">
+          Workspace
+        </Typography>
+      </Breadcrumbs>
+
+      {/* SBA-as-protagonist hero. Replaces the previous "Workspace"
+          PageHeader title. The page now belongs to whichever SBA is
+          active; "Workspace" is implicit (it's a breadcrumb and the
+          sidebar nav state). */}
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={{ xs: 2, md: 3 }}
+        alignItems={{ xs: "flex-start", md: "flex-end" }}
+        justifyContent="space-between"
+        sx={{
+          mb: 4,
+          pb: 3,
+          borderBottom: 1,
+          borderColor: "divider",
+        }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="overline" color="text.secondary">
+            Active SBA
+          </Typography>
+          {activeAssessment ? (
+            <>
+              <Typography
+                variant="h2"
+                component="h1"
+                sx={{
+                  fontWeight: 600,
+                  mt: 0.5,
+                  wordBreak: "break-word",
+                }}
+              >
+                {activeAssessment.title}
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mt: 1 }}
+              >
+                {subject?.name ?? activeAssessment.subjectId} · {activeAssessment.type}
+              </Typography>
+              {heroDueChip && (
+                <Stack
+                  direction="row"
+                  spacing={0.75}
+                  sx={{ mt: 1.75 }}
+                  flexWrap="wrap"
+                  useFlexGap
+                >
+                  <Chip
+                    label={heroDueChip.label}
+                    size="small"
+                    color={heroDueChip.color}
+                    variant="outlined"
+                  />
+                  <Chip
+                    label={`Weight ${activeAssessment.weight}%`}
+                    size="small"
+                    variant="outlined"
+                  />
+                </Stack>
+              )}
+            </>
+          ) : (
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 600, mt: 0.5 }}>
+              Workspace
+            </Typography>
+          )}
+        </Box>
+        <TextField
+          select
+          size="small"
+          value={activeId ?? ""}
+          onChange={(e) => setActiveId(e.target.value)}
+          sx={{ minWidth: { xs: "100%", sm: 280 }, flexShrink: 0 }}
+        >
+          {activeAssessments.map((a) => {
+            const subj = (subjectsQuery.data ?? []).find((s) => s.id === a.subjectId);
+            return (
+              <MenuItem key={a.id} value={a.id}>
+                {subj?.name ?? a.subjectId} · {a.title}
+              </MenuItem>
+            );
+          })}
+        </TextField>
+      </Stack>
 
       {!isDesktop && (
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
@@ -384,7 +503,6 @@ export default function WorkspacePage() {
         <Box sx={{ display: { xs: "none", md: "block" } }}>
           <LeftRail
             assessment={activeAssessment}
-            subject={subject}
             focusMode={focusMode}
             onPomodoroStateChange={setPomodoroState}
           />
@@ -486,7 +604,7 @@ export default function WorkspacePage() {
       >
         <DrawerHeader title="Plan" onClose={() => setContextOpen(false)} />
         <Box sx={{ p: 2 }}>
-          <LeftRail assessment={activeAssessment} subject={subject} />
+          <LeftRail assessment={activeAssessment} />
         </Box>
       </Drawer>
       <Drawer
@@ -503,7 +621,7 @@ export default function WorkspacePage() {
           <RightRail assessment={activeAssessment} subject={subject} />
         </Box>
       </Drawer>
-    </>
+    </Box>
   );
 }
 
@@ -619,50 +737,18 @@ function DrawerHeader({ title, onClose }: { title: string; onClose: () => void }
 
 function LeftRail({
   assessment,
-  subject,
   focusMode = false,
   onPomodoroStateChange,
 }: {
   assessment: Assessment;
-  subject: Subject | undefined;
-  /** When true, the SBA context card + Tasks card are hidden so the
-   *  rail collapses to just the Focus timer. The student is in a
-   *  focus session; reference context can wait. */
+  /** When true, the Tasks card is hidden so the rail collapses to
+   *  just the Focus timer. The student is in a focus session;
+   *  reference context can wait. */
   focusMode?: boolean;
   onPomodoroStateChange?: (state: PomodoroState) => void;
 }) {
-  const daysOut = dayjs(assessment.dueDate).diff(dayjs(), "day");
-  const dueChip =
-    daysOut < 0
-      ? { label: "Overdue", color: "error" as const }
-      : daysOut === 0
-        ? { label: "Due today", color: "warning" as const }
-        : daysOut <= 3
-          ? { label: `Due in ${daysOut}d`, color: "warning" as const }
-          : { label: `Due in ${daysOut}d`, color: "default" as const };
-
   return (
     <Stack spacing={2.5} sx={{ position: { md: "sticky" }, top: { md: 88 } }}>
-      {!focusMode && (
-        <Card>
-          <CardContent sx={{ p: 2.5 }}>
-            <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
-              Active SBA
-            </Typography>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 0.5 }}>
-              {assessment.title}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {subject?.name ?? assessment.subjectId} · {assessment.type}
-            </Typography>
-            <Stack direction="row" spacing={0.75} sx={{ mt: 1.5 }} flexWrap="wrap" useFlexGap>
-              <Chip label={dueChip.label} size="small" color={dueChip.color} variant="outlined" />
-              <Chip label={`Weight ${assessment.weight}%`} size="small" variant="outlined" />
-            </Stack>
-          </CardContent>
-        </Card>
-      )}
-
       <FocusTimer
         assessmentId={assessment.id}
         onStateChange={onPomodoroStateChange}
