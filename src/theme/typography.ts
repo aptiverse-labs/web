@@ -1,13 +1,13 @@
 import type { TypographyVariantsOptions } from "@mui/material/styles";
 
-// Match Euphoria.v4's commonTheme: Frygia first, then Roboto, then the
-// usual system stack. Frygia is loaded via a <link> to Euphoria's
-// CloudFront stylesheet in app/layout.tsx (see TODO there about
-// replacing before any public launch — licensing).
-// next/font/google's Roboto is bundled at /_next/static/media so it's
-// always available as a second-choice fallback if Frygia fails.
+// Manrope is the Aptiverse primary face: geometric humanist sans,
+// Open Font Licence, free for commercial use. Loaded via
+// next/font/google in app/layout.tsx, exposed as --font-manrope on
+// <html>. Roboto follows as a metric-similar fallback (also via
+// next/font/google) if Manrope fails to load. The system stack
+// catches the rare case where both webfonts are blocked entirely.
 const fontFamily =
-  '"Frygia", "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
+  'var(--font-manrope), var(--font-roboto), -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif';
 
 export const typography: TypographyVariantsOptions = {
   fontFamily,

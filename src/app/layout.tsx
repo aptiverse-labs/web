@@ -1,15 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Roboto } from "next/font/google";
+import { Manrope, Roboto } from "next/font/google";
 import { AppProviders } from "@/providers/AppProviders";
 import "./globals.css";
 
-// Match Euphoria.v4's typography. Applied directly via className so the
-// font-family lands on <body> immediately and inherits down without
-// CSS-variable indirection.
+// Manrope is the primary Aptiverse typeface: geometric humanist sans,
+// Open Font Licence, free for commercial use. Weights 400 / 500 / 600
+// cover the entire type scale defined in src/theme/typography.ts
+// (regular, medium, bold-equivalent). Exposed as a CSS variable so
+// the MUI theme can reference it via var(--font-manrope) without
+// caring about the generated class name.
+const manrope = Manrope({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-manrope",
+});
+
+// Roboto is kept as a metric-similar fallback if Manrope ever fails
+// to load (cached webfont gone, blocked, etc). Two fonts of similar
+// metric class catches the swap without layout shift.
 const roboto = Roboto({
   subsets: ["latin"],
   weight: ["300", "400", "500", "700"],
   display: "swap",
+  variable: "--font-roboto",
 });
 
 export const metadata: Metadata = {
@@ -52,25 +66,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        {/*
-          TODO(font-licensing): this loads Euphoria's CloudFront-hosted
-          Frygia stylesheet for visual parity. Frygia is licensed to
-          Euphoria — replace with a self-hosted face (Manrope / Outfit /
-          a purchased Frygia license) before any external launch.
-        */}
-        <link
-          rel="preconnect"
-          href="https://dt46w9nqlye04.cloudfront.net"
-          crossOrigin="anonymous"
-        />
-        <link
-          rel="stylesheet"
-          href="https://dt46w9nqlye04.cloudfront.net/fonts/v4/stylesheet.css"
-        />
-      </head>
-      <body className={roboto.className}>
+    <html
+      lang="en"
+      className={`${manrope.variable} ${roboto.variable}`}
+      suppressHydrationWarning
+    >
+      <body>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
