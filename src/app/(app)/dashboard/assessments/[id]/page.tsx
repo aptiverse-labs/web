@@ -15,10 +15,10 @@ import dayjs from "dayjs";
 import { motion } from "framer-motion";
 import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
-import ChecklistIcon from "@mui/icons-material/ChecklistOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { StatusChip } from "@/components/common/StatusChip";
 import { QueryStates } from "@/components/common/QueryStates";
+import { TasksEditor } from "@/components/workspace/TasksEditor";
 import { useAssessment, useSubjects } from "@/lib/api/queries";
 import type { Assessment } from "@/lib/mockData";
 import { formatDate } from "@/lib/format";
@@ -150,7 +150,7 @@ function AssessmentBody({
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 7 }}>
-          <TasksCard tasks={a.tasks} />
+          <TasksCard assessmentId={a.id} tasks={a.tasks ?? []} />
         </Grid>
         <Grid size={{ xs: 12, lg: 5 }}>
           <Stack spacing={3}>
@@ -190,9 +190,13 @@ function Stat({ label, value, hint, index }: { label: string; value: string; hin
 
 // ─── Tasks ──────────────────────────────────────────────────────────
 
-function TasksCard({ tasks }: { tasks?: string[] | null }) {
-  const hasTasks = Array.isArray(tasks) && tasks.length > 0;
-
+function TasksCard({
+  assessmentId,
+  tasks,
+}: {
+  assessmentId: string;
+  tasks: Assessment["tasks"];
+}) {
   return (
     <motion.div {...enter}>
       <Card>
@@ -207,64 +211,7 @@ function TasksCard({ tasks }: { tasks?: string[] | null }) {
               </Typography>
             </Box>
           </Stack>
-
-          {hasTasks ? (
-            <Stack spacing={1.5}>
-              {tasks!.map((t, i) => (
-                <Box
-                  key={i}
-                  sx={{
-                    p: 2,
-                    borderRadius: 1.5,
-                    border: 1,
-                    borderColor: "divider",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 2,
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: 500, flex: 1 }}>
-                    {t}
-                  </Typography>
-                  <Button size="small" variant="text">
-                    Mark done
-                  </Button>
-                </Box>
-              ))}
-            </Stack>
-          ) : (
-            <Box sx={{ py: 4, textAlign: "center" }}>
-              <Box
-                sx={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 1.5,
-                  mx: "auto",
-                  mb: 1.5,
-                  display: "grid",
-                  placeItems: "center",
-                  color: "primary.main",
-                  bgcolor: (t) =>
-                    t.palette.mode === "dark"
-                      ? "rgba(116, 181, 174, 0.12)"
-                      : "rgba(15, 105, 99, 0.08)",
-                }}
-              >
-                <ChecklistIcon fontSize="small" />
-              </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 380, mx: "auto", mb: 2 }}>
-                No tasks broken out yet. Use the workspace to draft a plan — outline, source material, practice questions, self-review.
-              </Typography>
-              <Button
-                component={Link}
-                href="/dashboard/workspace"
-                variant="outlined"
-                endIcon={<ArrowForwardIcon />}
-              >
-                Open in workspace
-              </Button>
-            </Box>
-          )}
+          <TasksEditor assessmentId={assessmentId} tasks={tasks ?? []} />
         </CardContent>
       </Card>
     </motion.div>

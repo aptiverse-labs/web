@@ -251,6 +251,11 @@ export type AssessmentType =
 
 export type AssessmentStatus = "scheduled" | "in_progress" | "submitted" | "graded";
 
+export type AssessmentTask = {
+  label: string;
+  done: boolean;
+};
+
 export type Assessment = {
   id: string;
   subjectId: string;
@@ -264,7 +269,7 @@ export type Assessment = {
   notes?: string | null;
   createdAt?: string;
   rubric?: { criterion: string; weight: number; description: string }[];
-  tasks?: string[];
+  tasks?: AssessmentTask[];
 };
 
 export const ASSESSMENT_TYPES: AssessmentType[] = [
@@ -306,7 +311,11 @@ export const ASSESSMENTS: Assessment[] = [
     dueDate: today.add(6, "day").toISOString(),
     status: "scheduled",
     predictedMark: 71,
-    tasks: ["Practice 20 derivative problems", "Past paper Q1-3", "Trig identities revision"],
+    tasks: [
+      { label: "Practice 20 derivative problems", done: false },
+      { label: "Past paper Q1-3", done: false },
+      { label: "Trig identities revision", done: false },
+    ],
   },
   {
     id: "a2",

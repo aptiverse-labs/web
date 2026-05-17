@@ -15,10 +15,6 @@ import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemIcon from "@mui/material/ListItemIcon";
-import ListItemText from "@mui/material/ListItemText";
 import Tooltip from "@mui/material/Tooltip";
 import Avatar from "@mui/material/Avatar";
 import Skeleton from "@mui/material/Skeleton";
@@ -27,27 +23,24 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import PauseIcon from "@mui/icons-material/Pause";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import FullscreenIcon from "@mui/icons-material/Fullscreen";
-import UploadIcon from "@mui/icons-material/UploadFileOutlined";
-import MicIcon from "@mui/icons-material/MicNoneOutlined";
-import SmartToyIcon from "@mui/icons-material/SmartToy";
-import SendIcon from "@mui/icons-material/Send";
-import CheckCircleIcon from "@mui/icons-material/CheckCircleOutline";
-import CircleIcon from "@mui/icons-material/CircleOutlined";
-import CloseIcon from "@mui/icons-material/Close";
+import PlayArrowIcon from "@mui/icons-material/PlayArrowOutlined";
+import PauseIcon from "@mui/icons-material/PauseOutlined";
+import RestartAltIcon from "@mui/icons-material/RestartAltOutlined";
+import SmartToyIcon from "@mui/icons-material/SmartToyOutlined";
+import SendIcon from "@mui/icons-material/SendOutlined";
+import CloseIcon from "@mui/icons-material/CloseOutlined";
+import ChecklistIcon from "@mui/icons-material/ChecklistOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
+import { TasksEditor } from "@/components/workspace/TasksEditor";
 import { useAssessments, useSubjects, useUpdateAssessment } from "@/lib/api/queries";
 import type { Assessment, Subject } from "@/lib/mockData";
-import { useWorkspaceDraft, type AutosaveState, type DraftPanel } from "@/lib/hooks/useWorkspaceDraft";
+import { useWorkspaceDraft, type AutosaveState } from "@/lib/hooks/useWorkspaceDraft";
 import { useAiHelp, type AiHelpMessage } from "@/lib/hooks/useAiHelp";
 import Link from "next/link";
 import dayjs from "dayjs";
 
-const TABS = ["Notes", "Essay", "Scratchpad", "Files", "Practice"] as const;
+const TABS = ["Notes", "Essay"] as const;
 type TabKey = (typeof TABS)[number];
 
 export default function WorkspacePage() {
@@ -82,7 +75,6 @@ export default function WorkspacePage() {
   const [aiOpen, setAiOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
 
-  // The whole workspace is meaningless without an active SBA.
   if (assessmentsQuery.isLoading || subjectsQuery.isLoading) {
     return (
       <>
@@ -97,16 +89,17 @@ export default function WorkspacePage() {
       <>
         <PageHeader
           title="Workspace"
-          description="Your unified space to write, plan, drill, and ask. Autosave on. Let's go."
+          description="Plan, write, and ask. Autosave on."
           breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Workspace" }]}
         />
         <Card>
           <CardContent sx={{ p: { xs: 3, md: 5 } }}>
             <EmptyState
+              icon={<ChecklistIcon />}
               title="Nothing to work on yet"
-              description="Log an SBA — a test, essay, investigation, project — and the workspace will load with it as the active task."
+              description="Log an SBA — a test, essay, investigation, project — and the workspace will open with it as the active task."
               action={
-                <Button component={Link} href="/dashboard/assessments" variant="contained">
+                <Button component={Link} href="/dashboard/assessments/new" variant="contained">
                   Add an assessment
                 </Button>
               }
@@ -121,7 +114,7 @@ export default function WorkspacePage() {
     <>
       <PageHeader
         title="Workspace"
-        description="Your unified space to write, plan, drill, and ask. Autosave on. Let's go."
+        description="Plan, write, and ask. Autosave on."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Workspace" }]}
         actions={
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -130,7 +123,7 @@ export default function WorkspacePage() {
               size="small"
               value={activeId ?? ""}
               onChange={(e) => setActiveId(e.target.value)}
-              sx={{ minWidth: { xs: "100%", sm: 260 } }}
+              sx={{ minWidth: { xs: "100%", sm: 280 } }}
             >
               {activeAssessments.map((a) => {
                 const subj = (subjectsQuery.data ?? []).find((s) => s.id === a.subjectId);
@@ -141,20 +134,11 @@ export default function WorkspacePage() {
                 );
               })}
             </TextField>
-            {isDesktop && (
-              <Tooltip title="Distraction-free">
-                <IconButton>
-                  <FullscreenIcon />
-                </IconButton>
-              </Tooltip>
-            )}
           </Stack>
         }
       />
 
-      {/* Mobile-only quick-open buttons for the rails. On desktop the rails
-          live as full sticky columns; on mobile they live as drawers so the
-          editor takes the entire viewport width on first paint. */}
+      {/* Mobile-only quick-open buttons for the rails. */}
       {!isDesktop && (
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Button
@@ -162,9 +146,9 @@ export default function WorkspacePage() {
             variant="outlined"
             size="small"
             onClick={() => setContextOpen(true)}
-            startIcon={<CircleIcon fontSize="small" />}
+            startIcon={<ChecklistIcon fontSize="small" />}
           >
-            SBA · Timer · Checklist
+            Plan
           </Button>
           <Button
             fullWidth
@@ -173,7 +157,7 @@ export default function WorkspacePage() {
             onClick={() => setAiOpen(true)}
             startIcon={<SmartToyIcon fontSize="small" />}
           >
-            AI Tutor · Rubric
+            AI tutor
           </Button>
         </Stack>
       )}
@@ -181,7 +165,7 @@ export default function WorkspacePage() {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "280px 1fr 340px" },
+          gridTemplateColumns: { xs: "1fr", md: "300px 1fr 340px" },
           gap: 3,
           alignItems: "start",
         }}
@@ -191,63 +175,52 @@ export default function WorkspacePage() {
           <LeftRail assessment={activeAssessment} subject={subject} />
         </Box>
 
-        {/* Editor — always visible, always first on mobile */}
+        {/* Editor */}
         <Card sx={{ minHeight: { xs: 480, md: 620 } }}>
           <CardContent sx={{ p: 0, pb: "0 !important" }}>
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              sx={{ px: { xs: 1, sm: 2 }, borderBottom: 1, borderColor: "divider" }}
+            <Tabs
+              value={tab}
+              onChange={(_, v) => setTab(v)}
+              variant="scrollable"
+              scrollButtons={false}
+              sx={{ borderBottom: 1, borderColor: "divider", px: { xs: 1, sm: 2 } }}
             >
-              <Tabs
-                value={tab}
-                onChange={(_, v) => setTab(v)}
-                variant="scrollable"
-                scrollButtons={false}
-              >
-                {TABS.map((t) => (
-                  <Tab key={t} label={t} value={t} />
-                ))}
-              </Tabs>
-              <Stack direction="row" spacing={0.5}>
-                <Tooltip title="Upload file">
-                  <IconButton size="small">
-                    <UploadIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Voice note">
-                  <IconButton size="small">
-                    <MicIcon />
-                  </IconButton>
-                </Tooltip>
-              </Stack>
-            </Stack>
+              {TABS.map((t) => (
+                <Tab key={t} label={t} value={t} />
+              ))}
+            </Tabs>
             <Box sx={{ p: { xs: 2, sm: 3 } }}>
               {tab === "Notes" && <NotesPanel assessmentId={activeId} />}
               {tab === "Essay" && <EssayPanel assessmentId={activeId} essayTitle={activeAssessment.title} />}
-              {tab === "Scratchpad" && <ScratchpadPanel />}
-              {tab === "Files" && <FilesPanel />}
-              {tab === "Practice" && <PracticePanel />}
             </Box>
           </CardContent>
         </Card>
 
-        {/* Right rail — hidden on mobile (lives in the drawer) */}
+        {/* Right rail */}
         <Box sx={{ display: { xs: "none", md: "block" } }}>
           <RightRail assessment={activeAssessment} subject={subject} />
         </Box>
       </Box>
 
       {/* Mobile drawers */}
-      <Drawer anchor="left" open={!isDesktop && contextOpen} onClose={() => setContextOpen(false)} PaperProps={{ sx: { width: { xs: "90vw", sm: 320 } } }}>
-        <DrawerHeader title="Active SBA" onClose={() => setContextOpen(false)} />
+      <Drawer
+        anchor="left"
+        open={!isDesktop && contextOpen}
+        onClose={() => setContextOpen(false)}
+        PaperProps={{ sx: { width: { xs: "90vw", sm: 320 } } }}
+      >
+        <DrawerHeader title="Plan" onClose={() => setContextOpen(false)} />
         <Box sx={{ p: 2 }}>
           <LeftRail assessment={activeAssessment} subject={subject} />
         </Box>
       </Drawer>
-      <Drawer anchor="right" open={!isDesktop && aiOpen} onClose={() => setAiOpen(false)} PaperProps={{ sx: { width: { xs: "100vw", sm: 380 } } }}>
-        <DrawerHeader title="AI Tutor" onClose={() => setAiOpen(false)} />
+      <Drawer
+        anchor="right"
+        open={!isDesktop && aiOpen}
+        onClose={() => setAiOpen(false)}
+        PaperProps={{ sx: { width: { xs: "100vw", sm: 380 } } }}
+      >
+        <DrawerHeader title="AI tutor" onClose={() => setAiOpen(false)} />
         <Box sx={{ p: 2 }}>
           <RightRail assessment={activeAssessment} subject={subject} />
         </Box>
@@ -259,7 +232,7 @@ export default function WorkspacePage() {
 function DrawerHeader({ title, onClose }: { title: string; onClose: () => void }) {
   return (
     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 1.5, borderBottom: 1, borderColor: "divider" }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
         {title}
       </Typography>
       <IconButton onClick={onClose} size="small" aria-label="Close">
@@ -270,7 +243,7 @@ function DrawerHeader({ title, onClose }: { title: string; onClose: () => void }
 }
 
 // ============================================================
-// LEFT RAIL — active SBA card + focus timer + checklist
+// LEFT RAIL — active SBA · pomodoro · tasks (real)
 // ============================================================
 function LeftRail({ assessment, subject }: { assessment: Assessment; subject: Subject | undefined }) {
   const daysOut = dayjs(assessment.dueDate).diff(dayjs(), "day");
@@ -280,17 +253,17 @@ function LeftRail({ assessment, subject }: { assessment: Assessment; subject: Su
       : daysOut === 0
         ? { label: "Due today", color: "warning" as const }
         : daysOut <= 3
-          ? { label: `Due in ${daysOut} days`, color: "warning" as const }
-          : { label: `Due in ${daysOut} days`, color: "default" as const };
+          ? { label: `Due in ${daysOut}d`, color: "warning" as const }
+          : { label: `Due in ${daysOut}d`, color: "default" as const };
 
   return (
     <Stack spacing={2.5} sx={{ position: { md: "sticky" }, top: { md: 88 } }}>
       <Card>
         <CardContent sx={{ p: 2.5 }}>
-          <Typography variant="overline" color="text.secondary">
+          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
             Active SBA
           </Typography>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: 0.5 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 0.5 }}>
             {assessment.title}
           </Typography>
           <Typography variant="caption" color="text.secondary">
@@ -307,38 +280,21 @@ function LeftRail({ assessment, subject }: { assessment: Assessment; subject: Su
 
       <Card>
         <CardContent sx={{ p: 2.5 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
-            Today&apos;s checklist
-          </Typography>
-          <List disablePadding>
-            {[
-              { done: true, label: "Outline structure" },
-              { done: true, label: "Write intro paragraph" },
-              { done: false, label: "Add 3 evidence points" },
-              { done: false, label: "Conclusion + CTA" },
-              { done: false, label: "Self-check against rubric" },
-            ].map((item) => (
-              <ListItem key={item.label} disableGutters disablePadding>
-                <ListItemIcon sx={{ minWidth: 28 }}>
-                  {item.done ? (
-                    <CheckCircleIcon sx={{ color: "primary.main", fontSize: 20 }} />
-                  ) : (
-                    <CircleIcon sx={{ color: "text.disabled", fontSize: 20 }} />
-                  )}
-                </ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    variant: "body2",
-                    sx: {
-                      textDecoration: item.done ? "line-through" : "none",
-                      color: item.done ? "text.disabled" : "text.primary",
-                    },
-                  }}
-                />
-              </ListItem>
-            ))}
-          </List>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+                Plan
+              </Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                Tasks
+              </Typography>
+            </Box>
+          </Stack>
+          <TasksEditor
+            assessmentId={assessment.id}
+            tasks={assessment.tasks ?? []}
+            compact
+          />
         </CardContent>
       </Card>
     </Stack>
@@ -361,6 +317,12 @@ function FocusTimer() {
     };
   }, [running]);
 
+  // Auto-stop at zero so the timer doesn't sit at 00:00 with the
+  // animation still active.
+  useEffect(() => {
+    if (secs === 0 && running) setRunning(false);
+  }, [secs, running]);
+
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   const pct = ((25 * 60 - secs) / (25 * 60)) * 100;
@@ -368,25 +330,50 @@ function FocusTimer() {
   return (
     <Card>
       <CardContent sx={{ p: 2.5 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-          Pomodoro · 25 min
+        <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+          Focus
         </Typography>
-        <Typography variant="h3" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", my: 1 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+          25 minute Pomodoro
+        </Typography>
+        <Typography
+          variant="h2"
+          sx={{
+            fontWeight: 600,
+            fontVariantNumeric: "tabular-nums",
+            my: 1,
+            lineHeight: 1.05,
+          }}
+        >
           {String(m).padStart(2, "0")}:{String(s).padStart(2, "0")}
         </Typography>
-        <LinearProgress variant="determinate" value={pct} sx={{ mb: 2 }} />
+        <LinearProgress
+          variant="determinate"
+          value={pct}
+          sx={{ mb: 2, height: 4, borderRadius: 999 }}
+          color={secs === 0 ? "success" : "primary"}
+        />
         <Stack direction="row" spacing={1}>
           <Button
             startIcon={running ? <PauseIcon /> : <PlayArrowIcon />}
             variant="contained"
             fullWidth
             onClick={() => setRunning((r) => !r)}
+            disabled={secs === 0}
           >
-            {running ? "Pause" : "Start"}
+            {running ? "Pause" : secs === 25 * 60 ? "Start" : "Resume"}
           </Button>
-          <IconButton onClick={() => { setRunning(false); setSecs(25 * 60); }}>
-            <RestartAltIcon />
-          </IconButton>
+          <Tooltip title="Reset">
+            <IconButton
+              onClick={() => {
+                setRunning(false);
+                setSecs(25 * 60);
+              }}
+              aria-label="Reset timer"
+            >
+              <RestartAltIcon />
+            </IconButton>
+          </Tooltip>
         </Stack>
       </CardContent>
     </Card>
@@ -403,13 +390,13 @@ function AutosaveBadge({ state }: { state: AutosaveState }) {
     label = "Saving…";
     color = "warning";
   } else if (state.status === "saved" && state.lastSavedAt) {
-    label = `Saved at ${dayjs(state.lastSavedAt).format("HH:mm")}`;
+    label = `Saved ${dayjs(state.lastSavedAt).format("HH:mm")}`;
     color = "success";
   } else if (state.status === "dirty") {
     label = "Unsaved";
     color = "warning";
   } else if (state.status === "error") {
-    label = `Save failed`;
+    label = "Save failed";
     color = "error";
   } else {
     label = "Idle";
@@ -439,7 +426,10 @@ function NotesPanel({ assessmentId }: { assessmentId: string | null }) {
         sx={{
           "& .MuiOutlinedInput-root": { bgcolor: "transparent", border: 0 },
           "& fieldset": { border: 0 },
-          "& textarea": { fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace", fontSize: "0.95rem" },
+          "& textarea": {
+            fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
+            fontSize: "0.95rem",
+          },
         }}
       />
       <Stack direction="row" justifyContent="flex-end">
@@ -468,9 +458,6 @@ function EssayPanel({ assessmentId, essayTitle }: { assessmentId: string | null;
   const submit = async () => {
     if (!assessmentId) return;
     try {
-      // Save the latest content immediately, then mark the SBA as
-      // submitted. Two awaits ensure the draft is durable before the
-      // status flip lands.
       draft.queueSave(value);
       await updateAssessment.mutateAsync({ id: assessmentId, status: "submitted" });
       setSnackbar({ open: true, msg: "Draft submitted. Saved + marked as submitted.", severity: "success" });
@@ -508,15 +495,16 @@ function EssayPanel({ assessmentId, essayTitle }: { assessmentId: string | null;
       >
         <Stack direction="row" spacing={1} alignItems="center">
           <Typography variant="caption" color="text.secondary">
-            {wordCount} words
+            {wordCount} {wordCount === 1 ? "word" : "words"}
           </Typography>
           <AutosaveBadge state={draft.state} />
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" disabled>
-            Self-check rubric
-          </Button>
-          <Button variant="contained" onClick={submit} disabled={!assessmentId || updateAssessment.isPending}>
+          <Button
+            variant="contained"
+            onClick={submit}
+            disabled={!assessmentId || updateAssessment.isPending || !value.trim()}
+          >
             {updateAssessment.isPending ? "Submitting…" : "Submit draft"}
           </Button>
         </Stack>
@@ -527,7 +515,11 @@ function EssayPanel({ assessmentId, essayTitle }: { assessmentId: string | null;
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        >
           {snackbar.msg}
         </Alert>
       </Snackbar>
@@ -535,85 +527,14 @@ function EssayPanel({ assessmentId, essayTitle }: { assessmentId: string | null;
   );
 }
 
-function ScratchpadPanel() {
-  return (
-    <Box
-      sx={{
-        height: 480,
-        borderRadius: 2,
-        border: 1,
-        borderColor: "divider",
-        bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)"),
-        display: "grid",
-        placeItems: "center",
-        position: "relative",
-        overflow: "hidden",
-        backgroundImage: (t) =>
-          `linear-gradient(${t.palette.divider} 1px, transparent 1px),
-           linear-gradient(90deg, ${t.palette.divider} 1px, transparent 1px)`,
-        backgroundSize: "32px 32px",
-      }}
-    >
-      <Typography color="text.secondary" sx={{ p: 2, textAlign: "center" }}>
-        Math scratchpad — scribble derivatives, sketch graphs, type LaTeX. <br />
-        Press the pen icon to start drawing. <br />
-        <Typography component="span" variant="caption">
-          (Drawing capture coming soon — drafts persist when ready.)
-        </Typography>
-      </Typography>
-    </Box>
-  );
-}
-
-function FilesPanel() {
-  return (
-    <Stack spacing={2}>
-      <Box
-        sx={{
-          border: 2,
-          borderStyle: "dashed",
-          borderColor: "divider",
-          borderRadius: 2,
-          p: 5,
-          textAlign: "center",
-          color: "text.secondary",
-        }}
-      >
-        <UploadIcon sx={{ fontSize: 36, mb: 1, color: "primary.main" }} />
-        <Typography>Drag files here or click to upload</Typography>
-        <Typography variant="caption">PDF, DOCX, JPG, PNG · up to 25MB</Typography>
-        <Typography variant="caption" sx={{ display: "block", mt: 1.5, opacity: 0.7 }}>
-          (File storage coming soon.)
-        </Typography>
-      </Box>
-    </Stack>
-  );
-}
-
-function PracticePanel() {
-  return (
-    <Box sx={{ py: { xs: 4, md: 6 }, textAlign: "center" }}>
-      <Typography variant="h6" gutterBottom>
-        Embed a practice attempt
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2, maxWidth: 480, mx: "auto" }}>
-        Continue a paused practice test, or start a new one aligned to this SBA.
-      </Typography>
-      <Button component={Link} href="/dashboard/practice" variant="contained" size="large">
-        Open practice page
-      </Button>
-    </Box>
-  );
-}
-
 // ============================================================
-// RIGHT RAIL — AI Tutor + rubric checklist
+// RIGHT RAIL — AI tutor + rubric (honest empty when none attached)
 // ============================================================
 function RightRail({ assessment, subject }: { assessment: Assessment; subject: Subject | undefined }) {
   return (
     <Stack spacing={2.5} sx={{ position: { md: "sticky" }, top: { md: 88 } }}>
       <AiTutorChat assessment={assessment} subject={subject} />
-      <RubricChecklist assessment={assessment} />
+      <RubricCard rubric={assessment.rubric} />
     </Stack>
   );
 }
@@ -622,7 +543,7 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
   const [messages, setMessages] = useState<AiHelpMessage[]>([
     {
       role: "assistant",
-      content: `Hey 👋 I'm your AI tutor. Ask me anything about ${assessment.title}${subject ? ` (${subject.name})` : ""}.`,
+      content: `Ask me anything about ${assessment.title}${subject ? ` (${subject.name})` : ""}.`,
     },
   ]);
   const [input, setInput] = useState("");
@@ -638,10 +559,10 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
   const send = () => {
     const text = input.trim();
     if (!text) return;
-    // Prepend a one-shot system context so the bot knows which SBA the
-    // user is asking about. The /api/ai/help endpoint accepts only
-    // user/assistant roles, so we splice the context into the first user
-    // message rather than sending a separate "system" turn.
+    // One-shot system context on the first user turn so the bot knows
+    // what the user is working on. /api/ai/help only accepts
+    // user/assistant roles, so we prepend rather than send a separate
+    // system turn.
     const contextLine = `[Context: working on "${assessment.title}"${subject ? ` for ${subject.name}` : ""}, due ${dayjs(assessment.dueDate).format("DD MMM")}.]`;
     const userMessage: AiHelpMessage = {
       role: "user",
@@ -664,7 +585,7 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
                 err.status === 503
                   ? "The AI is unavailable right now. Try again in a moment."
                   : err.status === 402
-                    ? "You've used this month's Quick AI replies. See /dashboard/billing to upgrade or wait for next month."
+                    ? "You've used this month's Quick AI replies. Upgrade your plan or wait for next month."
                     : "Something went wrong on my side. Try again in a moment.",
             },
           ]),
@@ -674,16 +595,21 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
 
   return (
     <Card sx={{ height: { xs: 460, md: 540 }, display: "flex", flexDirection: "column" }}>
-      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1.5}
+        sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}
+      >
         <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32 }}>
           <SmartToyIcon fontSize="small" sx={{ color: "primary.contrastText" }} />
         </Avatar>
-        <Box>
+        <Box sx={{ flex: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-            AI Tutor
+            AI tutor
           </Typography>
           <Typography variant="caption" color={ask.isPending ? "warning.main" : "success.main"}>
-            ● {ask.isPending ? "Thinking…" : "Online"}
+            {ask.isPending ? "Thinking…" : "Online"}
           </Typography>
         </Box>
       </Stack>
@@ -757,7 +683,12 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
             }}
             disabled={ask.isPending}
           />
-          <IconButton color="primary" onClick={send} disabled={!input.trim() || ask.isPending}>
+          <IconButton
+            color="primary"
+            onClick={send}
+            disabled={!input.trim() || ask.isPending}
+            aria-label="Send"
+          >
             <SendIcon />
           </IconButton>
         </Stack>
@@ -766,42 +697,47 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
   );
 }
 
-function RubricChecklist({ assessment }: { assessment: Assessment }) {
-  const rubric: { label: string; weight: number; done: boolean }[] =
-    assessment.rubric && assessment.rubric.length > 0
-      ? assessment.rubric.map((r) => ({ label: r.criterion, weight: r.weight, done: false }))
-      : [
-          { label: "Content & ideas", weight: 30, done: false },
-          { label: "Structure", weight: 25, done: false },
-          { label: "Style & tone", weight: 25, done: false },
-          { label: "Language & conventions", weight: 20, done: false },
-        ];
+function RubricCard({ rubric }: { rubric: Assessment["rubric"] }) {
+  const hasRubric = Array.isArray(rubric) && rubric.length > 0;
 
   return (
     <Card>
       <CardContent sx={{ p: 2.5 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
-          Rubric checklist
+        <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+          Marking
         </Typography>
-        <Stack spacing={1.25}>
-          {rubric.map((r) => (
-            <Stack key={r.label} direction="row" justifyContent="space-between" alignItems="center">
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-                {r.done ? (
-                  <CheckCircleIcon sx={{ color: "primary.main", fontSize: 18 }} />
-                ) : (
-                  <CircleIcon sx={{ color: "text.disabled", fontSize: 18 }} />
-                )}
-                <Typography variant="body2" sx={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {r.label}
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: hasRubric ? 1.5 : 1 }}>
+          Rubric
+        </Typography>
+        {hasRubric ? (
+          <Stack spacing={1.5}>
+            {rubric!.map((r) => (
+              <Box key={r.criterion}>
+                <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {r.criterion}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {r.weight}%
+                  </Typography>
+                </Stack>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                  {r.description}
                 </Typography>
-              </Stack>
-              <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
-                {r.weight}%
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
+                <LinearProgress
+                  variant="determinate"
+                  value={r.weight}
+                  color="primary"
+                  sx={{ height: 4, borderRadius: 999 }}
+                />
+              </Box>
+            ))}
+          </Stack>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            No rubric attached. When your teacher shares one, it'll appear here with criteria and weights.
+          </Typography>
+        )}
       </CardContent>
     </Card>
   );

@@ -300,7 +300,11 @@ export type CreateAssessmentInput = {
   notes?: string;
 };
 
-export type UpdateAssessmentInput = Partial<CreateAssessmentInput>;
+export type UpdateAssessmentInput = Partial<CreateAssessmentInput> & {
+  // Send a full task list to replace what's stored; omit to leave
+  // tasks untouched. Send [] to clear.
+  tasks?: { label: string; done: boolean }[];
+};
 
 // Refresh the navbar bell after any mutation whose server-side handler
 // can enqueue a notification (assessment submit, goal completion). The
