@@ -239,7 +239,7 @@ export default function WorkspacePage() {
     <>
       {safeTab === "notes"    && <NotesPanel    assessmentId={activeId} />}
       {safeTab === "draft"    && <DraftPanel    assessmentId={activeId} draftTitle={activeAssessment.title} />}
-      {safeTab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />}
+      {safeTab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectCategory={subject?.category} />}
       {safeTab === "practice" && <PracticePanel assessment={activeAssessment} subject={subject} />}
     </>
   );
@@ -440,7 +440,7 @@ function PanelByKey({
   switch (tabKey) {
     case "notes":    return <NotesPanel    assessmentId={activeId} />;
     case "draft":    return <DraftPanel    assessmentId={activeId} draftTitle={assessment.title} />;
-    case "working":  return <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />;
+    case "working":  return <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectCategory={subject?.category} />;
     case "practice": return <PracticePanel assessment={assessment} subject={subject} />;
   }
 }
@@ -840,27 +840,75 @@ function DraftPanel({ assessmentId, draftTitle }: { assessmentId: string | null;
   );
 }
 
+// Subject-aware symbol palette. Returns an empty list for any category
+// that doesn't routinely use these glyphs (languages, humanities,
+// commerce, etc.) — the palette renders nothing in those cases so the
+// Working surface stays clean.
+function symbolsForCategory(category?: string): string[] {
+  if (category === "mathematics") {
+    return ["×", "÷", "±", "≈", "≤", "≥", "≠", "²", "³", "½", "π", "θ", "Δ", "Σ", "√", "°", "∞", "→", "∝", "∫", "∂"];
+  }
+  if (category === "natural_science") {
+    return ["×", "÷", "±", "≈", "≤", "≥", "²", "³", "π", "Δ", "λ", "μ", "Ω", "√", "°", "→", "↔", "⇌", "·"];
+  }
+  return [];
+}
+
 // Rough work — for maths/physics steps, lab observations, project sketches.
 // Same autosave channel as the legacy "scratchpad" panel so old drafts
 // carry over. Mono font because students typing equations and tables want
-// columns to line up.
+// columns to line up. Maths/sciences subjects also get a symbol palette
+// above the textarea.
 function WorkingPanel({
   assessmentId,
   subjectName,
+  subjectCategory,
 }: {
   assessmentId: string | null;
   subjectName?: string;
+  subjectCategory?: string;
 }) {
   const draft = useWorkspaceDraft(assessmentId, "scratchpad");
   const [value, setValue] = useState(draft.initialContent);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   useEffect(() => { setValue(draft.initialContent); }, [draft.initialContent]);
+
+  const symbols = symbolsForCategory(subjectCategory);
+
+  // Insert at the current caret position. If the textarea isn't focused
+  // (e.g. user tapped a symbol button on touch), append at the end so
+  // the click still does something useful.
+  const insertSymbol = (sym: string) => {
+    const el = textareaRef.current;
+    if (!el) {
+      const next = value + sym;
+      setValue(next);
+      draft.queueSave(next);
+      return;
+    }
+    const start = el.selectionStart ?? value.length;
+    const end = el.selectionEnd ?? value.length;
+    const next = value.slice(0, start) + sym + value.slice(end);
+    setValue(next);
+    draft.queueSave(next);
+    // Move caret to the position right after the inserted symbol on
+    // the next tick so the textarea has the updated value.
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(start + sym.length, start + sym.length);
+    });
+  };
 
   return (
     <Stack spacing={1.5}>
+      {symbols.length > 0 && (
+        <SymbolPalette symbols={symbols} onInsert={insertSymbol} />
+      )}
       <TextField
         fullWidth
         multiline
         minRows={14}
+        inputRef={textareaRef}
         placeholder={
           subjectName
             ? `${subjectName} working — show your steps, jot equations, line up columns…`
@@ -882,6 +930,65 @@ function WorkingPanel({
         <AutosaveBadge state={draft.state} />
       </Stack>
     </Stack>
+  );
+}
+
+// Touch-friendly horizontally-scrollable strip of glyph buttons. Each
+// inserts its character at the textarea caret position. Designed to fit
+// on a phone — overflow scrolls; rows of 44px-tall buttons.
+function SymbolPalette({
+  symbols,
+  onInsert,
+}: {
+  symbols: string[];
+  onInsert: (sym: string) => void;
+}) {
+  return (
+    <Box
+      role="toolbar"
+      aria-label="Maths symbols"
+      sx={{
+        display: "flex",
+        gap: 0.5,
+        overflowX: "auto",
+        pb: 0.5,
+        mx: { xs: -2, sm: -3 },
+        px: { xs: 2, sm: 3 },
+        // Hide the scrollbar visual but keep scroll behaviour. Reads
+        // cleaner on a narrow phone where a scrollbar above the keyboard
+        // is visual noise.
+        scrollbarWidth: "none",
+        "&::-webkit-scrollbar": { display: "none" },
+      }}
+    >
+      {symbols.map((sym) => (
+        <Button
+          key={sym}
+          variant="outlined"
+          size="small"
+          onMouseDown={(e) => {
+            // Prevent the button taking focus and stealing the caret
+            // from the textarea — keeps insertions in the right place.
+            e.preventDefault();
+          }}
+          onClick={() => onInsert(sym)}
+          sx={{
+            minWidth: 40,
+            height: 40,
+            px: 1,
+            fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
+            fontSize: "1rem",
+            fontWeight: 500,
+            color: "text.primary",
+            borderColor: "divider",
+            flexShrink: 0,
+          }}
+          aria-label={`Insert ${sym}`}
+        >
+          {sym}
+        </Button>
+      ))}
+    </Box>
   );
 }
 
