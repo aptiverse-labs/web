@@ -12,13 +12,15 @@ import Chip from "@mui/material/Chip";
 import Skeleton from "@mui/material/Skeleton";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
-import { alpha } from "@mui/material/styles";
+import Divider from "@mui/material/Divider";
+import { alpha, useTheme } from "@mui/material/styles";
 import Link from "next/link";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { motion } from "framer-motion";
 import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
+import { brand } from "@/theme/palette";
 import {
   useSubjects,
   useAssessments,
@@ -130,6 +132,8 @@ function UpcomingAssessmentsCard({
   isEmpty: boolean;
   dataUpdatedAt: number | undefined;
 }) {
+  const [hero, ...rest] = upcoming;
+
   return (
     <motion.div {...enter}>
       <Card sx={{ mb: 3 }}>
@@ -144,7 +148,7 @@ function UpcomingAssessmentsCard({
               <Typography variant="overline" color="text.secondary">
                 Up next
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
                 Upcoming SBAs
               </Typography>
             </Box>
@@ -160,9 +164,9 @@ function UpcomingAssessmentsCard({
 
           {loading ? (
             <Stack spacing={1.25}>
-              <Skeleton variant="rounded" height={74} />
-              <Skeleton variant="rounded" height={74} />
-              <Skeleton variant="rounded" height={74} />
+              <Skeleton variant="rounded" height={120} />
+              <Skeleton variant="rounded" height={56} />
+              <Skeleton variant="rounded" height={56} />
             </Stack>
           ) : isEmpty ? (
             <Box sx={{ py: 5, textAlign: "center" }}>
@@ -171,102 +175,30 @@ function UpcomingAssessmentsCard({
               </Typography>
             </Box>
           ) : (
-            <Stack spacing={1.25}>
-              {upcoming.map((a, i) => {
-                const subject = subjects.find((s) => s.id === a.subjectId);
-                const daysLeft = dayjs(a.dueDate).diff(dayjs(), "day");
-                const urgent = daysLeft >= 0 && daysLeft <= 3;
-                return (
-                  <motion.div key={a.id} {...enterStagger(i)}>
-                    <Box
-                      component={Link}
-                      href={`/dashboard/assessments/${a.id}`}
-                      sx={{
-                        p: 2,
-                        borderRadius: 1.5,
-                        border: 1,
-                        borderColor: "divider",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 2,
-                        textDecoration: "none",
-                        color: "inherit",
-                        transition:
-                          "border-color 180ms cubic-bezier(0.165, 0.84, 0.44, 1), background-color 180ms cubic-bezier(0.165, 0.84, 0.44, 1)",
-                        "&:hover": {
-                          borderColor: "primary.main",
-                          bgcolor: (t) => alpha(t.palette.primary.main, 0.03),
-                        },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 1,
-                          display: "grid",
-                          placeItems: "center",
-                          color: "primary.main",
-                          bgcolor: (t) =>
-                            alpha(
-                              t.palette.primary.main,
-                              t.palette.mode === "dark" ? 0.12 : 0.08,
-                            ),
-                          flexShrink: 0,
-                        }}
-                      >
-                        <AssignmentIcon fontSize="small" />
-                      </Box>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{ fontWeight: 600 }}
-                          noWrap
-                        >
-                          {a.title}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {subject?.name ?? "Unlinked"} · {a.type} · {a.weight}%
-                        </Typography>
-                      </Box>
-                      <Box
-                        sx={{
-                          textAlign: "right",
-                          display: { xs: "none", sm: "block" },
-                        }}
-                      >
-                        <Typography variant="caption" color="text.secondary">
-                          Predicted
-                        </Typography>
-                        <Typography
-                          variant="subtitle2"
-                          sx={{
-                            fontWeight: 600,
-                            fontVariantNumeric: "tabular-nums",
-                          }}
-                        >
-                          {a.predictedMark != null ? `${a.predictedMark}%` : "–"}
-                        </Typography>
-                      </Box>
-                      <Chip
-                        label={
-                          urgent
-                            ? `${daysLeft}d`
-                            : dayjs(a.dueDate).format("DD MMM")
-                        }
-                        size="small"
-                        color={urgent ? "warning" : "default"}
-                        variant={urgent ? "filled" : "outlined"}
-                        sx={{
-                          fontWeight: 600,
-                          fontVariantNumeric: "tabular-nums",
-                        }}
-                      />
-                    </Box>
-                  </motion.div>
-                );
-              })}
-            </Stack>
+            <>
+              {hero && (
+                <HeroUpcomingRow
+                  a={hero}
+                  subject={subjects.find((s) => s.id === hero.subjectId)}
+                />
+              )}
+
+              {rest.length > 0 && (
+                <>
+                  <Divider sx={{ my: 2 }} />
+                  <Stack spacing={0.5}>
+                    {rest.map((a, i) => (
+                      <motion.div key={a.id} {...enterStagger(i)}>
+                        <CompactUpcomingRow
+                          a={a}
+                          subject={subjects.find((s) => s.id === a.subjectId)}
+                        />
+                      </motion.div>
+                    ))}
+                  </Stack>
+                </>
+              )}
+            </>
           )}
 
           <LastSynced at={dataUpdatedAt} />
@@ -276,7 +208,192 @@ function UpcomingAssessmentsCard({
   );
 }
 
+// ─── Hero row (the page's one focal moment) ──────────────────────────
+// The most urgent upcoming SBA gets dedicated typography, a prominent
+// days-left numeral, and a direct "Start working" deeplink. This is
+// where the page commits to answering the canonical question: "what
+// should I work on right now?"
+
+function HeroUpcomingRow({
+  a,
+  subject,
+}: {
+  a: UpcomingItem;
+  subject?: Subject;
+}) {
+  const daysLeft = dayjs(a.dueDate).diff(dayjs(), "day");
+  const urgent = daysLeft >= 0 && daysLeft <= 3;
+  const daysLabel =
+    daysLeft === 0
+      ? "today"
+      : daysLeft === 1
+        ? "tomorrow"
+        : daysLeft > 0
+          ? `in ${daysLeft} days`
+          : dayjs(a.dueDate).format("DD MMM");
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        alignItems: { xs: "stretch", sm: "center" },
+        gap: { xs: 2, sm: 3 },
+      }}
+    >
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="overline" color="primary.main" sx={{ display: "block" }}>
+          {subject?.name ?? "Unlinked"}
+        </Typography>
+        <Typography
+          variant="h5"
+          component={Link}
+          href={`/dashboard/assessments/${a.id}`}
+          sx={{
+            fontWeight: 600,
+            color: "text.primary",
+            textDecoration: "none",
+            display: "block",
+            mt: 0.25,
+            "&:hover": { color: "primary.main" },
+            transition: "color 180ms cubic-bezier(0.165, 0.84, 0.44, 1)",
+          }}
+        >
+          {a.title}
+        </Typography>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ mt: 0.75 }}
+          divider={<Box component="span" sx={{ color: "text.disabled" }}>·</Box>}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Due{" "}
+            <Box
+              component="span"
+              sx={{
+                fontWeight: 600,
+                color: urgent ? "warning.dark" : "text.primary",
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {daysLabel}
+            </Box>
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {a.type}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {a.weight}% weight
+          </Typography>
+          {a.predictedMark != null && (
+            <Typography variant="body2" color="text.secondary">
+              Predicted{" "}
+              <Box
+                component="span"
+                sx={{
+                  fontWeight: 600,
+                  color: "text.primary",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {a.predictedMark}%
+              </Box>
+            </Typography>
+          )}
+        </Stack>
+      </Box>
+      <Button
+        component={Link}
+        href={`/dashboard/workspace?assessmentId=${a.id}`}
+        variant="contained"
+        size="large"
+        sx={{ flexShrink: 0 }}
+      >
+        Start working
+      </Button>
+    </Box>
+  );
+}
+
+// ─── Compact row (denser, glanceable; not the hero) ──────────────────
+
+function CompactUpcomingRow({
+  a,
+  subject,
+}: {
+  a: UpcomingItem;
+  subject?: Subject;
+}) {
+  const daysLeft = dayjs(a.dueDate).diff(dayjs(), "day");
+  const urgent = daysLeft >= 0 && daysLeft <= 3;
+  const dayLabel =
+    daysLeft === 0
+      ? "Today"
+      : urgent
+        ? `${daysLeft}d`
+        : dayjs(a.dueDate).format("DD MMM");
+
+  return (
+    <Box
+      component={Link}
+      href={`/dashboard/assessments/${a.id}`}
+      sx={{
+        px: 1.5,
+        py: 1.25,
+        borderRadius: 1.5,
+        display: "flex",
+        alignItems: "center",
+        gap: 1.5,
+        textDecoration: "none",
+        color: "inherit",
+        transition:
+          "background-color 180ms cubic-bezier(0.165, 0.84, 0.44, 1)",
+        "&:hover": { bgcolor: (t) => alpha(t.palette.primary.main, 0.04) },
+      }}
+    >
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }} noWrap>
+          {a.title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {subject?.name ?? "Unlinked"} · {a.type} · {a.weight}%
+        </Typography>
+      </Box>
+      <Chip
+        label={dayLabel}
+        size="small"
+        color={urgent ? "warning" : "default"}
+        variant={urgent ? "filled" : "outlined"}
+        sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
+      />
+    </Box>
+  );
+}
+
 // ─── Mastery trend (now carries the predicted average) ────────────────
+
+// Tonal teal ramp for the chart. Replaces MUI X's categorical default
+// palette (which would render each subject in an unrelated hue, the
+// usual SaaS line-chart look). Inside one ramp the chart commits to the
+// Aptiverse brand colour; subject identity is still distinguishable by
+// shade, and the visual register reads as "this is our chart", not
+// "this is a chart library's output".
+const CHART_TEAL_RAMP_LIGHT = [
+  brand.teal[700],
+  brand.teal[500],
+  brand.teal[400],
+  brand.teal[300],
+  brand.teal[200],
+];
+const CHART_TEAL_RAMP_DARK = [
+  brand.teal[200],
+  brand.teal[300],
+  brand.teal[400],
+  brand.teal[500],
+  brand.teal[600],
+];
 
 function MasteryTrendCard({
   subjects,
@@ -287,6 +404,9 @@ function MasteryTrendCard({
   loading: boolean;
   dataUpdatedAt: number | undefined;
 }) {
+  const theme = useTheme();
+  const tealRamp =
+    theme.palette.mode === "dark" ? CHART_TEAL_RAMP_DARK : CHART_TEAL_RAMP_LIGHT;
   const withData = subjects.filter(
     (s) => s.termAverages && s.termAverages.length > 0,
   );
@@ -338,7 +458,7 @@ function MasteryTrendCard({
               <Typography variant="overline" color="text.secondary">
                 Mastery
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
                 Term-over-term
               </Typography>
             </Box>
@@ -356,7 +476,7 @@ function MasteryTrendCard({
             <Stack
               direction="row"
               alignItems="flex-end"
-              spacing={1.5}
+              spacing={2}
               sx={{ mb: 2 }}
             >
               <Box>
@@ -380,17 +500,29 @@ function MasteryTrendCard({
                 </Stack>
                 <Stack direction="row" alignItems="baseline" spacing={0.75}>
                   <Typography
-                    variant="h4"
                     component="div"
                     sx={{
+                      // Display-style numeral. Larger than h4 (1.25rem)
+                      // so the predicted mark is the page's bold focal
+                      // figure. Clamp keeps it readable across breakpoints.
+                      fontSize: { xs: "2.25rem", sm: "2.75rem" },
                       fontWeight: 600,
-                      lineHeight: 1.1,
+                      lineHeight: 1,
+                      letterSpacing: "-0.02em",
+                      color: "primary.main",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
                     {predictedAverage}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography
+                    sx={{
+                      fontSize: "1rem",
+                      fontWeight: 500,
+                      color: "primary.main",
+                      lineHeight: 1,
+                    }}
+                  >
                     %
                   </Typography>
                 </Stack>
@@ -402,7 +534,7 @@ function MasteryTrendCard({
                   spacing={0.25}
                   sx={{
                     color: delta > 0 ? "success.main" : "warning.main",
-                    pb: 0.5,
+                    pb: 0.75,
                   }}
                 >
                   {delta > 0 ? (
@@ -447,10 +579,11 @@ function MasteryTrendCard({
               xAxis={[
                 { data: ["T1", "T2", "T3", "T4"], scaleType: "point" },
               ]}
-              series={withData.slice(0, 5).map((s) => ({
+              series={withData.slice(0, 5).map((s, i) => ({
                 data: (s.termAverages ?? []).map((t) => t.mark),
                 label: s.name,
                 curve: "monotoneX",
+                color: tealRamp[i],
               }))}
               margin={{ top: 16, right: 16, bottom: 32, left: 32 }}
             />
@@ -492,7 +625,7 @@ function ActiveGoalsCard({
               <Typography variant="overline" color="text.secondary">
                 In progress
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              <Typography variant="h5" sx={{ fontWeight: 600 }}>
                 Active goals
               </Typography>
             </Box>
