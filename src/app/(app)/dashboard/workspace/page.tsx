@@ -141,6 +141,12 @@ export default function WorkspacePage() {
     if (!tabs.includes(tab)) setTab(tabs[0]);
   }, [tabs, tab]);
 
+  // Derived "safe" tab. After switching assessment types, `tab` lags
+  // `tabs` by one render (the effect above fixes it on the next pass).
+  // MUI Tabs warns when value doesn't match any child, so we render the
+  // first valid tab in this transient state and stay quiet.
+  const safeTab: TabKey = tabs.includes(tab) ? tab : tabs[0];
+
   const [viewMode, setViewMode] = useState<ViewMode>("tabbed");
   const [aiOpen, setAiOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
@@ -231,10 +237,10 @@ export default function WorkspacePage() {
 
   const editorSlots = (
     <>
-      {tab === "notes"    && <NotesPanel    assessmentId={activeId} />}
-      {tab === "draft"    && <DraftPanel    assessmentId={activeId} draftTitle={activeAssessment.title} />}
-      {tab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />}
-      {tab === "practice" && <PracticePanel assessment={activeAssessment} subject={subject} />}
+      {safeTab === "notes"    && <NotesPanel    assessmentId={activeId} />}
+      {safeTab === "draft"    && <DraftPanel    assessmentId={activeId} draftTitle={activeAssessment.title} />}
+      {safeTab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />}
+      {safeTab === "practice" && <PracticePanel assessment={activeAssessment} subject={subject} />}
     </>
   );
 
@@ -338,7 +344,7 @@ export default function WorkspacePage() {
             >
               {viewMode === "tabbed" ? (
                 <Tabs
-                  value={tab}
+                  value={safeTab}
                   onChange={(_, v: TabKey) => setTab(v)}
                   variant="scrollable"
                   scrollButtons={false}
