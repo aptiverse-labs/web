@@ -36,6 +36,7 @@ export function Sidebar({ open, onClose, variant = "permanent" }: SidebarProps) 
         open={open}
         onClose={onClose}
         ModalProps={{ keepMounted: true }}
+        slotProps={{ paper: { "aria-label": "Main navigation" } }}
         sx={{
           display: { xs: "block", md: "none" },
           "& .MuiDrawer-paper": { width: SIDEBAR_WIDTH },
@@ -75,7 +76,7 @@ function SidebarContent({
   const pathname = usePathname();
 
   return (
-    <Stack sx={{ height: "100%" }}>
+    <Stack component="nav" aria-label="Main navigation" sx={{ height: "100%" }}>
       <Box sx={{ flex: 1, overflowY: "auto", py: 1.5, px: 1.25 }}>
         {sections.map((s) => (
           <Box key={s.heading} sx={{ mb: 1 }}>
@@ -103,20 +104,33 @@ function SidebarContent({
                       href={item.href}
                       selected={active}
                       onClick={onLinkClick}
-                      sx={{ py: 0.85, px: 1.5 }}
+                      sx={{
+                        py: 0.85,
+                        px: 1.5,
+                        // ListItemIcon defaults to the parent text colour. The
+                        // global override at MuiListItemButton.Mui-selected
+                        // recolours it to primary.main — don't inline an
+                        // sx color here or specificity wins over the system.
+                        "& .MuiListItemIcon-root": { color: "text.secondary", minWidth: 36 },
+                        "&.Mui-selected .MuiListItemIcon-root": { color: "primary.main" },
+                      }}
                     >
-                      <ListItemIcon sx={{ minWidth: 36, color: "text.secondary" }}>
+                      <ListItemIcon>
                         <Icon fontSize="small" />
                       </ListItemIcon>
                       <ListItemText
                         primary={item.label}
-                        primaryTypographyProps={{ fontSize: "0.9rem", fontWeight: active ? 600 : 500 }}
+                        slotProps={{
+                          primary: {
+                            sx: { fontSize: "0.9rem", fontWeight: active ? 600 : 500 },
+                          },
+                        }}
                       />
                       {item.badge && (
                         <Chip
                           label={item.badge}
                           size="small"
-                          color="secondary"
+                          color="success"
                           sx={{ height: 20, fontSize: "0.65rem", fontWeight: 700 }}
                         />
                       )}

@@ -15,6 +15,7 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
+import { alpha } from "@mui/material/styles";
 import MenuIcon from "@mui/icons-material/Menu";
 import NotificationsIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import LogoutIcon from "@mui/icons-material/LogoutOutlined";
@@ -136,14 +137,26 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
             open={!!notifEl}
             anchorEl={notifEl}
             onClose={() => setNotifEl(null)}
-            slotProps={{ paper: { sx: { width: 380, maxHeight: 480 } } }}
+            slotProps={{
+              paper: {
+                sx: {
+                  width: { xs: "calc(100vw - 32px)", sm: 380 },
+                  maxWidth: 380,
+                  maxHeight: 480,
+                },
+              },
+            }}
           >
             <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: "divider" }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                 Notifications
               </Typography>
               {unreadCount > 0 && (
-                <Typography variant="caption" color="text.secondary">
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontVariantNumeric: "tabular-nums" }}
+                >
                   {unreadCount} unread
                 </Typography>
               )}
@@ -175,10 +188,7 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
                   whiteSpace: "normal",
                   bgcolor: n.read
                     ? "transparent"
-                    : (t) =>
-                        t.palette.mode === "dark"
-                          ? "rgba(63,157,149,0.06)"
-                          : "rgba(15,105,99,0.04)",
+                    : (t) => alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.06 : 0.04),
                 }}
               >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -209,8 +219,21 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
             </MenuItem>
           </Menu>
 
-          <IconButton onClick={(e) => setProfileEl(e.currentTarget)} sx={{ ml: 0.5 }}>
-            <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main", fontSize: "0.85rem", fontWeight: 700 }}>
+          <IconButton
+            onClick={(e) => setProfileEl(e.currentTarget)}
+            sx={{ ml: 0.5 }}
+            aria-label="Account menu"
+          >
+            <Avatar
+              sx={{
+                width: 32,
+                height: 32,
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                fontSize: "0.8125rem",
+                fontWeight: 700,
+              }}
+            >
               {initials(displayName)}
             </Avatar>
           </IconButton>

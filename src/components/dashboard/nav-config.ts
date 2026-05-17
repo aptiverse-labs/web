@@ -51,7 +51,7 @@ export const STUDENT_NAV: NavSection[] = [
     heading: "Today",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: HomeIcon },
-      { label: "Workspace", href: "/dashboard/workspace", icon: WorkspacesIcon, badge: "Live" },
+      { label: "Workspace", href: "/dashboard/workspace", icon: WorkspacesIcon },
       { label: "AI Tutor", href: "/dashboard/chatbot", icon: SmartToyIcon },
     ],
   },
