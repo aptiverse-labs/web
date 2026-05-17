@@ -15,6 +15,8 @@ import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
+import MuiLink from "@mui/material/Link";
+import { alpha } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import SchoolIcon from "@mui/icons-material/School";
@@ -75,40 +77,74 @@ export default function RegisterPage() {
       {step === 0 && (
         <>
           <Grid container spacing={2}>
-            {ROLE_OPTIONS.map((r) => (
-              <Grid key={r.value} size={{ xs: 12, sm: 6 }}>
-                <Card sx={{ borderColor: role === r.value ? "primary.main" : "divider", borderWidth: role === r.value ? 2 : 1 }}>
-                  <CardActionArea
-                    onClick={() => {
-                      setRole(r.value);
-                      setStep(1);
+            {ROLE_OPTIONS.map((r) => {
+              const selected = role === r.value;
+              return (
+                <Grid key={r.value} size={{ xs: 12, sm: 6 }}>
+                  <Card
+                    sx={{
+                      // Border width stays 1px in both states. The previous
+                      // 1px <-> 2px toggle on select shifted the card 1px
+                      // in every direction, jolting neighbours sideways.
+                      // Use a soft 2px ring via box-shadow for the selected
+                      // affordance instead, since shadows don't push layout.
+                      borderColor: selected ? "primary.main" : "divider",
+                      boxShadow: selected
+                        ? (t) => `0 0 0 2px ${alpha(t.palette.primary.main, 0.16)}`
+                        : "none",
+                      transition:
+                        "border-color 180ms cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 180ms cubic-bezier(0.165, 0.84, 0.44, 1)",
                     }}
                   >
-                    <CardContent>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Box sx={{ width: 36, height: 36, borderRadius: 1.5, display: "grid", placeItems: "center", bgcolor: "action.hover", color: "primary.main" }}>
-                          {r.icon}
-                        </Box>
-                        <Box>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                            {r.label}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {r.description}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </CardContent>
-                  </CardActionArea>
-                </Card>
-              </Grid>
-            ))}
+                    <CardActionArea
+                      onClick={() => {
+                        setRole(r.value);
+                        setStep(1);
+                      }}
+                      aria-pressed={selected}
+                    >
+                      <CardContent>
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                          <Box
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              borderRadius: 1.5,
+                              display: "grid",
+                              placeItems: "center",
+                              bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+                              color: "primary.main",
+                            }}
+                          >
+                            {r.icon}
+                          </Box>
+                          <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                              {r.label}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {r.description}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                </Grid>
+              );
+            })}
           </Grid>
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
             Already on Aptiverse?{" "}
-            <Link href="/login" style={{ color: "inherit", fontWeight: 600 }}>
+            <MuiLink
+              component={Link}
+              href="/login"
+              color="text.primary"
+              underline="hover"
+              sx={{ fontWeight: 600 }}
+            >
               Sign in
-            </Link>
+            </MuiLink>
           </Typography>
         </>
       )}
@@ -118,6 +154,7 @@ export default function RegisterPage() {
           <OAuthButtons />
           <Box
             component="form"
+            noValidate
             onSubmit={async (e) => {
               e.preventDefault();
               const ok = await trigger();
@@ -183,10 +220,10 @@ export default function RegisterPage() {
                     {role === "student" && (
                       <>
                         <Typography>
-                          <strong>School:</strong> {getValues("school") || "—"}
+                          <strong>School:</strong> {getValues("school") || "Not set"}
                         </Typography>
                         <Typography>
-                          <strong>Grade:</strong> {getValues("grade") || "—"}
+                          <strong>Grade:</strong> {getValues("grade") || "Not set"}
                         </Typography>
                       </>
                     )}

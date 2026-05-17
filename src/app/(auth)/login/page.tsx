@@ -13,6 +13,7 @@ import Alert from "@mui/material/Alert";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Box from "@mui/material/Box";
+import MuiLink from "@mui/material/Link";
 import Link from "next/link";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { loginSchema, type LoginValues } from "@/lib/schemas";
@@ -118,7 +119,7 @@ function LoginInner() {
 
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Box component="form" onSubmit={handleSubmit(onSubmit)}>
+      <Box component="form" noValidate onSubmit={handleSubmit(onSubmit)}>
         <Stack spacing={2}>
           <TextField
             fullWidth
@@ -143,9 +144,16 @@ function LoginInner() {
               control={<Checkbox size="small" {...register("remember")} defaultChecked />}
               label={<Typography variant="body2">Remember me</Typography>}
             />
-            <Link href="/forgot-password" style={{ fontSize: "0.875rem", color: "inherit" }}>
+            <MuiLink
+              component={Link}
+              href="/forgot-password"
+              variant="body2"
+              color="text.secondary"
+              underline="hover"
+              sx={{ "&:hover": { color: "text.primary" } }}
+            >
               Forgot password?
-            </Link>
+            </MuiLink>
           </Stack>
           <Button type="submit" size="large" variant="contained" disabled={!isValid || submitting}>
             {submitting ? "Signing in…" : "Sign in"}
@@ -155,9 +163,15 @@ function LoginInner() {
 
       <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
         New to Aptiverse?{" "}
-        <Link href="/register" style={{ color: "inherit", fontWeight: 600 }}>
+        <MuiLink
+          component={Link}
+          href="/register"
+          color="text.primary"
+          underline="hover"
+          sx={{ fontWeight: 600 }}
+        >
           Create an account
-        </Link>
+        </MuiLink>
       </Typography>
     </Stack>
   );

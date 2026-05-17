@@ -3,6 +3,7 @@
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import MuiLink from "@mui/material/Link";
 import Link from "next/link";
 import { Logo } from "@/components/common/Logo";
 import { ColorModeToggle } from "@/components/common/ColorModeToggle";
@@ -17,7 +18,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           flexDirection: "column",
           justifyContent: "space-between",
           p: 6,
-          background: (t) => `linear-gradient(135deg, ${t.palette.primary.dark}, ${t.palette.primary.main} 60%, ${t.palette.secondary.main})`,
+          // Monochromatic teal drench. The previous gradient ended in
+          // secondary.main (terracotta), which DESIGN.md reserves for
+          // "warm attention / needs work" feedback. Coding the welcome
+          // panel as warm-attention was a meaning clash; staying inside
+          // the primary ramp keeps the panel reading as "Aptiverse".
+          background: (t) =>
+            `linear-gradient(135deg, ${t.palette.primary.dark}, ${t.palette.primary.main} 55%, ${t.palette.primary.light})`,
           color: "primary.contrastText",
         }}
       >
@@ -26,15 +33,39 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </Box>
         <Stack spacing={2}>
           <Typography variant="h2" component="p" sx={{ fontWeight: 700, lineHeight: 1.15 }}>
-            Grow with confidence — high school, on your side.
+            Grow with confidence. High school, on your side.
           </Typography>
           <Typography variant="body1" sx={{ opacity: 0.92, maxWidth: 420 }}>
             Join thousands of South African FET-phase learners (Grades 10–12) using Aptiverse for SBA prep, mastery tracking, wellbeing and bursaries.
           </Typography>
         </Stack>
-        <Typography variant="caption" sx={{ opacity: 0.85 }}>
-          © {new Date().getFullYear()} Aptiverse · Privacy · Terms
-        </Typography>
+        <Stack
+          direction="row"
+          spacing={1.5}
+          sx={{ typography: "caption", opacity: 0.85, alignItems: "center" }}
+        >
+          <Box component="span">© {new Date().getFullYear()} Aptiverse</Box>
+          <Box component="span" aria-hidden="true">·</Box>
+          <MuiLink
+            component={Link}
+            href="/privacy"
+            color="inherit"
+            underline="hover"
+            sx={{ "&:focus-visible": { outlineOffset: 4 } }}
+          >
+            Privacy
+          </MuiLink>
+          <Box component="span" aria-hidden="true">·</Box>
+          <MuiLink
+            component={Link}
+            href="/terms"
+            color="inherit"
+            underline="hover"
+            sx={{ "&:focus-visible": { outlineOffset: 4 } }}
+          >
+            Terms
+          </MuiLink>
+        </Stack>
       </Box>
 
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
