@@ -42,6 +42,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TasksEditor } from "@/components/workspace/TasksEditor";
+import { StepWorkingEditor } from "@/components/workspace/StepWorkingEditor";
 import {
   useAssessments,
   useSubjects,
@@ -243,7 +244,7 @@ export default function WorkspacePage() {
     <>
       {safeTab === "notes"    && <NotesPanel    assessmentId={activeId} />}
       {safeTab === "draft"    && <DraftPanel    assessmentId={activeId} draftTitle={activeAssessment.title} />}
-      {safeTab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />}
+      {safeTab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectCategory={subject?.category} />}
       {safeTab === "practice" && <PracticePanel assessment={activeAssessment} subject={subject} />}
     </>
   );
@@ -444,7 +445,7 @@ function PanelByKey({
   switch (tabKey) {
     case "notes":    return <NotesPanel    assessmentId={activeId} />;
     case "draft":    return <DraftPanel    assessmentId={activeId} draftTitle={assessment.title} />;
-    case "working":  return <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />;
+    case "working":  return <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} subjectCategory={subject?.category} />;
     case "practice": return <PracticePanel assessment={assessment} subject={subject} />;
   }
 }
@@ -844,23 +845,60 @@ function DraftPanel({ assessmentId, draftTitle }: { assessmentId: string | null;
   );
 }
 
-// Working surface — plain-text scratch for reasoning, observations,
-// and step-by-step explanations of what the student did on paper.
+// Working surface.
 //
-// Deliberately NOT a math editor. A real math input needs 2D layout
-// (fractions stacked, roots over expressions, integrals with bounds).
-// Glyph-insertion into a textarea looks like one but isn't — it's the
-// worst of both worlds. When we ship real maths input, it'll be a
-// proper WYSIWYG editor (MathLive / KaTeX equation builder), not a
-// glyph row.
+// For maths and natural-science subjects: a structured step editor with
+// MathLive WYSIWYG equation fields (real fractions, roots, integrals).
+// Each step has a prose note and an optional equation, matching how
+// teachers grade step-by-step.
+//
+// For every other subject (languages, humanities, commerce, etc.): a
+// plain-text scratch surface for reasoning and observations. No math
+// editor — they don't need one and the bundle weight would be waste.
+//
+// Both modes use the same `scratchpad` draft channel. The structured
+// editor persists as JSON; legacy plain-text scratchpads are migrated
+// in-place when the editor first parses them.
 function WorkingPanel({
   assessmentId,
   subjectName,
+  subjectCategory,
 }: {
   assessmentId: string | null;
   subjectName?: string;
+  subjectCategory?: string;
 }) {
   const draft = useWorkspaceDraft(assessmentId, "scratchpad");
+  const useStructured =
+    subjectCategory === "mathematics" || subjectCategory === "natural_science";
+
+  if (useStructured) {
+    return <StructuredWorking draft={draft} />;
+  }
+  return <PlainWorking draft={draft} subjectName={subjectName} />;
+}
+
+function StructuredWorking({ draft }: { draft: ReturnType<typeof useWorkspaceDraft> }) {
+  return (
+    <Stack spacing={1.5}>
+      <StepWorkingEditor
+        value={draft.initialContent}
+        onChange={(v) => draft.queueSave(v)}
+      />
+      <Stack direction="row" justifyContent="flex-end">
+        <AutosaveBadge state={draft.state} />
+      </Stack>
+    </Stack>
+  );
+}
+
+function PlainWorking({
+  draft,
+  subjectName,
+}: {
+  draft: ReturnType<typeof useWorkspaceDraft>;
+  subjectName?: string;
+}) {
   const [value, setValue] = useState(draft.initialContent);
   useEffect(() => { setValue(draft.initialContent); }, [draft.initialContent]);
 
