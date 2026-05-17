@@ -1,146 +1,251 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
 import IconButton from "@mui/material/IconButton";
 import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
+import Skeleton from "@mui/material/Skeleton";
 import MoreHorizIcon from "@mui/icons-material/MoreHorizOutlined";
 
-// Aptiverse math editor.
+// Aptiverse math editor — scientific-calculator style.
 //
-// One textarea + a symbol toolbar. What you type is what's stored —
-// no preview pane, no LaTeX-to-rendered translation. Students write
-// maths the way they write it in notes and messages: x^2, sqrt(x+1),
-// 1/2. Readable as plain text without 2D rendering.
+// The writing surface is MathLive's <math-field>, which renders real
+// 2D maths as the student types (fractions stack, roots cover, integrals
+// show bounds above/below). Critically: MathLive's own virtual keyboard
+// is OFF (it's the part that looked terrible). Input comes from:
+//   - the device's keyboard (physical on laptop, OS-native on phone)
+//   - our toolbar, which inserts maths *structure* with empty slots
+//     the student tabs into to fill in. Tap [∫] → see ∫□^□ □ appear
+//     with the cursor in the lower-bound box.
 //
-// For working that genuinely needs 2D layout — stacked fractions,
-// integrals with bounds, geometry sketches — the student photographs
-// their paper (see UploadsStrip below).
+// What gets stored is LaTeX (MathLive's native format), but the student
+// never sees it — they see the rendered maths.
 
-type Symbol = {
+type Template = {
   label: string;     // glyph on the button
-  insert: string;    // text to insert (Unicode, not LaTeX)
-  caret?: number;    // chars from start of insert where caret lands
+  latex: string;     // what to insert (MathLive's #? syntax = empty slot)
   hint?: string;
 };
 
-// Six symbols a student reaches for on every page of NSC working.
-// Anything beyond these lives in the More popover so the toolbar
-// stays compact on a phone.
-const PRIMARY: Symbol[] = [
-  { label: "1⁄2", insert: "/",                   hint: "Divide / fraction (e.g. 1/2)" },
-  { label: "√",   insert: "√()",       caret: 2, hint: "Square root, e.g. √(x+1)" },
-  { label: "xⁿ",  insert: "^",                   hint: "Power, e.g. x^2" },
-  { label: "( )", insert: "()",        caret: 1, hint: "Brackets" },
-  { label: "π",   insert: "π",                   hint: "Pi" },
-  { label: "≤",   insert: " ≤ ",                 hint: "Less than or equal" },
+const PRIMARY: Template[] = [
+  { label: "a⁄b",  latex: "\\frac{#?}{#?}",                   hint: "Fraction" },
+  { label: "√",    latex: "\\sqrt{#?}",                        hint: "Square root" },
+  { label: "xⁿ",   latex: "^{#?}",                             hint: "Power / exponent" },
+  { label: "xₙ",   latex: "_{#?}",                             hint: "Subscript" },
+  { label: "( )",  latex: "\\left(#?\\right)",                 hint: "Auto-sized brackets" },
+  { label: "π",    latex: "\\pi",                              hint: "Pi" },
 ];
 
-const MORE_GROUPS: { title: string; items: Symbol[] }[] = [
+const MORE_GROUPS: { title: string; items: Template[] }[] = [
+  {
+    title: "Calculus & stats",
+    items: [
+      { label: "∫",    latex: "\\int_{#?}^{#?} #?",                hint: "Definite integral" },
+      { label: "Σ",    latex: "\\sum_{#?}^{#?} #?",                hint: "Summation with bounds" },
+      { label: "lim",  latex: "\\lim_{#?} #?",                     hint: "Limit" },
+      { label: "ⁿ√",   latex: "\\sqrt[#?]{#?}",                    hint: "nth root" },
+      { label: "x̄",    latex: "\\bar{#?}",                          hint: "Mean" },
+      { label: "x̂",    latex: "\\hat{#?}",                          hint: "Estimator" },
+    ],
+  },
   {
     title: "Operators",
     items: [
-      { label: "×", insert: " × " },
-      { label: "÷", insert: " ÷ " },
-      { label: "±", insert: " ± " },
-      { label: "·", insert: " · " },
-      { label: "≈", insert: " ≈ " },
-      { label: "≥", insert: " ≥ " },
-      { label: "≠", insert: " ≠ " },
-      { label: "→", insert: " → " },
-      { label: "∞", insert: "∞"   },
+      { label: "×",   latex: "\\times"  },
+      { label: "÷",   latex: "\\div"    },
+      { label: "±",   latex: "\\pm"     },
+      { label: "·",   latex: "\\cdot"   },
+      { label: "≈",   latex: "\\approx" },
+      { label: "≤",   latex: "\\le"     },
+      { label: "≥",   latex: "\\ge"     },
+      { label: "≠",   latex: "\\ne"     },
+      { label: "→",   latex: "\\to"     },
+      { label: "∞",   latex: "\\infty"  },
     ],
   },
   {
     title: "Greek",
     items: [
-      { label: "α", insert: "α" },
-      { label: "β", insert: "β" },
-      { label: "θ", insert: "θ" },
-      { label: "λ", insert: "λ" },
-      { label: "μ", insert: "μ" },
-      { label: "Δ", insert: "Δ" },
-      { label: "Σ", insert: "Σ" },
-      { label: "Ω", insert: "Ω" },
-    ],
-  },
-  {
-    title: "Calculus & stats",
-    items: [
-      { label: "∫",  insert: "∫" },
-      { label: "Σ",  insert: "Σ" },
-      { label: "lim", insert: "lim " },
-      { label: "ⁿ√", insert: "ⁿ√()", caret: 3, hint: "nth root" },
-      { label: "x̄",  insert: "x̄"  },
-      { label: "x̂",  insert: "x̂"  },
+      { label: "α",   latex: "\\alpha"  },
+      { label: "β",   latex: "\\beta"   },
+      { label: "θ",   latex: "\\theta"  },
+      { label: "λ",   latex: "\\lambda" },
+      { label: "μ",   latex: "\\mu"     },
+      { label: "Δ",   latex: "\\Delta"  },
+      { label: "Σ",   latex: "\\Sigma"  },
+      { label: "Ω",   latex: "\\Omega"  },
     ],
   },
 ];
 
-type Props = {
+// MathLive loader — fonts + keyboard policy set once on first import.
+let registerPromise: Promise<void> | null = null;
+function ensureMathLive(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (registerPromise) return registerPromise;
+  registerPromise = import("mathlive").then((mod) => {
+    type Globals = { MathfieldElement?: { fontsDirectory: string } };
+    const g = mod as unknown as Globals;
+    if (g.MathfieldElement) {
+      g.MathfieldElement.fontsDirectory = "/mathlive-fonts";
+    }
+  });
+  return registerPromise;
+}
+
+// Minimal type surface for the <math-field> element we actually use.
+// Avoids pulling in MathLive's full ambient declarations.
+type MathFieldEl = HTMLElement & {
   value: string;
-  onChange: (v: string) => void;
-  placeholder?: string;
+  insert: (latex: string, options?: { selectionMode?: "placeholder" | "after" | "before" }) => void;
+  focus: () => void;
 };
 
-export function MathEditor({ value, onChange, placeholder }: Props) {
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+type Props = {
+  value: string;
+  onChange: (latex: string) => void;
+};
+
+export function MathEditor({ value, onChange }: Props) {
+  const hostRef = useRef<HTMLDivElement>(null);
+  const fieldRef = useRef<MathFieldEl | null>(null);
+  const onChangeRef = useRef(onChange);
+  const [ready, setReady] = useState(false);
   const [moreEl, setMoreEl] = useState<HTMLElement | null>(null);
 
-  const insert = (sym: Symbol) => {
-    const el = textareaRef.current;
-    if (!el) {
-      onChange(value + sym.insert);
-      return;
-    }
-    const start = el.selectionStart ?? value.length;
-    const end = el.selectionEnd ?? value.length;
-    const next = value.slice(0, start) + sym.insert + value.slice(end);
-    onChange(next);
-    const caret = start + (sym.caret ?? sym.insert.length);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(caret, caret);
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+
+  // Mount the math-field once MathLive has loaded.
+  useEffect(() => {
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+
+    ensureMathLive().then(() => {
+      if (cancelled || !hostRef.current || fieldRef.current) return;
+      const host = hostRef.current;
+      const field = document.createElement("math-field") as MathFieldEl;
+      // Critically: NO virtual keyboard. Students use their device's
+      // native keyboard plus our toolbar. The MathLive virtual keyboard
+      // is the bit that looked terrible.
+      field.setAttribute("math-virtual-keyboard-policy", "off");
+      field.setAttribute("smart-mode", "true");
+      field.value = value;
+
+      const onInput = () => onChangeRef.current(field.value);
+      field.addEventListener("input", onInput);
+
+      host.appendChild(field);
+      fieldRef.current = field;
+      setReady(true);
+
+      cleanup = () => {
+        field.removeEventListener("input", onInput);
+        if (field.parentNode === host) host.removeChild(field);
+        fieldRef.current = null;
+      };
     });
+
+    return () => { cancelled = true; cleanup?.(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Reflect external value changes back into the field, but only when
+  // they actually diverge — otherwise typing would fight a re-render
+  // every keystroke.
+  useEffect(() => {
+    const f = fieldRef.current;
+    if (!f) return;
+    if (f.value !== value) f.value = value;
+  }, [value]);
+
+  const insertTemplate = (tpl: Template) => {
+    const f = fieldRef.current;
+    if (!f) return;
+    // selectionMode 'placeholder' lands the cursor inside the first
+    // empty slot (the first `#?`) — the scientific-calculator
+    // behaviour the user asked for.
+    f.insert(tpl.latex, { selectionMode: "placeholder" });
+    f.focus();
   };
 
   return (
     <Stack spacing={1.5}>
-      <Toolbar onInsert={insert} onMore={(e) => setMoreEl(e.currentTarget)} />
+      <Toolbar onInsert={insertTemplate} onMore={(e) => setMoreEl(e.currentTarget)} />
 
-      <TextField
-        fullWidth
-        multiline
-        minRows={10}
-        inputRef={textareaRef}
-        placeholder={
-          placeholder ??
-          "Write your working. Use the toolbar for symbols, or type them directly."
-        }
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        sx={{
-          "& textarea": {
-            fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
-            fontSize: "0.95rem",
-            lineHeight: 1.7,
-          },
-        }}
-      />
+      <MathFieldFrame hostRef={hostRef} loading={!ready} />
 
       <MorePopover
         anchorEl={moreEl}
         onClose={() => setMoreEl(null)}
-        onInsert={(sym) => {
+        onInsert={(tpl) => {
           setMoreEl(null);
-          insert(sym);
+          insertTemplate(tpl);
         }}
       />
     </Stack>
+  );
+}
+
+// ─── The math-field itself, styled minimally ─────────────────────────
+
+function MathFieldFrame({
+  hostRef,
+  loading,
+}: {
+  hostRef: React.RefObject<HTMLDivElement | null>;
+  loading: boolean;
+}) {
+  return (
+    <Box sx={{ position: "relative", minHeight: 240 }}>
+      {loading && (
+        <Box sx={{ position: "absolute", inset: 0 }}>
+          <Skeleton variant="rounded" height={240} />
+        </Box>
+      )}
+      <Box
+        ref={hostRef}
+        sx={(t) => ({
+          "& math-field": {
+            display: "block",
+            width: "100%",
+            minHeight: 240,
+            padding: "16px 18px",
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 1,
+            backgroundColor: "background.paper",
+            color: "text.primary",
+            fontSize: "1.1rem",
+            lineHeight: 1.7,
+            "--primary":                       t.palette.primary.main,
+            "--caret-color":                   t.palette.primary.main,
+            "--text-color":                    t.palette.text.primary,
+            "--placeholder-color":             t.palette.text.disabled,
+            "--placeholder-opacity":           "1",
+            "--smart-fence-color":             t.palette.text.secondary,
+            "--smart-fence-opacity":           "0.6",
+            "--correct-color":                 t.palette.success.main,
+            "--incorrect-color":               t.palette.error.main,
+            "--selection-background-color":
+              t.palette.mode === "dark"
+                ? "rgba(116,181,174,0.30)"
+                : "rgba(15,105,99,0.18)",
+            "--selection-color":               t.palette.text.primary,
+            "--contains-highlight-background-color":
+              t.palette.mode === "dark"
+                ? "rgba(255,255,255,0.04)"
+                : "rgba(0,0,0,0.03)",
+            "&:focus-within": {
+              borderColor: "primary.main",
+              outline: "none",
+            },
+          },
+        })}
+      />
+    </Box>
   );
 }
 
@@ -150,7 +255,7 @@ function Toolbar({
   onInsert,
   onMore,
 }: {
-  onInsert: (sym: Symbol) => void;
+  onInsert: (tpl: Template) => void;
   onMore: (e: React.MouseEvent<HTMLElement>) => void;
 }) {
   return (
@@ -164,8 +269,8 @@ function Toolbar({
         "&::-webkit-scrollbar": { display: "none" },
       }}
     >
-      {PRIMARY.map((sym) => (
-        <SymbolButton key={sym.insert} symbol={sym} onInsert={onInsert} />
+      {PRIMARY.map((tpl) => (
+        <ToolButton key={tpl.latex} template={tpl} onInsert={onInsert} />
       ))}
       <Box sx={{ flex: 1 }} />
       <Tooltip title="More symbols">
@@ -191,19 +296,21 @@ function Toolbar({
   );
 }
 
-function SymbolButton({
-  symbol,
+function ToolButton({
+  template,
   onInsert,
 }: {
-  symbol: Symbol;
-  onInsert: (sym: Symbol) => void;
+  template: Template;
+  onInsert: (tpl: Template) => void;
 }) {
   return (
-    <Tooltip title={symbol.hint ?? symbol.label}>
+    <Tooltip title={template.hint ?? template.label}>
       <IconButton
+        // Prevent the button taking focus and stealing the caret from
+        // the math-field — keeps the insert landing in the right place.
         onMouseDown={(e) => e.preventDefault()}
-        onClick={() => onInsert(symbol)}
-        aria-label={symbol.hint ?? symbol.label}
+        onClick={() => onInsert(template)}
+        aria-label={template.hint ?? template.label}
         sx={{
           height: 44,
           minWidth: 44,
@@ -219,7 +326,7 @@ function SymbolButton({
           "&:hover": { borderColor: "primary.main", color: "primary.main", bgcolor: "transparent" },
         }}
       >
-        {symbol.label}
+        {template.label}
       </IconButton>
     </Tooltip>
   );
@@ -232,7 +339,7 @@ function MorePopover({
 }: {
   anchorEl: HTMLElement | null;
   onClose: () => void;
-  onInsert: (sym: Symbol) => void;
+  onInsert: (tpl: Template) => void;
 }) {
   return (
     <Popover
@@ -241,7 +348,7 @@ function MorePopover({
       onClose={onClose}
       anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       transformOrigin={{ vertical: "top", horizontal: "right" }}
-      slotProps={{ paper: { sx: { p: 2, width: { xs: 280, sm: 320 } } } }}
+      slotProps={{ paper: { sx: { p: 2, width: { xs: 280, sm: 340 } } } }}
     >
       <Stack spacing={2}>
         {MORE_GROUPS.map((group) => (
@@ -266,8 +373,8 @@ function MorePopover({
                 gap: 0.5,
               }}
             >
-              {group.items.map((sym) => (
-                <SymbolButton key={sym.insert} symbol={sym} onInsert={onInsert} />
+              {group.items.map((tpl) => (
+                <ToolButton key={tpl.latex} template={tpl} onInsert={onInsert} />
               ))}
             </Box>
           </Box>
