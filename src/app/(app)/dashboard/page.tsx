@@ -68,7 +68,7 @@ export default function StudentDashboardPage() {
         dataUpdatedAt={assessmentsQuery.dataUpdatedAt}
       />
 
-      <Grid container spacing={3} sx={{ mt: 0 }}>
+      <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 7 }}>
           <MasteryTrendCard
             subjects={subjects}
@@ -199,12 +199,16 @@ function UpcomingAssessmentsCard({
   return (
     <motion.div {...enter}>
       <Card sx={{ mb: 3 }}>
-        <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+        {/* Primary surface gets more breathing room than the
+            secondary cards below (which stay at the standard
+            { xs: 2.5, sm: 3 }). Same padding everywhere is
+            monotony; the size difference encodes hierarchy. */}
+        <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
           <Stack
             direction="row"
             justifyContent="space-between"
             alignItems="flex-end"
-            sx={{ mb: 2 }}
+            sx={{ mb: 2.5 }}
           >
             <Box>
               <Typography variant="overline" color="text.secondary">
@@ -249,7 +253,11 @@ function UpcomingAssessmentsCard({
 
               {rest.length > 0 && (
                 <>
-                  <Divider sx={{ my: 2 }} />
+                  {/* Asymmetric divider rhythm: more space above
+                      the rule (the hero block needs its breath),
+                      tighter below (compact rows are dense). The
+                      previous my: 2 was uniform monotony. */}
+                  <Divider sx={{ mt: 3, mb: 1.5 }} />
                   <Stack spacing={0.5}>
                     {rest.map((a, i) => (
                       <motion.div key={a.id} {...enterStagger(i)}>
@@ -308,7 +316,7 @@ function HeroUpcomingRow({
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography
           variant="overline"
-          color="primary.main"
+          color="text.secondary"
           sx={{
             display: "block",
             // Subject names like "Life Orientation" are mostly short

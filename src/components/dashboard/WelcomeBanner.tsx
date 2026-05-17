@@ -1,10 +1,7 @@
 "use client";
 
 import Box from "@mui/material/Box";
-import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
-import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useAssessments } from "@/lib/api/queries";
 import dayjs from "dayjs";
@@ -18,6 +15,13 @@ function timeOfDay(hour: number) {
   if (hour < 22) return TIME_OF_DAY_LABELS[2];
   return TIME_OF_DAY_LABELS[3];
 }
+
+// Banner is now orientation only, no action surface. The "Open workspace"
+// CTA was redundant: the hero SBA card below carries a "Start working"
+// button that deeplinks to the workspace *with the assessment loaded* --
+// strictly more useful than a context-free workspace-open. Two stacked
+// filled-teal primary CTAs above the fold on mobile was the layout-
+// hierarchy problem the layout pass exists to fix.
 
 export function WelcomeBanner({ name }: { name?: string }) {
   const { data: session } = useSession();
@@ -52,37 +56,19 @@ export function WelcomeBanner({ name }: { name?: string }) {
         borderColor: "divider",
       }}
     >
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={{ xs: 2.5, md: 4 }}
-        alignItems={{ xs: "flex-start", md: "flex-end" }}
-        justifyContent="space-between"
+      <Typography variant="overline" color="text.secondary">
+        {weekday} {tod}
+      </Typography>
+      <Typography variant="h4" component="h1" sx={{ fontWeight: 600, mt: 0.5 }}>
+        Hi {resolved}.
+      </Typography>
+      <Typography
+        variant="body1"
+        color="text.secondary"
+        sx={{ mt: 1, maxWidth: "62ch" }}
       >
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="overline" color="text.secondary">
-            {weekday} {tod}
-          </Typography>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 600, mt: 0.5 }}>
-            Hi {resolved}.
-          </Typography>
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{ mt: 1, maxWidth: "62ch" }}
-          >
-            Pick up where you left off.{deadlinePhrase ? ` ${deadlinePhrase}` : ""}
-          </Typography>
-        </Box>
-        <Button
-          component={Link}
-          href="/dashboard/workspace"
-          variant="contained"
-          size="large"
-          sx={{ flexShrink: 0, alignSelf: { xs: "stretch", md: "auto" } }}
-        >
-          Open workspace
-        </Button>
-      </Stack>
+        Pick up where you left off.{deadlinePhrase ? ` ${deadlinePhrase}` : ""}
+      </Typography>
     </Box>
   );
 }
