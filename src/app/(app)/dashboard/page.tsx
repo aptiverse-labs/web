@@ -331,7 +331,11 @@ function HeroUpcomingRow({
           {subject?.name ?? "Unlinked"}
         </Typography>
         <Typography
-          variant="h5"
+          // h4 (1.25rem) outranks the card's h5 section header
+          // (1.0625rem) by a 1.176x scale jump. The hero is the
+          // focal item on the page; the card label is subordinate.
+          // Previously both were h5, which mumbled the hierarchy.
+          variant="h4"
           component={Link}
           href={`/dashboard/assessments/${a.id}`}
           sx={{
@@ -811,7 +815,10 @@ function GoalRow({ g }: { g: Goal }) {
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
-            variant="body2"
+            // subtitle2 is the correct semantic role for a list-item
+            // title ("small heading"). body2 600 was rendering the
+            // same pixels but with body-text semantics.
+            variant="subtitle2"
             sx={{ fontWeight: 600 }}
             noWrap
           >
