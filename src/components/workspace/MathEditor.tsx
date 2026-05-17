@@ -9,8 +9,6 @@ import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
 import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
-import GlobalStyles from "@mui/material/GlobalStyles";
-import { useTheme } from "@mui/material/styles";
 import MoreHorizIcon from "@mui/icons-material/MoreHorizOutlined";
 import AddIcon from "@mui/icons-material/AddOutlined";
 import CloseIcon from "@mui/icons-material/CloseOutlined";
@@ -108,41 +106,22 @@ const MORE_GROUPS: { title: string; items: Template[] }[] = [
   },
 ];
 
-// MathLive loader — fonts + a trimmed keyboard layout.
-//
-// Layout policy: keep MathLive's keyboard but show only its 'numeric'
-// tab. The default 4-tab keyboard (123 / ∞≠∈ / abc / αβγ) surfaces
-// glyphs students don't need and reads as iOS chrome. A single
-// number-pad with operators is the right shape.
+// MathLive loader — fonts only. The virtual keyboard is off across
+// every device, so we don't configure layouts or theming for it.
+// Math input comes from the OS keyboard plus our toolbar; the
+// math-field is the rendering + cursor surface, not an input chrome.
 let registerPromise: Promise<void> | null = null;
 function ensureMathLive(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
   if (registerPromise) return registerPromise;
   registerPromise = import("mathlive").then((mod) => {
-    type Globals = {
-      MathfieldElement?: { fontsDirectory: string };
-      mathVirtualKeyboard?: { layouts: unknown };
-    };
+    type Globals = { MathfieldElement?: { fontsDirectory: string } };
     const g = mod as unknown as Globals;
     if (g.MathfieldElement) {
       g.MathfieldElement.fontsDirectory = "/mathlive-fonts";
     }
-    const mvk =
-      g.mathVirtualKeyboard ??
-      (window as unknown as { mathVirtualKeyboard?: Globals["mathVirtualKeyboard"] })
-        .mathVirtualKeyboard;
-    if (mvk) {
-      try { mvk.layouts = ["numeric"]; } catch { /* ignore */ }
-    }
   });
   return registerPromise;
-}
-
-// Detect a true touch device. Desktop users with a physical keyboard
-// don't need a virtual one popping over their editor; touch users do.
-function isTouchDevice(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia?.("(pointer: coarse)").matches ?? false;
 }
 
 type MathFieldEl = HTMLElement & {
@@ -245,13 +224,6 @@ export function MathEditor({ value, onChange }: Props) {
 
   return (
     <Stack spacing={1.5}>
-      {/* Theme MathLive's virtual keyboard so it reads as ours, not
-          stock iOS. The keyboard renders as a viewport-fixed sibling
-          of body, so its style lives outside any sx scope — Global
-          styles are the only handle. We only paint; we don't touch
-          position/size (those collided with MathLive's own logic in
-          earlier attempts and broke layout). */}
-      <MathLiveKeyboardTheme />
       <Toolbar onInsert={insertTemplate} onMore={(e) => setMoreEl(e.currentTarget)} />
 
       <Stack spacing={0.75}>
@@ -350,17 +322,14 @@ function MathLine({
       if (cancelled || !hostRef.current || fieldRef.current) return;
       const host = hostRef.current;
       const field = document.createElement("math-field") as MathFieldEl;
-      // Touch devices get the virtual keyboard on focus; desktop
-      // doesn't (the user has a real keyboard already).
-      const policy = isTouchDevice() ? "auto" : "off";
-      field.setAttribute("math-virtual-keyboard-policy", policy);
+      // Virtual keyboard off everywhere. Students type with their OS
+      // keyboard for letters/numbers and use our toolbar for math
+      // structures. Same UX on mobile and desktop, no chrome flicker.
+      field.setAttribute("math-virtual-keyboard-policy", "off");
       field.setAttribute("smart-mode", "true");
-      // Property form too — some MathLive versions read one but not
-      // the other. Wrapped in try/catch because the property surface
-      // shifts across versions.
       try {
         (field as unknown as { mathVirtualKeyboardPolicy?: string })
-          .mathVirtualKeyboardPolicy = policy;
+          .mathVirtualKeyboardPolicy = "off";
       } catch {
         // ignore
       }
@@ -528,76 +497,6 @@ function MathLine({
         </IconButton>
       )}
     </Box>
-  );
-}
-
-// ─── MathLive virtual-keyboard theme ─────────────────────────────────
-//
-// The keyboard renders viewport-fixed as a body-level sibling of the
-// math-field, so its styles sit outside any sx scope. These globals
-// map MathLive's CSS variables to the Aptiverse palette and override
-// a few stubborn classes the variables miss. Only paint — no layout
-// or position overrides (those collided with MathLive's logic and
-// broke positioning in earlier attempts).
-
-function MathLiveKeyboardTheme() {
-  const t = useTheme();
-  const isDark = t.palette.mode === "dark";
-
-  const surface = t.palette.background.paper;
-  const border = t.palette.divider;
-  const text = t.palette.text.primary;
-  const mutedText = t.palette.text.secondary;
-  const accent = t.palette.primary.main;
-  const keyBg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
-  const keyBgHover = isDark ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.08)";
-
-  return (
-    <GlobalStyles
-      styles={{
-        "body, :root": {
-          "--ml-virtual-keyboard-background":                   surface,
-          "--ml-virtual-keyboard-background-border":            border,
-          "--ml-virtual-keyboard-text":                         text,
-          "--ml-virtual-keyboard-toolbar-background":           surface,
-          "--ml-virtual-keyboard-toolbar-text":                 mutedText,
-          "--ml-virtual-keyboard-toolbar-text-active":          accent,
-          "--ml-virtual-keyboard-toolbar-background-hover":     keyBgHover,
-          "--ml-virtual-keyboard-toolbar-background-selected":  "transparent",
-          "--ml-virtual-keyboard-keycap-background":            keyBg,
-          "--ml-virtual-keyboard-keycap-background-active":     keyBgHover,
-          "--ml-virtual-keyboard-keycap-background-pressed":    accent,
-          "--ml-virtual-keyboard-keycap-text":                  text,
-          "--ml-virtual-keyboard-keycap-text-active":           text,
-          "--ml-virtual-keyboard-keycap-text-pressed":          t.palette.primary.contrastText,
-          "--ml-virtual-keyboard-keycap-secondary-text":        mutedText,
-          "--ml-virtual-keyboard-keycap-secondary-text-active": accent,
-          "--ml-virtual-keyboard-keycap-shift-background":      keyBgHover,
-          "--ml-virtual-keyboard-keycap-shift-text":            text,
-          // Pre-0.107 names — defence in depth if the dep gets downgraded.
-          "--keyboard-background":               surface,
-          "--keyboard-text":                     text,
-          "--keyboard-accent-color":             accent,
-          "--keyboard-border":                   border,
-          "--keycap-background":                 keyBg,
-          "--keycap-background-active":          keyBgHover,
-          "--keycap-background-pressed":         accent,
-          "--keycap-text":                       text,
-          "--keycap-text-pressed":               t.palette.primary.contrastText,
-          "--keycap-secondary-text":             mutedText,
-          "--keycap-secondary-text-active":      accent,
-          "--keycap-border":                     border,
-        },
-        // Stubborn parts the variables miss.
-        ".ML__keyboard .MLK__keycap aside, .ML__keyboard .MLK__keycap small": {
-          color: `${mutedText} !important`,
-        },
-        ".ML__keyboard .MLK__tab[aria-selected='true'], .ML__keyboard .action.selected": {
-          color: `${accent} !important`,
-          borderBottom: `2px solid ${accent} !important`,
-        },
-      }}
-    />
   );
 }
 
