@@ -86,7 +86,7 @@ export default function StudentDashboardPage() {
         dataUpdatedAt={assessmentsQuery.dataUpdatedAt}
       />
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, md: 3 }}>
         <Grid size={{ xs: 12, md: 7 }}>
           <MasteryTrendCard
             subjects={subjects}
@@ -485,7 +485,12 @@ function CompactUpcomingRow({
         <Typography variant="subtitle2" sx={{ fontWeight: 600 }} noWrap>
           {a.title}
         </Typography>
-        <Typography variant="caption" color="text.secondary">
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          noWrap
+          sx={{ display: "block" }}
+        >
           {subject?.name ?? "Unlinked"} · {a.type} · {a.weight}%
         </Typography>
       </Box>
@@ -627,8 +632,17 @@ function MasteryTrendCard({
                 >
                   <IconButton
                     size="small"
-                    sx={{ p: 0.25 }}
                     aria-label="How predicted average is calculated"
+                    sx={{
+                      // 44x44 touch target (WCAG 2.5.5) without
+                      // visually growing the icon: 14px padding
+                      // pulls the hit area out, 14px negative
+                      // margin pulls layout back so the surrounding
+                      // baseline doesn't shift. Net rendered footprint
+                      // matches the previous 16px-ish icon.
+                      p: "14px",
+                      m: "-14px",
+                    }}
                   >
                     <InfoOutlinedIcon sx={{ fontSize: "1rem" }} />
                   </IconButton>
