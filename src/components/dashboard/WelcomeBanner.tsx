@@ -1,9 +1,10 @@
 "use client";
 
 import Box from "@mui/material/Box";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useSession } from "next-auth/react";
-import { useAssessments } from "@/lib/api/queries";
+import { useAssessments, useGoals } from "@/lib/api/queries";
 import dayjs from "dayjs";
 
 const TIME_OF_DAY_LABELS = ["morning", "afternoon", "evening", "night"];
@@ -94,6 +95,17 @@ export function WelcomeBanner({ name }: { name?: string }) {
     .sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))[0];
   const daysOut = next ? dayjs(next.dueDate).diff(dayjs(), "day") : null;
 
+  // Earned-milestone signal: a small amber dot beside the name when the
+  // student has hit 100% on at least one goal. Sacred-Amber Rule from
+  // DESIGN.md applies: amber is for earned achievement only, never
+  // decorative. A goal at 100% qualifies; an "active" goal at 60%
+  // doesn't. Tooltip carries the count for context without the dot
+  // having to grow into a chip.
+  const goalsQuery = useGoals();
+  const milestoneCount = (goalsQuery.data ?? []).filter(
+    (g) => g.progress === 100,
+  ).length;
+
   const sentence = orientationSentence({
     weekday,
     hour,
@@ -113,8 +125,40 @@ export function WelcomeBanner({ name }: { name?: string }) {
       <Typography variant="overline" color="text.secondary">
         {weekday} {tod}
       </Typography>
-      <Typography variant="h4" component="h1" sx={{ fontWeight: 600, mt: 0.5 }}>
+      <Typography
+        variant="h4"
+        component="h1"
+        sx={{ fontWeight: 600, mt: 0.5, display: "flex", alignItems: "center", gap: 1 }}
+      >
         Hi {resolved}.
+        {milestoneCount > 0 && (
+          <Tooltip
+            arrow
+            enterTouchDelay={0}
+            title={
+              milestoneCount === 1
+                ? "1 goal completed."
+                : `${milestoneCount} goals completed.`
+            }
+          >
+            <Box
+              component="span"
+              aria-label={
+                milestoneCount === 1
+                  ? "1 goal completed"
+                  : `${milestoneCount} goals completed`
+              }
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                bgcolor: "achievement.main",
+                display: "inline-block",
+                flexShrink: 0,
+              }}
+            />
+          </Tooltip>
+        )}
       </Typography>
       <Typography
         variant="body1"
