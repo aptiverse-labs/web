@@ -77,7 +77,14 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
     <AppBar position="sticky">
       <Toolbar
         disableGutters
-        sx={{ minHeight: { xs: 64, md: 68 }, pr: { xs: 2, md: 3 }, gap: 1.5 }}
+        sx={{
+          minHeight: { xs: 64, md: 68 },
+          // Right gutter mirrors the main content's px scale so the
+          // avatar's right edge lines up vertically with the content's
+          // right edge instead of floating 16px past it on wide screens.
+          pr: { xs: 2, sm: 3, lg: 5 },
+          gap: 1.5,
+        }}
       >
         <IconButton
           color="inherit"
@@ -110,7 +117,7 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
 
         <Box sx={{ flex: 1 }} />
 
-        <Stack direction="row" spacing={0.75} alignItems="center">
+        <Stack direction="row" spacing={1} alignItems="center">
           <ColorModeToggle />
 
           <Tooltip title="Notifications">
@@ -127,6 +134,7 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
                 overlap="circular"
                 invisible={unreadCount === 0}
                 max={99}
+                sx={{ "& .MuiBadge-badge": { fontVariantNumeric: "tabular-nums" } }}
               >
                 <NotificationsIcon />
               </Badge>
@@ -221,7 +229,6 @@ export function AppTopBar({ onMobileMenuClick }: Props) {
 
           <IconButton
             onClick={(e) => setProfileEl(e.currentTarget)}
-            sx={{ ml: 0.5 }}
             aria-label="Account menu"
           >
             <Avatar

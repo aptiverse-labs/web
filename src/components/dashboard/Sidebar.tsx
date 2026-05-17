@@ -77,9 +77,20 @@ function SidebarContent({
 
   return (
     <Stack component="nav" aria-label="Main navigation" sx={{ height: "100%" }}>
-      <Box sx={{ flex: 1, overflowY: "auto", py: 1.5, px: 1.25 }}>
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: "auto",
+          // scrollbar-gutter: stable reserves space for the scrollbar
+          // whether it's showing or not, so the nav doesn't shift 10px
+          // sideways the moment content grows past one viewport.
+          scrollbarGutter: "stable",
+          py: 1.5,
+          px: 1.25,
+        }}
+      >
         {sections.map((s) => (
-          <Box key={s.heading} sx={{ mb: 1 }}>
+          <Box key={s.heading} sx={{ mb: 1.5 }}>
             <Typography
               variant="overline"
               sx={{ px: 1.5, color: "text.secondary", fontWeight: 600, letterSpacing: "0.06em" }}
@@ -105,7 +116,7 @@ function SidebarContent({
                       selected={active}
                       onClick={onLinkClick}
                       sx={{
-                        py: 0.85,
+                        py: 1,
                         px: 1.5,
                         // ListItemIcon defaults to the parent text colour. The
                         // global override at MuiListItemButton.Mui-selected
