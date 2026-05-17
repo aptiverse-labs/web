@@ -8,25 +8,37 @@ import IconButton from "@mui/material/IconButton";
 import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
 import Skeleton from "@mui/material/Skeleton";
+import Button from "@mui/material/Button";
 import MoreHorizIcon from "@mui/icons-material/MoreHorizOutlined";
+import AddIcon from "@mui/icons-material/AddOutlined";
+import CloseIcon from "@mui/icons-material/CloseOutlined";
+import { motion, AnimatePresence } from "framer-motion";
 
-// Aptiverse math editor — scientific-calculator style.
+// Aptiverse math editor — one line, one math-field.
 //
-// The writing surface is MathLive's <math-field>, which renders real
-// 2D maths as the student types (fractions stack, roots cover, integrals
-// show bounds above/below). Critically: MathLive's own virtual keyboard
-// is OFF (it's the part that looked terrible). Input comes from:
-//   - the device's keyboard (physical on laptop, OS-native on phone)
-//   - our toolbar, which inserts maths *structure* with empty slots
-//     the student tabs into to fill in. Tap [∫] → see ∫□^□ □ appear
-//     with the cursor in the lower-bound box.
+// The student's working is a stack of math-fields, one per line. Each
+// renders real 2D maths WYSIWYG (fractions stack, roots cover, integrals
+// show bounds). Hitting Enter inside a field creates a new field below
+// and focuses it; hitting Backspace at the start of an empty field
+// removes that line and focuses the previous one. The toolbar inserts
+// structure templates (with empty slots the student tabs into) into
+// whichever line is currently focused — like keys on a scientific
+// calculator.
 //
-// What gets stored is LaTeX (MathLive's native format), but the student
-// never sees it — they see the rendered maths.
+// Why one field per line rather than one field with multi-line content:
+// MathLive supports multi-row content within a single field but it
+// renders the lines stacked with a single shared editing surface — the
+// student felt like they were inside one expression that just happened
+// to wrap. Per-line fields read as a working stack the way a paper page
+// does.
+//
+// Storage: lines joined with newlines into the existing scratchpad
+// draft column. MathLive's value never contains a literal newline so
+// the separator is unambiguous.
 
 type Template = {
-  label: string;     // glyph on the button
-  latex: string;     // what to insert (MathLive's #? syntax = empty slot)
+  label: string;
+  latex: string;
   hint?: string;
 };
 
@@ -96,12 +108,11 @@ function ensureMathLive(): Promise<void> {
   return registerPromise;
 }
 
-// Minimal type surface for the <math-field> element we actually use.
-// Avoids pulling in MathLive's full ambient declarations.
 type MathFieldEl = HTMLElement & {
   value: string;
   insert: (latex: string, options?: { selectionMode?: "placeholder" | "after" | "before" }) => void;
   focus: () => void;
+  selectionIsCollapsed?: boolean;
 };
 
 type Props = {
@@ -109,24 +120,169 @@ type Props = {
   onChange: (latex: string) => void;
 };
 
+// Parse storage back to an array of LaTeX lines. Empty / undefined →
+// a single empty line so the editor always has at least one input.
+function parseLines(raw: string): string[] {
+  if (!raw) return [""];
+  const lines = raw.split(/\n/);
+  return lines.length === 0 ? [""] : lines;
+}
+
+function serializeLines(lines: string[]): string {
+  // Trim trailing empty lines so a series of accidental Enters at the
+  // end doesn't bloat the persisted value, but keep internal empties
+  // (a student can intentionally leave a blank line between sections).
+  const trimmed = [...lines];
+  while (trimmed.length > 1 && trimmed[trimmed.length - 1] === "") trimmed.pop();
+  return trimmed.join("\n");
+}
+
 export function MathEditor({ value, onChange }: Props) {
+  const lines = parseLines(value);
+  const fieldsRef = useRef<(MathFieldEl | null)[]>([]);
+  const focusedIdxRef = useRef<number>(0);
+  const [moreEl, setMoreEl] = useState<HTMLElement | null>(null);
+
+  // Pending focus: after we add a line, focus it on next paint.
+  const pendingFocusRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (pendingFocusRef.current === null) return;
+    const idx = pendingFocusRef.current;
+    pendingFocusRef.current = null;
+    requestAnimationFrame(() => {
+      fieldsRef.current[idx]?.focus();
+    });
+  });
+
+  const setLines = (next: string[]) => {
+    // Keep fieldsRef length in sync with the new lines length.
+    fieldsRef.current = next.map((_, i) => fieldsRef.current[i] ?? null);
+    onChange(serializeLines(next));
+  };
+
+  const updateLine = (i: number, v: string) => {
+    if (lines[i] === v) return;
+    const next = lines.map((l, idx) => (idx === i ? v : l));
+    setLines(next);
+  };
+
+  const insertLineAfter = (i: number, initial = "") => {
+    const next = [...lines.slice(0, i + 1), initial, ...lines.slice(i + 1)];
+    pendingFocusRef.current = i + 1;
+    setLines(next);
+  };
+
+  const removeLine = (i: number) => {
+    if (lines.length === 1) {
+      // Last line — just clear it instead of unmounting the only field.
+      if (lines[0] !== "") setLines([""]);
+      return;
+    }
+    const next = lines.filter((_, idx) => idx !== i);
+    pendingFocusRef.current = Math.max(0, i - 1);
+    setLines(next);
+  };
+
+  // Toolbar inserts into whichever line was last focused.
+  const insertTemplate = (tpl: Template) => {
+    const f = fieldsRef.current[focusedIdxRef.current];
+    if (!f) return;
+    f.insert(tpl.latex, { selectionMode: "placeholder" });
+    f.focus();
+  };
+
+  return (
+    <Stack spacing={1.5}>
+      <Toolbar onInsert={insertTemplate} onMore={(e) => setMoreEl(e.currentTarget)} />
+
+      <Stack spacing={0.75}>
+        <AnimatePresence initial={false}>
+          {lines.map((line, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ type: "spring", stiffness: 380, damping: 32 }}
+              style={{ overflow: "hidden" }}
+            >
+              <MathLine
+                index={i}
+                value={line}
+                onChange={(v) => updateLine(i, v)}
+                onEnter={() => insertLineAfter(i)}
+                onBackspaceAtStart={() => removeLine(i)}
+                onFocus={() => { focusedIdxRef.current = i; }}
+                registerField={(f) => { fieldsRef.current[i] = f; }}
+                showRemove={lines.length > 1}
+                onRemoveClick={() => removeLine(i)}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </Stack>
+
+      <Button
+        onClick={() => insertLineAfter(lines.length - 1)}
+        startIcon={<AddIcon fontSize="small" />}
+        variant="text"
+        size="small"
+        sx={{ alignSelf: "flex-start", color: "text.secondary", textTransform: "none" }}
+      >
+        Add line
+      </Button>
+
+      <MorePopover
+        anchorEl={moreEl}
+        onClose={() => setMoreEl(null)}
+        onInsert={(tpl) => {
+          setMoreEl(null);
+          insertTemplate(tpl);
+        }}
+      />
+    </Stack>
+  );
+}
+
+// ─── One math-field line ─────────────────────────────────────────────
+
+type LineProps = {
+  index: number;
+  value: string;
+  onChange: (v: string) => void;
+  onEnter: () => void;
+  onBackspaceAtStart: () => void;
+  onFocus: () => void;
+  registerField: (f: MathFieldEl | null) => void;
+  showRemove: boolean;
+  onRemoveClick: () => void;
+};
+
+function MathLine({
+  index,
+  value,
+  onChange,
+  onEnter,
+  onBackspaceAtStart,
+  onFocus,
+  registerField,
+  showRemove,
+  onRemoveClick,
+}: LineProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const fieldRef = useRef<MathFieldEl | null>(null);
   const onChangeRef = useRef(onChange);
-  // Last value we emitted via onChange. We use this to detect when
-  // the incoming `value` prop is just our own echo (parent updated
-  // state and re-rendered) vs. a genuinely external change (assessment
-  // switched, server normalised the LaTeX). Without this guard every
-  // keystroke would round-trip through state and we'd write the value
-  // back into the field mid-typing — re-parsing, re-rendering, jumping
-  // the cursor. Classic controlled-imperative editor pitfall.
+  const onEnterRef = useRef(onEnter);
+  const onBackspaceRef = useRef(onBackspaceAtStart);
+  const onFocusRef = useRef(onFocus);
   const lastEmittedRef = useRef<string>(value);
   const [ready, setReady] = useState(false);
-  const [moreEl, setMoreEl] = useState<HTMLElement | null>(null);
 
   useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  useEffect(() => { onEnterRef.current = onEnter; }, [onEnter]);
+  useEffect(() => { onBackspaceRef.current = onBackspaceAtStart; }, [onBackspaceAtStart]);
+  useEffect(() => { onFocusRef.current = onFocus; }, [onFocus]);
 
-  // Mount the math-field once MathLive has loaded.
   useEffect(() => {
     let cancelled = false;
     let cleanup: (() => void) | undefined;
@@ -135,9 +291,6 @@ export function MathEditor({ value, onChange }: Props) {
       if (cancelled || !hostRef.current || fieldRef.current) return;
       const host = hostRef.current;
       const field = document.createElement("math-field") as MathFieldEl;
-      // Critically: NO virtual keyboard. Students use their device's
-      // native keyboard plus our toolbar. The MathLive virtual keyboard
-      // is the bit that looked terrible.
       field.setAttribute("math-virtual-keyboard-policy", "off");
       field.setAttribute("smart-mode", "true");
       field.value = value;
@@ -148,16 +301,45 @@ export function MathEditor({ value, onChange }: Props) {
         lastEmittedRef.current = v;
         onChangeRef.current(v);
       };
+      const onFocusHandler = () => onFocusRef.current();
+      const onKey = (e: KeyboardEvent) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          // Hijack Enter — instead of stacking a row inside this
+          // math-field, ask the parent to create a new field below.
+          e.preventDefault();
+          e.stopPropagation();
+          onEnterRef.current();
+          return;
+        }
+        if (e.key === "Backspace") {
+          // Backspace at the start of an empty field removes the line.
+          // Empty-check: MathLive renders empty fields as a single
+          // placeholder; checking .value catches both empty string and
+          // an unedited placeholder.
+          if (field.value === "") {
+            e.preventDefault();
+            e.stopPropagation();
+            onBackspaceRef.current();
+          }
+        }
+      };
+
       field.addEventListener("input", onInput);
+      field.addEventListener("focus", onFocusHandler);
+      field.addEventListener("keydown", onKey);
 
       host.appendChild(field);
       fieldRef.current = field;
+      registerField(field);
       setReady(true);
 
       cleanup = () => {
         field.removeEventListener("input", onInput);
+        field.removeEventListener("focus", onFocusHandler);
+        field.removeEventListener("keydown", onKey);
         if (field.parentNode === host) host.removeChild(field);
         fieldRef.current = null;
+        registerField(null);
       };
     });
 
@@ -165,12 +347,9 @@ export function MathEditor({ value, onChange }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Sync external value changes back into the field. Skip:
-  //   1. Our own echo (incoming value === last value we emitted)
-  //   2. While the field is focused (user is mid-typing; never disrupt)
-  // Together these stop the "characters get re-added" jitter while
-  // still picking up legitimate external changes (assessment switch,
-  // undo from elsewhere) when the field isn't focused.
+  // Sync external value changes back in — same controlled-imperative
+  // guard as the single-field editor: skip our own echo and skip while
+  // the field is focused.
   useEffect(() => {
     const f = fieldRef.current;
     if (!f) return;
@@ -185,90 +364,80 @@ export function MathEditor({ value, onChange }: Props) {
     }
   }, [value]);
 
-  const insertTemplate = (tpl: Template) => {
-    const f = fieldRef.current;
-    if (!f) return;
-    // selectionMode 'placeholder' lands the cursor inside the first
-    // empty slot (the first `#?`) — the scientific-calculator
-    // behaviour the user asked for.
-    f.insert(tpl.latex, { selectionMode: "placeholder" });
-    f.focus();
-  };
-
   return (
-    <Stack spacing={1.5}>
-      <Toolbar onInsert={insertTemplate} onMore={(e) => setMoreEl(e.currentTarget)} />
-
-      <MathFieldFrame hostRef={hostRef} loading={!ready} />
-
-      <MorePopover
-        anchorEl={moreEl}
-        onClose={() => setMoreEl(null)}
-        onInsert={(tpl) => {
-          setMoreEl(null);
-          insertTemplate(tpl);
-        }}
-      />
-    </Stack>
-  );
-}
-
-// ─── The math-field itself, styled minimally ─────────────────────────
-
-function MathFieldFrame({
-  hostRef,
-  loading,
-}: {
-  hostRef: React.RefObject<HTMLDivElement | null>;
-  loading: boolean;
-}) {
-  return (
-    <Box sx={{ position: "relative", minHeight: 240 }}>
-      {loading && (
-        <Box sx={{ position: "absolute", inset: 0 }}>
-          <Skeleton variant="rounded" height={240} />
-        </Box>
-      )}
-      <Box
-        ref={hostRef}
-        sx={(t) => ({
-          "& math-field": {
-            display: "block",
-            width: "100%",
-            minHeight: 240,
-            padding: "16px 18px",
-            border: 1,
-            borderColor: "divider",
-            borderRadius: 1,
-            backgroundColor: "background.paper",
-            color: "text.primary",
-            fontSize: "1.1rem",
-            lineHeight: 1.7,
-            "--primary":                       t.palette.primary.main,
-            "--caret-color":                   t.palette.primary.main,
-            "--text-color":                    t.palette.text.primary,
-            "--placeholder-color":             t.palette.text.disabled,
-            "--placeholder-opacity":           "1",
-            "--smart-fence-color":             t.palette.text.secondary,
-            "--smart-fence-opacity":           "0.6",
-            "--correct-color":                 t.palette.success.main,
-            "--incorrect-color":               t.palette.error.main,
-            "--selection-background-color":
-              t.palette.mode === "dark"
-                ? "rgba(116,181,174,0.30)"
-                : "rgba(15,105,99,0.18)",
-            "--selection-color":               t.palette.text.primary,
-            "--contains-highlight-background-color":
-              t.palette.mode === "dark"
-                ? "rgba(255,255,255,0.04)"
-                : "rgba(0,0,0,0.03)",
-            "&:focus-within": {
-              borderColor: "primary.main",
-              outline: "none",
+    <Box
+      sx={{
+        position: "relative",
+        "&:hover .line-remove": { opacity: 1 },
+      }}
+    >
+      <Box sx={{ position: "relative", minHeight: 56 }}>
+        {!ready && (
+          <Box sx={{ position: "absolute", inset: 0 }}>
+            <Skeleton variant="rounded" height={56} />
+          </Box>
+        )}
+        <Box
+          ref={hostRef}
+          sx={(t) => ({
+            "& math-field": {
+              display: "block",
+              width: "100%",
+              minHeight: 56,
+              padding: "12px 16px",
+              border: 1,
+              borderColor: "divider",
+              borderRadius: 1,
+              backgroundColor: "background.paper",
+              color: "text.primary",
+              fontSize: "1.05rem",
+              lineHeight: 1.6,
+              "--primary":                       t.palette.primary.main,
+              "--caret-color":                   t.palette.primary.main,
+              "--text-color":                    t.palette.text.primary,
+              "--placeholder-color":             t.palette.text.disabled,
+              "--placeholder-opacity":           "1",
+              "--smart-fence-color":             t.palette.text.secondary,
+              "--smart-fence-opacity":           "0.6",
+              "--correct-color":                 t.palette.success.main,
+              "--incorrect-color":               t.palette.error.main,
+              "--selection-background-color":
+                t.palette.mode === "dark"
+                  ? "rgba(116,181,174,0.30)"
+                  : "rgba(15,105,99,0.18)",
+              "--selection-color":               t.palette.text.primary,
+              "--contains-highlight-background-color":
+                t.palette.mode === "dark"
+                  ? "rgba(255,255,255,0.04)"
+                  : "rgba(0,0,0,0.03)",
+              "&:focus-within": {
+                borderColor: "primary.main",
+                outline: "none",
+              },
             },
-          },
-        })}
-      />
+          })}
+        />
+      </Box>
+      {showRemove && (
+        <IconButton
+          className="line-remove"
+          size="small"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onRemoveClick}
+          aria-label={`Remove line ${index + 1}`}
+          sx={{
+            position: "absolute",
+            top: 8,
+            right: 8,
+            opacity: 0,
+            transition: "opacity 150ms ease",
+            color: "text.secondary",
+            "&:focus-visible": { opacity: 1 },
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      )}
     </Box>
   );
 }
@@ -330,8 +499,6 @@ function ToolButton({
   return (
     <Tooltip title={template.hint ?? template.label}>
       <IconButton
-        // Prevent the button taking focus and stealing the caret from
-        // the math-field — keeps the insert landing in the right place.
         onMouseDown={(e) => e.preventDefault()}
         onClick={() => onInsert(template)}
         aria-label={template.hint ?? template.label}
