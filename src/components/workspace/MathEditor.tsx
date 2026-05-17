@@ -1,8 +1,6 @@
 "use client";
 
-import "katex/dist/katex.min.css";
-
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -11,103 +9,99 @@ import IconButton from "@mui/material/IconButton";
 import Popover from "@mui/material/Popover";
 import Tooltip from "@mui/material/Tooltip";
 import MoreHorizIcon from "@mui/icons-material/MoreHorizOutlined";
-import { CollapsibleSection } from "@/components/common/CollapsibleSection";
 
 // Aptiverse math editor.
 //
-// One surface: toolbar → input → rendered preview, all visible.
-// Students type LaTeX (or tap a template button) and see real 2D
-// maths render below each line. No modes, no panes — the simplest
-// arrangement that earns its space.
+// One textarea + a symbol toolbar. What you type is what's stored —
+// no preview pane, no LaTeX-to-rendered translation. Students write
+// maths the way they write it in notes and messages: x^2, sqrt(x+1),
+// 1/2. Readable as plain text without 2D rendering.
 //
-// Why not WYSIWYG: tree-cursor 2D editing is a months-long project
-// and the wrong bet at zero users. Textual input + KaTeX rendering
-// gives them real maths output without that complexity.
+// For working that genuinely needs 2D layout — stacked fractions,
+// integrals with bounds, geometry sketches — the student photographs
+// their paper (see UploadsStrip below).
 
-type Template = {
-  label: string;        // glyph on the button
-  insert: string;       // LaTeX to insert
-  caret?: number;       // chars from start of insert where caret lands
-  hint?: string;        // tooltip text
+type Symbol = {
+  label: string;     // glyph on the button
+  insert: string;    // text to insert (Unicode, not LaTeX)
+  caret?: number;    // chars from start of insert where caret lands
+  hint?: string;
 };
 
-// Six templates a student reaches for on every page of NSC working.
+// Six symbols a student reaches for on every page of NSC working.
 // Anything beyond these lives in the More popover so the toolbar
 // stays compact on a phone.
-const PRIMARY: Template[] = [
-  { label: "a⁄b",  insert: "\\frac{}{}",         caret: 6,  hint: "Fraction" },
-  { label: "√",    insert: "\\sqrt{}",           caret: 6,  hint: "Square root" },
-  { label: "xⁿ",   insert: "^{}",                caret: 2,  hint: "Power / exponent" },
-  { label: "xₙ",   insert: "_{}",                caret: 2,  hint: "Subscript" },
-  { label: "( )",  insert: "\\left(\\right)",    caret: 6,  hint: "Auto-sized brackets" },
-  { label: "π",    insert: "\\pi ",                          hint: "Pi" },
+const PRIMARY: Symbol[] = [
+  { label: "1⁄2", insert: "/",                   hint: "Divide / fraction (e.g. 1/2)" },
+  { label: "√",   insert: "√()",       caret: 2, hint: "Square root, e.g. √(x+1)" },
+  { label: "xⁿ",  insert: "^",                   hint: "Power, e.g. x^2" },
+  { label: "( )", insert: "()",        caret: 1, hint: "Brackets" },
+  { label: "π",   insert: "π",                   hint: "Pi" },
+  { label: "≤",   insert: " ≤ ",                 hint: "Less than or equal" },
 ];
 
-// "More" popover — organised by intent so the student finds what
-// they need without scanning a flat 30-item grid.
-const MORE_GROUPS: { title: string; items: Template[] }[] = [
+const MORE_GROUPS: { title: string; items: Symbol[] }[] = [
   {
     title: "Operators",
     items: [
-      { label: "×",   insert: "\\times "  },
-      { label: "÷",   insert: "\\div "    },
-      { label: "±",   insert: "\\pm "     },
-      { label: "·",   insert: "\\cdot "   },
-      { label: "≈",   insert: "\\approx " },
-      { label: "≤",   insert: "\\le "     },
-      { label: "≥",   insert: "\\ge "     },
-      { label: "≠",   insert: "\\ne "     },
-      { label: "→",   insert: "\\to "     },
-      { label: "∞",   insert: "\\infty "  },
+      { label: "×", insert: " × " },
+      { label: "÷", insert: " ÷ " },
+      { label: "±", insert: " ± " },
+      { label: "·", insert: " · " },
+      { label: "≈", insert: " ≈ " },
+      { label: "≥", insert: " ≥ " },
+      { label: "≠", insert: " ≠ " },
+      { label: "→", insert: " → " },
+      { label: "∞", insert: "∞"   },
     ],
   },
   {
     title: "Greek",
     items: [
-      { label: "α",   insert: "\\alpha "  },
-      { label: "β",   insert: "\\beta "   },
-      { label: "θ",   insert: "\\theta "  },
-      { label: "λ",   insert: "\\lambda " },
-      { label: "μ",   insert: "\\mu "     },
-      { label: "Δ",   insert: "\\Delta "  },
-      { label: "Σ",   insert: "\\Sigma "  },
-      { label: "Ω",   insert: "\\Omega "  },
+      { label: "α", insert: "α" },
+      { label: "β", insert: "β" },
+      { label: "θ", insert: "θ" },
+      { label: "λ", insert: "λ" },
+      { label: "μ", insert: "μ" },
+      { label: "Δ", insert: "Δ" },
+      { label: "Σ", insert: "Σ" },
+      { label: "Ω", insert: "Ω" },
     ],
   },
   {
     title: "Calculus & stats",
     items: [
-      { label: "∫",      insert: "\\int_{}^{} ",  caret: 6, hint: "Integral with bounds" },
-      { label: "Σ",      insert: "\\sum_{}^{} ",  caret: 6, hint: "Summation with bounds" },
-      { label: "lim",    insert: "\\lim_{} ",     caret: 6, hint: "Limit" },
-      { label: "d/dx",   insert: "\\frac{d}{dx}",           hint: "Derivative" },
-      { label: "ⁿ√",     insert: "\\sqrt[]{}",    caret: 6, hint: "nth root" },
-      { label: "x̄",      insert: "\\bar{x}"                  },
-      { label: "x̂",      insert: "\\hat{x}"                  },
+      { label: "∫",  insert: "∫" },
+      { label: "Σ",  insert: "Σ" },
+      { label: "lim", insert: "lim " },
+      { label: "ⁿ√", insert: "ⁿ√()", caret: 3, hint: "nth root" },
+      { label: "x̄",  insert: "x̄"  },
+      { label: "x̂",  insert: "x̂"  },
     ],
   },
 ];
 
 type Props = {
   value: string;
-  onChange: (latex: string) => void;
+  onChange: (v: string) => void;
+  placeholder?: string;
 };
 
-export function MathEditor({ value, onChange }: Props) {
+export function MathEditor({ value, onChange, placeholder }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [moreEl, setMoreEl] = useState<HTMLElement | null>(null);
 
-  const insert = (tpl: Template) => {
+  const insert = (sym: Symbol) => {
     const el = textareaRef.current;
     if (!el) {
-      onChange(value + tpl.insert);
+      onChange(value + sym.insert);
       return;
     }
     const start = el.selectionStart ?? value.length;
     const end = el.selectionEnd ?? value.length;
-    const next = value.slice(0, start) + tpl.insert + value.slice(end);
+    const next = value.slice(0, start) + sym.insert + value.slice(end);
     onChange(next);
-    const caret = start + (tpl.caret ?? tpl.insert.length);
+    const caret = start + (sym.caret ?? sym.insert.length);
     requestAnimationFrame(() => {
       el.focus();
       el.setSelectionRange(caret, caret);
@@ -115,15 +109,18 @@ export function MathEditor({ value, onChange }: Props) {
   };
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={1.5}>
       <Toolbar onInsert={insert} onMore={(e) => setMoreEl(e.currentTarget)} />
 
       <TextField
         fullWidth
         multiline
-        minRows={6}
+        minRows={10}
         inputRef={textareaRef}
-        placeholder="Type your working, or tap a symbol above."
+        placeholder={
+          placeholder ??
+          "Write your working. Use the toolbar for symbols, or type them directly."
+        }
         value={value}
         onChange={(e) => onChange(e.target.value)}
         sx={{
@@ -135,20 +132,12 @@ export function MathEditor({ value, onChange }: Props) {
         }}
       />
 
-      <CollapsibleSection
-        label="Preview"
-        defaultOpen
-        meta={value.trim() ? `${value.trim().split(/\n/).filter((l) => l.trim()).length} line${value.trim().split(/\n/).filter((l) => l.trim()).length === 1 ? "" : "s"}` : undefined}
-      >
-        <PreviewBlock source={value} />
-      </CollapsibleSection>
-
       <MorePopover
         anchorEl={moreEl}
         onClose={() => setMoreEl(null)}
-        onInsert={(tpl) => {
+        onInsert={(sym) => {
           setMoreEl(null);
-          insert(tpl);
+          insert(sym);
         }}
       />
     </Stack>
@@ -161,7 +150,7 @@ function Toolbar({
   onInsert,
   onMore,
 }: {
-  onInsert: (tpl: Template) => void;
+  onInsert: (sym: Symbol) => void;
   onMore: (e: React.MouseEvent<HTMLElement>) => void;
 }) {
   return (
@@ -175,8 +164,8 @@ function Toolbar({
         "&::-webkit-scrollbar": { display: "none" },
       }}
     >
-      {PRIMARY.map((tpl) => (
-        <ToolButton key={tpl.insert} template={tpl} onInsert={onInsert} />
+      {PRIMARY.map((sym) => (
+        <SymbolButton key={sym.insert} symbol={sym} onInsert={onInsert} />
       ))}
       <Box sx={{ flex: 1 }} />
       <Tooltip title="More symbols">
@@ -202,19 +191,19 @@ function Toolbar({
   );
 }
 
-function ToolButton({
-  template,
+function SymbolButton({
+  symbol,
   onInsert,
 }: {
-  template: Template;
-  onInsert: (tpl: Template) => void;
+  symbol: Symbol;
+  onInsert: (sym: Symbol) => void;
 }) {
   return (
-    <Tooltip title={template.hint ?? template.label}>
+    <Tooltip title={symbol.hint ?? symbol.label}>
       <IconButton
         onMouseDown={(e) => e.preventDefault()}
-        onClick={() => onInsert(template)}
-        aria-label={template.hint ?? template.label}
+        onClick={() => onInsert(symbol)}
+        aria-label={symbol.hint ?? symbol.label}
         sx={{
           height: 44,
           minWidth: 44,
@@ -230,7 +219,7 @@ function ToolButton({
           "&:hover": { borderColor: "primary.main", color: "primary.main", bgcolor: "transparent" },
         }}
       >
-        {template.label}
+        {symbol.label}
       </IconButton>
     </Tooltip>
   );
@@ -243,7 +232,7 @@ function MorePopover({
 }: {
   anchorEl: HTMLElement | null;
   onClose: () => void;
-  onInsert: (tpl: Template) => void;
+  onInsert: (sym: Symbol) => void;
 }) {
   return (
     <Popover
@@ -252,121 +241,38 @@ function MorePopover({
       onClose={onClose}
       anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       transformOrigin={{ vertical: "top", horizontal: "right" }}
-      slotProps={{ paper: { sx: { p: 1, width: { xs: 280, sm: 320 } } } }}
+      slotProps={{ paper: { sx: { p: 2, width: { xs: 280, sm: 320 } } } }}
     >
-      <Stack spacing={0.5}>
-        {MORE_GROUPS.map((group, i) => (
-          <CollapsibleSection
-            key={group.title}
-            label={group.title}
-            defaultOpen={i === 0}
-            meta={`${group.items.length}`}
-          >
+      <Stack spacing={2}>
+        {MORE_GROUPS.map((group) => (
+          <Box key={group.title}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{
+                letterSpacing: "0.06em",
+                fontWeight: 600,
+                textTransform: "uppercase",
+                mb: 0.75,
+                display: "block",
+              }}
+            >
+              {group.title}
+            </Typography>
             <Box
               sx={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fill, minmax(44px, 1fr))",
                 gap: 0.5,
-                p: 0.5,
               }}
             >
-              {group.items.map((tpl) => (
-                <ToolButton key={tpl.insert} template={tpl} onInsert={onInsert} />
+              {group.items.map((sym) => (
+                <SymbolButton key={sym.insert} symbol={sym} onInsert={onInsert} />
               ))}
             </Box>
-          </CollapsibleSection>
+          </Box>
         ))}
       </Stack>
     </Popover>
-  );
-}
-
-// ─── Preview ────────────────────────────────────────────────────────
-
-function PreviewBlock({ source }: { source: string }) {
-  const [katexMod, setKatexMod] = useState<typeof import("katex") | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    import("katex").then((m) => {
-      if (!cancelled) setKatexMod(m);
-    });
-    return () => { cancelled = true; };
-  }, []);
-
-  const rendered = useMemo(() => {
-    if (!katexMod) return null;
-    const lines = source.split(/\n/);
-    return lines.map((line) => {
-      const t = line.trim();
-      if (!t) return { kind: "blank" as const };
-      try {
-        const html = katexMod.default.renderToString(t, {
-          displayMode: true,
-          throwOnError: false,
-          errorColor: "#A8632F",
-          output: "html",
-        });
-        return { kind: "math" as const, html };
-      } catch {
-        return { kind: "text" as const, text: t };
-      }
-    });
-  }, [source, katexMod]);
-
-  return (
-    <Box
-      sx={{
-        minHeight: 120,
-        p: { xs: 2, sm: 2.5 },
-        border: 1,
-        borderColor: "divider",
-        borderRadius: 1,
-        bgcolor: (t) =>
-          t.palette.mode === "dark"
-            ? "rgba(255,255,255,0.02)"
-            : "rgba(0,0,0,0.02)",
-        overflowX: "auto",
-      }}
-    >
-      {!source.trim() ? (
-        <Typography variant="body2" color="text.disabled">
-          Your equations render here as you type.
-        </Typography>
-      ) : !katexMod || !rendered ? (
-        <Typography variant="body2" color="text.secondary">
-          Loading…
-        </Typography>
-      ) : (
-        <Box
-          sx={{
-            color: "text.primary",
-            // KaTeX centres display equations; left-align to match
-            // reading order of the source above.
-            "& .katex-display": { textAlign: "left", margin: 0 },
-            "& .katex-display + .katex-display": { mt: 1 },
-            "& > *:not(:last-child)": { mb: 1 },
-          }}
-        >
-          {rendered.map((b, i) => {
-            if (b.kind === "blank") return <Box key={i} sx={{ height: 8 }} />;
-            if (b.kind === "math") {
-              return (
-                <div
-                  key={i}
-                  // eslint-disable-next-line react/no-danger
-                  dangerouslySetInnerHTML={{ __html: b.html }}
-                />
-              );
-            }
-            return (
-              <Typography key={i} variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                {b.text}
-              </Typography>
-            );
-          })}
-        </Box>
-      )}
-    </Box>
   );
 }
