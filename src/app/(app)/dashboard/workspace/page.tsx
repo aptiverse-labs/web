@@ -848,30 +848,16 @@ function DraftPanel({ assessmentId, draftTitle }: { assessmentId: string | null;
 
 // Working surface.
 //
-// For maths and natural-science subjects: a structured step editor with
-// MathLive WYSIWYG equation fields (real fractions, roots, integrals).
-// Each step has a prose note and an optional equation, matching how
-// teachers grade step-by-step.
+// Maths + natural-science subjects get MathEditor — a single MathLive
+// math-field rendered WYSIWYG (fractions stack, roots cover, integrals
+// show bounds) with our own toolbar inserting structure templates.
+// MathLive's virtual keyboard is off; students use their device's
+// keyboard for letters/numbers and the toolbar for math structures.
 //
-// For every other subject (languages, humanities, commerce, etc.): a
-// plain-text scratch surface for reasoning and observations. No math
-// editor — they don't need one and the bundle weight would be waste.
+// Other subjects get a plain mono textarea — no maths rendering, no
+// bundle weight for content they don't need.
 //
-// Both modes use the same `scratchpad` draft channel. The structured
-// editor persists as JSON; legacy plain-text scratchpads are migrated
-// in-place when the editor first parses them.
-// Working surface.
-//
-// Maths + natural-science subjects get the Aptiverse-built MathEditor:
-// LaTeX source on the left, KaTeX-rendered preview on the right, with
-// a small toolbar of template buttons (fraction, root, exponent, etc.)
-// for students who don't know LaTeX by hand. Real 2D maths in the
-// preview — no WYSIWYG editor surface to fight.
-//
-// Other subjects get a plain mono textarea — they don't need maths
-// rendering, and shipping it would be bundle weight for nothing.
-//
-// Both modes share the `scratchpad` draft channel; both pair with the
+// Both modes share the `scratchpad` draft channel and pair with the
 // UploadsStrip below so students can attach a photo of handwritten
 // working alongside whatever they type.
 function WorkingPanel({
