@@ -9,6 +9,7 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
+import { alpha, useTheme } from "@mui/material/styles";
 import Link from "next/link";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
@@ -19,7 +20,6 @@ import { enter, enterStagger } from "@/lib/motion";
 import type { MoodPoint, WellbeingSummary } from "@/lib/mockData";
 import SelfImprovementIcon from "@mui/icons-material/SelfImprovementOutlined";
 import PsychologyIcon from "@mui/icons-material/PsychologyOutlined";
-import MenuBookIcon from "@mui/icons-material/MenuBookOutlined";
 import EditNoteIcon from "@mui/icons-material/EditNoteOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
 
@@ -40,6 +40,12 @@ export default function WellbeingPage() {
   const summary  = summaryQ.data;
   const populated = hasCheckedIn(summary);
   const loading   = summaryQ.isLoading || trendQ.isLoading;
+  // The summary endpoint is the source of truth for "is the page
+  // populated"; if it errors we can't tell whether the student is a
+  // returning user or a first-timer, and falling through to
+  // FirstCheckIn tells a long-time user to "start your first check-in"
+  // which is wrong. Surface the error honestly with a retry instead.
+  const hardError = summaryQ.isError;
 
   return (
     <>
@@ -51,6 +57,8 @@ export default function WellbeingPage() {
 
       {loading ? (
         <SummarySkeleton />
+      ) : hardError ? (
+        <WellbeingError onRetry={() => { summaryQ.refetch(); trendQ.refetch(); }} />
       ) : populated ? (
         <PopulatedSummary summary={summary!} trend={trendQ.data ?? []} />
       ) : (
@@ -122,6 +130,7 @@ function PopulatedSummary({ summary, trend }: { summary: WellbeingSummary; trend
 }
 
 function MoodChart({ trend }: { trend: MoodPoint[] }) {
+  const theme = useTheme();
   const data = useMemo(
     () =>
       trend.map((p) => ({
@@ -141,7 +150,10 @@ function MoodChart({ trend }: { trend: MoodPoint[] }) {
           data: data.map((d) => d.mood),
           label: "Mood",
           curve: "monotoneX",
-          color: "#1F8079",
+          // Token: Aptiverse Teal via the theme. Was hard-coded #1F8079 —
+          // drift caught in /impeccable polish. Now mode-aware (light vs
+          // dark variants of the primary).
+          color: theme.palette.primary.main,
           showMark: true,
         },
       ]}
@@ -161,7 +173,11 @@ function Stat({ label, value, unit, hint }: { label: string; value: string; unit
             {label}
           </Typography>
           <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ mt: 0.5 }}>
-            <Typography variant="h4" component="div" sx={{ fontWeight: 600, lineHeight: 1.1 }}>
+            <Typography
+              variant="h4"
+              component="div"
+              sx={{ fontWeight: 600, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}
+            >
               {value}
             </Typography>
             {unit && (
@@ -234,6 +250,8 @@ function FirstCheckIn() {
 function CheckInPreview() {
   return (
     <Box
+      role="img"
+      aria-label="Mood check-in preview: a one to five scale from Rough to Great."
       sx={{
         border: 1,
         borderColor: "divider",
@@ -249,6 +267,7 @@ function CheckInPreview() {
         {[1, 2, 3, 4, 5].map((n) => (
           <Box
             key={n}
+            aria-hidden
             sx={{
               flex: 1,
               aspectRatio: "1",
@@ -260,6 +279,7 @@ function CheckInPreview() {
               fontWeight: 600,
               color: "text.secondary",
               fontSize: 18,
+              fontVariantNumeric: "tabular-nums",
             }}
           >
             {n}
@@ -271,6 +291,35 @@ function CheckInPreview() {
         <Typography variant="caption" color="text.secondary">Great</Typography>
       </Stack>
     </Box>
+  );
+}
+
+// ─── Error state ──────────────────────────────────────────────────────
+
+function WellbeingError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <motion.div {...enter}>
+      <Card>
+        <CardContent sx={{ p: { xs: 3, sm: 4 }, textAlign: "center" }}>
+          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+            Couldn't load wellbeing
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5, mb: 1 }}>
+            Try again in a moment.
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 3, maxWidth: 460, mx: "auto" }}
+          >
+            We couldn't reach your check-in history. The connection might be patchy. Your data is safe; nothing's been lost.
+          </Typography>
+          <Button variant="contained" onClick={onRetry}>
+            Try again
+          </Button>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 }
 
@@ -302,36 +351,36 @@ function SummarySkeleton() {
   );
 }
 
-// ─── Quick tools row ──────────────────────────────────────────────────
+// ─── Quick tools ──────────────────────────────────────────────────────
+//
+// Previously a 4-up grid of identical icon-tile cards with the leading
+// glyph in a coloured square above each title. /impeccable polish caught
+// the drift: directly violates the No-Icon-Tile-Above-Heading Rule from
+// DESIGN.md and the "identical card grids are an AI-template tell"
+// Don't. Reworked as a single card with a vertical list, inline icons
+// next to row labels (allowed by DESIGN.md — *row-label*, not
+// *above-heading*). "Stories that helped" dropped: it linked to
+// /dashboard/journey which is now a per-subject working track, not a
+// stories page. Fake affordance, removed until a real destination exists.
 
 const TOOLS = [
   {
-    icon: <EditNoteIcon />,
+    icon: <EditNoteIcon fontSize="small" />,
     title: "Daily check-in",
     description: "A 30-second mood log. The whole foundation.",
-    cta: "Open diary",
     href: "/dashboard/diary",
   },
   {
-    icon: <SelfImprovementIcon />,
-    title: "Breathing exercise",
-    description: "Box breathing — five minutes, slower heart, calmer head.",
-    cta: "Start",
+    icon: <SelfImprovementIcon fontSize="small" />,
+    title: "Box breathing",
+    description: "Five minutes, slower heart, calmer head.",
     href: "/dashboard/diary?tool=breathing",
   },
   {
-    icon: <PsychologyIcon />,
+    icon: <PsychologyIcon fontSize="small" />,
     title: "Talk to a psychologist",
     description: "Verified counsellors. Book a 30-minute session.",
-    cta: "See counsellors",
     href: "/dashboard/psychologist",
-  },
-  {
-    icon: <MenuBookIcon />,
-    title: "Stories that helped",
-    description: "South Africans who struggled before they soared.",
-    cta: "Read",
-    href: "/dashboard/journey",
   },
 ] as const;
 
@@ -341,48 +390,52 @@ function QuickTools() {
       <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
         Quick tools
       </Typography>
-      <Grid container spacing={2.5}>
-        {TOOLS.map((t, i) => (
-          <Grid key={t.title} size={{ xs: 12, sm: 6, md: 3 }}>
-            <motion.div {...enterStagger(i)} style={{ height: "100%" }}>
-              <Card sx={{ height: "100%" }}>
-                <CardActionArea component={Link} href={t.href} sx={{ height: "100%" }}>
-                  <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 1.5, height: "100%" }}>
-                    <Box
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 1.5,
-                        display: "grid",
-                        placeItems: "center",
-                        color: "primary.main",
-                        bgcolor: (theme) =>
-                          theme.palette.mode === "dark"
-                            ? "rgba(63,157,149,0.12)"
-                            : "rgba(15,105,99,0.08)",
-                      }}
-                    >
-                      {t.icon}
-                    </Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+      <Card>
+        <Stack divider={<Box sx={{ borderTop: 1, borderColor: "divider" }} />}>
+          {TOOLS.map((t, i) => (
+            <motion.div key={t.title} {...enterStagger(i)}>
+              <CardActionArea
+                component={Link}
+                href={t.href}
+                sx={{
+                  px: { xs: 2, sm: 2.5 },
+                  py: 2,
+                  borderRadius: 0,
+                  display: "block",
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Box
+                    sx={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 1,
+                      display: "grid",
+                      placeItems: "center",
+                      color: "primary.main",
+                      bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                      flexShrink: 0,
+                    }}
+                  >
+                    {t.icon}
+                  </Box>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
                       {t.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
                       {t.description}
                     </Typography>
-                    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: "primary.main", mt: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {t.cta}
-                      </Typography>
-                      <ArrowForwardIcon sx={{ fontSize: 16 }} />
-                    </Stack>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
+                  </Box>
+                  <ArrowForwardIcon
+                    sx={{ color: "text.secondary", fontSize: 18, flexShrink: 0 }}
+                  />
+                </Stack>
+              </CardActionArea>
             </motion.div>
-          </Grid>
-        ))}
-      </Grid>
+          ))}
+        </Stack>
+      </Card>
     </Stack>
   );
 }
