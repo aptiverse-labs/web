@@ -115,7 +115,7 @@ export function MathField({
   return (
     <Box
       ref={hostRef}
-      sx={{
+      sx={(t) => ({
         "& math-field": {
           width: "100%",
           padding: "8px 12px",
@@ -124,16 +124,47 @@ export function MathField({
           borderColor: "divider",
           borderRadius: 1,
           backgroundColor: "background.paper",
+          color: "text.primary",
           fontSize: "1rem",
           display: "block",
-          // Caret + focus ring — match the rest of the app's
-          // outlined-input look.
+
+          // MathLive ships its own CSS variables for caret / selection
+          // / placeholder colours that don't inherit from MUI. Without
+          // these overrides the placeholder squares + caret render in
+          // MathLive's defaults (dark glyphs on dark background in dark
+          // mode → unreadable). Map them to the app palette.
+          "--primary":                       t.palette.primary.main,
+          "--caret-color":                   t.palette.primary.main,
+          "--text-color":                    t.palette.text.primary,
+          "--placeholder-color":             t.palette.text.disabled,
+          "--placeholder-opacity":           "1",
+          "--smart-fence-color":             t.palette.text.secondary,
+          "--smart-fence-opacity":           "0.6",
+          "--correct-color":                 t.palette.success.main,
+          "--incorrect-color":               t.palette.error.main,
+          "--selection-background-color":
+            t.palette.mode === "dark"
+              ? "rgba(116,181,174,0.30)"
+              : "rgba(15,105,99,0.18)",
+          "--selection-color":               t.palette.text.primary,
+          "--contains-highlight-background-color":
+            t.palette.mode === "dark"
+              ? "rgba(255,255,255,0.04)"
+              : "rgba(0,0,0,0.03)",
+
+          // Empty boxes ("missing argument" placeholders) — make their
+          // border use the divider colour so they read as inputs, not
+          // a wall of dark squares.
+          "& [data-placeholder]": {
+            color: t.palette.text.disabled,
+          },
+
           "&:focus-within": {
             borderColor: "primary.main",
             outline: "none",
           },
         },
-      }}
+      })}
     />
   );
 }
