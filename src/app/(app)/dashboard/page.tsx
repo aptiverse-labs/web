@@ -18,9 +18,11 @@ import Divider from "@mui/material/Divider";
 import { alpha, useTheme } from "@mui/material/styles";
 import Link from "next/link";
 import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
 import { motion } from "framer-motion";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
+import { CardError } from "@/components/common/CardError";
+import { LastSynced } from "@/components/common/LastSynced";
+import { SectionHeader } from "@/components/common/SectionHeader";
 import { brand } from "@/theme/palette";
 import {
   useSubjects,
@@ -34,9 +36,6 @@ import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import CloudOffOutlinedIcon from "@mui/icons-material/CloudOffOutlined";
-
-dayjs.extend(relativeTime);
 
 // Lazy-load the chart and, transitively, @mui/x-charts (~100-150kb
 // gzipped). The Mastery card sits below the canonical-fold on mobile,
@@ -127,79 +126,6 @@ export default function StudentDashboardPage() {
   );
 }
 
-// ─── Card error state ────────────────────────────────────────────────
-// React Query holds stale data silently when a refetch fails, so before
-// this card existed a network failure would render the same empty-state
-// copy ("Add subjects, then log marks") as a brand-new account. That
-// lied to returning students. Now: explicit failure surface with a
-// Retry button that calls the query's refetch().
-//
-// Copy stays calm. PRODUCT.md "the senior friend at 8pm": no alarm
-// bells, no error codes, no apology theatre. Honest, short, actionable.
-
-function CardError({
-  onRetry,
-  what,
-}: {
-  onRetry: () => void;
-  what: string;
-}) {
-  return (
-    <Box
-      sx={{
-        py: 4,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: 1.5,
-        textAlign: "center",
-      }}
-    >
-      <Box
-        sx={{
-          width: 36,
-          height: 36,
-          borderRadius: 1,
-          display: "grid",
-          placeItems: "center",
-          color: "text.secondary",
-          bgcolor: (t) => alpha(t.palette.text.primary, 0.05),
-        }}
-      >
-        <CloudOffOutlinedIcon fontSize="small" />
-      </Box>
-      <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>
-        Couldn&apos;t load {what} right now. Check your connection?
-      </Typography>
-      <Button size="small" onClick={onRetry}>
-        Try again
-      </Button>
-    </Box>
-  );
-}
-
-// ─── Last-synced footnote ────────────────────────────────────────────
-// Tells the loadshedding-affected student that the data they're looking
-// at may be cached. React Query holds stale data silently when the
-// connection drops; this surfaces the truth in a calm caption.
-
-function LastSynced({ at }: { at: number | undefined }) {
-  if (!at) return null;
-  const ageMs = Date.now() - at;
-  // Only surface if the data is older than 5 minutes. Fresh fetches
-  // shouldn't add visual noise.
-  if (ageMs < 5 * 60 * 1000) return null;
-  return (
-    <Typography
-      variant="caption"
-      color="text.secondary"
-      sx={{ display: "block", mt: 2 }}
-    >
-      Last synced {dayjs(at).fromNow()}.
-    </Typography>
-  );
-}
-
 // ─── Upcoming SBAs (the canonical "what next") ────────────────────────
 
 type UpcomingItem = {
@@ -242,29 +168,21 @@ function UpcomingAssessmentsCard({
           { xs: 2.5, sm: 3 }). Same padding everywhere is
           monotony; the size difference encodes hierarchy. */}
       <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="flex-end"
-          sx={{ mb: 2.5 }}
-        >
-          <Box>
-            <Typography variant="overline" color="text.secondary">
-              Up next
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Upcoming SBAs
-            </Typography>
-          </Box>
-          <Button
-            component={Link}
-            href="/dashboard/assessments"
-            endIcon={<ArrowForwardIcon />}
-            size="small"
-          >
-            All
-          </Button>
-        </Stack>
+        <SectionHeader
+          overline="Up next"
+          title="Upcoming SBAs"
+          mb={2.5}
+          action={
+            <Button
+              component={Link}
+              href="/dashboard/assessments"
+              endIcon={<ArrowForwardIcon />}
+              size="small"
+            >
+              All
+            </Button>
+          }
+        />
 
         {loading ? (
           <Stack spacing={1.25}>
@@ -604,29 +522,20 @@ function MasteryTrendCard({
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: { xs: 2.5, sm: 3 }, height: "100%" }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="flex-end"
-          sx={{ mb: 2 }}
-        >
-          <Box>
-            <Typography variant="overline" color="text.secondary">
-              Mastery
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Term-over-term
-            </Typography>
-          </Box>
-          <Button
-            component={Link}
-            href="/dashboard/mastery"
-            endIcon={<ArrowForwardIcon />}
-            size="small"
-          >
-            Details
-          </Button>
-        </Stack>
+        <SectionHeader
+          overline="Mastery"
+          title="Term-over-term"
+          action={
+            <Button
+              component={Link}
+              href="/dashboard/mastery"
+              endIcon={<ArrowForwardIcon />}
+              size="small"
+            >
+              Details
+            </Button>
+          }
+        />
 
         {isError && <CardError onRetry={onRetry} what="your mastery trend" />}
 
@@ -780,33 +689,24 @@ function ActiveGoalsCard({
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: { xs: 2.5, sm: 3 }, height: "100%" }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="flex-end"
-          sx={{ mb: 2 }}
-        >
-          <Box>
-            {/* Overline used to read "In progress" but the list
-                includes at-risk goals, which aren't really "in
-                progress" in the positive sense. "Tracking" is
-                honest cover for both states. */}
-            <Typography variant="overline" color="text.secondary">
-              Tracking
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Active goals
-            </Typography>
-          </Box>
-          <Button
-            component={Link}
-            href="/dashboard/goals"
-            endIcon={<ArrowForwardIcon />}
-            size="small"
-          >
-            All
-          </Button>
-        </Stack>
+        {/* Overline reads "Tracking" not "In progress": the list
+            includes at-risk goals, which aren't strictly in
+            progress in a positive sense. "Tracking" covers both
+            states honestly. */}
+        <SectionHeader
+          overline="Tracking"
+          title="Active goals"
+          action={
+            <Button
+              component={Link}
+              href="/dashboard/goals"
+              endIcon={<ArrowForwardIcon />}
+              size="small"
+            >
+              All
+            </Button>
+          }
+        />
         {loading ? (
           <Stack spacing={1.5}>
             <Skeleton variant="rounded" height={56} />

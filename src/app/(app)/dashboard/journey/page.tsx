@@ -12,6 +12,7 @@ import Button from "@mui/material/Button";
 import Link from "next/link";
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
+import { CardError } from "@/components/common/CardError";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryStates } from "@/components/common/QueryStates";
 import { useSubjects, useAssessments } from "@/lib/api/queries";
@@ -44,7 +45,17 @@ export default function JourneyPage() {
       {isLoading ? (
         <LoadingSkeleton />
       ) : isError ? (
-        <ErrorCard onRetry={() => { subjectsQuery.refetch(); assessmentsQuery.refetch(); }} />
+        <Card>
+          <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+            <CardError
+              what="your journey"
+              onRetry={() => {
+                subjectsQuery.refetch();
+                assessmentsQuery.refetch();
+              }}
+            />
+          </CardContent>
+        </Card>
       ) : (
         <JourneyView
           subjects={subjectsQuery.data ?? []}
@@ -524,20 +535,3 @@ function LoadingSkeleton() {
   );
 }
 
-function ErrorCard({ onRetry }: { onRetry: () => void }) {
-  return (
-    <Card>
-      <CardContent sx={{ p: 6, textAlign: "center" }}>
-        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-          Couldn't load your journey
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Check your connection and try again.
-        </Typography>
-        <Button variant="outlined" onClick={onRetry}>
-          Try again
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}

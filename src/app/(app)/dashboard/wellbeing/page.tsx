@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
+import { CardError } from "@/components/common/CardError";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useWellbeingSummary, useMoodTrend } from "@/lib/api/queries";
 import { enter, enterStagger } from "@/lib/motion";
@@ -58,7 +59,17 @@ export default function WellbeingPage() {
       {loading ? (
         <SummarySkeleton />
       ) : hardError ? (
-        <WellbeingError onRetry={() => { summaryQ.refetch(); trendQ.refetch(); }} />
+        <Card>
+          <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+            <CardError
+              what="your wellbeing history"
+              onRetry={() => {
+                summaryQ.refetch();
+                trendQ.refetch();
+              }}
+            />
+          </CardContent>
+        </Card>
       ) : populated ? (
         <PopulatedSummary summary={summary!} trend={trendQ.data ?? []} />
       ) : (
@@ -291,35 +302,6 @@ function CheckInPreview() {
         <Typography variant="caption" color="text.secondary">Great</Typography>
       </Stack>
     </Box>
-  );
-}
-
-// ─── Error state ──────────────────────────────────────────────────────
-
-function WellbeingError({ onRetry }: { onRetry: () => void }) {
-  return (
-    <motion.div {...enter}>
-      <Card>
-        <CardContent sx={{ p: { xs: 3, sm: 4 }, textAlign: "center" }}>
-          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
-            Couldn't load wellbeing
-          </Typography>
-          <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.5, mb: 1 }}>
-            Try again in a moment.
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 3, maxWidth: 460, mx: "auto" }}
-          >
-            We couldn't reach your check-in history. The connection might be patchy. Your data is safe; nothing's been lost.
-          </Typography>
-          <Button variant="contained" onClick={onRetry}>
-            Try again
-          </Button>
-        </CardContent>
-      </Card>
-    </motion.div>
   );
 }
 
