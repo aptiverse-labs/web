@@ -11,6 +11,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import IconButton from "@mui/material/IconButton";
 import Chip from "@mui/material/Chip";
 import Skeleton from "@mui/material/Skeleton";
+import { alpha } from "@mui/material/styles";
 import Link from "next/link";
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
@@ -68,7 +69,7 @@ export default function StudentDashboardPage() {
         <Grid size={{ xs: 6, md: 3 }}>
           <Stat
             label="Predicted average"
-            value={predictedAverage != null ? `${predictedAverage}` : "—"}
+            value={predictedAverage != null ? `${predictedAverage}` : "–"}
             unit={predictedAverage != null ? "%" : undefined}
             hint={subjects.length === 0 ? "Add subjects to see" : "Across your subjects"}
             index={0}
@@ -156,7 +157,15 @@ function Stat({
             {label}
           </Typography>
           <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ mt: 0.5 }}>
-            <Typography variant="h4" component="div" sx={{ fontWeight: 600, lineHeight: 1.1 }}>
+            <Typography
+              variant="h4"
+              component="div"
+              sx={{
+                fontWeight: 600,
+                lineHeight: 1.1,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
               {value}
             </Typography>
             {unit && (
@@ -210,7 +219,7 @@ function MasteryTrendCard({ subjects, loading }: { subjects: Subject[]; loading:
             <Box sx={{ py: 6, textAlign: "center" }}>
               <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, mx: "auto" }}>
                 {subjects.length === 0
-                  ? "Add subjects, then log a few marks against them — your term-over-term trend lives here."
+                  ? "Add subjects, then log a few marks against them. Your term-over-term trend lives here."
                   : "Log marks against your subjects to see your trend appear."}
               </Typography>
             </Box>
@@ -288,7 +297,7 @@ function UpcomingAssessmentsCard({
           ) : isEmpty ? (
             <Box sx={{ py: 5, textAlign: "center" }}>
               <Typography variant="body2" color="text.secondary">
-                Nothing on the horizon — enjoy the breather, or get ahead.
+                Nothing on the horizon. Enjoy the breather, or get ahead.
               </Typography>
             </Box>
           ) : (
@@ -300,6 +309,8 @@ function UpcomingAssessmentsCard({
                 return (
                   <Box
                     key={a.id}
+                    component={Link}
+                    href={`/dashboard/assessments/${a.id}`}
                     sx={{
                       p: 2,
                       borderRadius: 1.5,
@@ -308,8 +319,14 @@ function UpcomingAssessmentsCard({
                       display: "flex",
                       alignItems: "center",
                       gap: 2,
-                      transition: "border-color 150ms ease",
-                      "&:hover": { borderColor: "text.secondary" },
+                      textDecoration: "none",
+                      color: "inherit",
+                      transition:
+                        "border-color 180ms cubic-bezier(0.165, 0.84, 0.44, 1), background-color 180ms cubic-bezier(0.165, 0.84, 0.44, 1)",
+                      "&:hover": {
+                        borderColor: "primary.main",
+                        bgcolor: (t) => alpha(t.palette.primary.main, 0.03),
+                      },
                     }}
                   >
                     <Box
@@ -321,9 +338,7 @@ function UpcomingAssessmentsCard({
                         placeItems: "center",
                         color: "primary.main",
                         bgcolor: (t) =>
-                          t.palette.mode === "dark"
-                            ? "rgba(116, 181, 174, 0.12)"
-                            : "rgba(15, 105, 99, 0.08)",
+                          alpha(t.palette.primary.main, t.palette.mode === "dark" ? 0.12 : 0.08),
                         flexShrink: 0,
                       }}
                     >
@@ -334,15 +349,18 @@ function UpcomingAssessmentsCard({
                         {a.title}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {subject?.name ?? "—"} · {a.type} · {a.weight}%
+                        {subject?.name ?? "No subject"} · {a.type} · {a.weight}%
                       </Typography>
                     </Box>
                     <Box sx={{ textAlign: "right", display: { xs: "none", sm: "block" } }}>
                       <Typography variant="caption" color="text.secondary">
                         Predicted
                       </Typography>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                        {a.predictedMark != null ? `${a.predictedMark}%` : "—"}
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
+                      >
+                        {a.predictedMark != null ? `${a.predictedMark}%` : "–"}
                       </Typography>
                     </Box>
                     <Chip
@@ -350,7 +368,7 @@ function UpcomingAssessmentsCard({
                       size="small"
                       color={urgent ? "warning" : "default"}
                       variant={urgent ? "filled" : "outlined"}
-                      sx={{ fontWeight: 600 }}
+                      sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}
                     />
                   </Box>
                 );
@@ -426,7 +444,7 @@ function ActiveGoalsCard({
             </Stack>
           ) : isEmpty ? (
             <Typography variant="body2" color="text.secondary">
-              No active goals — set one to start tracking.
+              No active goals yet. Set one to start tracking.
             </Typography>
           ) : (
             <Stack spacing={2}>
@@ -472,8 +490,13 @@ function notificationIcon(kind: string) {
   }
 }
 
-function notificationTint(kind: string): "primary" | "secondary" | "warning" {
-  if (kind === "celebration") return "secondary";
+function notificationTint(kind: string): "primary" | "achievement" | "warning" {
+  // celebration -> achievement (amber): per DESIGN.md the Sacred-Amber
+  // Rule reserves amber for earned milestones. A "you hit your goal"
+  // notification is exactly that. The previous "secondary" (terracotta)
+  // tint coded a celebration as warm-attention/"needs work", inverting
+  // the meaning.
+  if (kind === "celebration") return "achievement";
   if (kind === "alert")       return "warning";
   return "primary";
 }
@@ -520,7 +543,7 @@ function RecentNotificationsCard({
               You're all caught up.
             </Typography>
           ) : (
-            <Stack spacing={1.75}>
+            <Stack spacing={2}>
               {notifications.slice(0, 3).map((n) => {
                 const tint = notificationTint(n.kind);
                 return (
@@ -533,7 +556,7 @@ function RecentNotificationsCard({
                         display: "grid",
                         placeItems: "center",
                         color: `${tint}.main`,
-                        bgcolor: (t) => `${t.palette[tint].main}1A`,
+                        bgcolor: (t) => alpha(t.palette[tint].main, 0.1),
                         flexShrink: 0,
                       }}
                     >
