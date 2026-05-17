@@ -33,6 +33,7 @@ import AssignmentIcon from "@mui/icons-material/AssignmentOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import CloudOffOutlinedIcon from "@mui/icons-material/CloudOffOutlined";
 
 dayjs.extend(relativeTime);
 
@@ -61,6 +62,8 @@ export default function StudentDashboardPage() {
         upcoming={upcoming}
         subjects={subjects}
         loading={assessmentsQuery.isLoading}
+        isError={assessmentsQuery.isError}
+        onRetry={() => assessmentsQuery.refetch()}
         isEmpty={!assessmentsQuery.isLoading && upcoming.length === 0}
         dataUpdatedAt={assessmentsQuery.dataUpdatedAt}
       />
@@ -70,6 +73,8 @@ export default function StudentDashboardPage() {
           <MasteryTrendCard
             subjects={subjects}
             loading={subjectsQuery.isLoading}
+            isError={subjectsQuery.isError}
+            onRetry={() => subjectsQuery.refetch()}
             dataUpdatedAt={subjectsQuery.dataUpdatedAt}
           />
         </Grid>
@@ -77,11 +82,64 @@ export default function StudentDashboardPage() {
           <ActiveGoalsCard
             goals={activeGoals}
             loading={goalsQuery.isLoading}
+            isError={goalsQuery.isError}
+            onRetry={() => goalsQuery.refetch()}
             isEmpty={!goalsQuery.isLoading && activeGoals.length === 0}
           />
         </Grid>
       </Grid>
     </>
+  );
+}
+
+// ─── Card error state ────────────────────────────────────────────────
+// React Query holds stale data silently when a refetch fails, so before
+// this card existed a network failure would render the same empty-state
+// copy ("Add subjects, then log marks") as a brand-new account. That
+// lied to returning students. Now: explicit failure surface with a
+// Retry button that calls the query's refetch().
+//
+// Copy stays calm. PRODUCT.md "the senior friend at 8pm": no alarm
+// bells, no error codes, no apology theatre. Honest, short, actionable.
+
+function CardError({
+  onRetry,
+  what,
+}: {
+  onRetry: () => void;
+  what: string;
+}) {
+  return (
+    <Box
+      sx={{
+        py: 4,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 1.5,
+        textAlign: "center",
+      }}
+    >
+      <Box
+        sx={{
+          width: 36,
+          height: 36,
+          borderRadius: 1,
+          display: "grid",
+          placeItems: "center",
+          color: "text.secondary",
+          bgcolor: (t) => alpha(t.palette.text.primary, 0.05),
+        }}
+      >
+        <CloudOffOutlinedIcon fontSize="small" />
+      </Box>
+      <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360 }}>
+        Couldn&apos;t load {what} right now. Check your connection?
+      </Typography>
+      <Button size="small" onClick={onRetry}>
+        Try again
+      </Button>
+    </Box>
   );
 }
 
@@ -123,12 +181,16 @@ function UpcomingAssessmentsCard({
   upcoming,
   subjects,
   loading,
+  isError,
+  onRetry,
   isEmpty,
   dataUpdatedAt,
 }: {
   upcoming: UpcomingItem[];
   subjects: Subject[];
   loading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   isEmpty: boolean;
   dataUpdatedAt: number | undefined;
 }) {
@@ -168,6 +230,8 @@ function UpcomingAssessmentsCard({
               <Skeleton variant="rounded" height={56} />
               <Skeleton variant="rounded" height={56} />
             </Stack>
+          ) : isError ? (
+            <CardError onRetry={onRetry} what="your upcoming SBAs" />
           ) : isEmpty ? (
             <Box sx={{ py: 5, textAlign: "center" }}>
               <Typography variant="body2" color="text.secondary">
@@ -242,7 +306,20 @@ function HeroUpcomingRow({
       }}
     >
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="overline" color="primary.main" sx={{ display: "block" }}>
+        <Typography
+          variant="overline"
+          color="primary.main"
+          sx={{
+            display: "block",
+            // Subject names like "Life Orientation" are mostly short
+            // but the field is user-editable in some flows. Truncate
+            // to one line with ellipsis so a long name doesn't push
+            // the title row down.
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
           {subject?.name ?? "Unlinked"}
         </Typography>
         <Typography
@@ -253,7 +330,14 @@ function HeroUpcomingRow({
             fontWeight: 600,
             color: "text.primary",
             textDecoration: "none",
-            display: "block",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            // Long assessment titles ("Maths SBA: Trigonometry
+            // identities + radian-measure problem set") shouldn't
+            // shove the meta row off-screen. Clamp to two lines.
+            wordBreak: "break-word",
             mt: 0.25,
             "&:hover": { color: "primary.main" },
             transition: "color 180ms cubic-bezier(0.165, 0.84, 0.44, 1)",
@@ -265,6 +349,13 @@ function HeroUpcomingRow({
           direction="row"
           spacing={1}
           alignItems="center"
+          // Meta row has up to 4 fragments separated by bullets. On
+          // 360px viewports with longer values ("85% weight",
+          // "Predicted 78%") this could blow past one row. Wrap
+          // gracefully instead of forcing a horizontal scroll.
+          useFlexGap
+          flexWrap="wrap"
+          rowGap={0.5}
           sx={{ mt: 0.75 }}
           divider={<Box component="span" sx={{ color: "text.disabled" }}>·</Box>}
         >
@@ -398,10 +489,14 @@ const CHART_TEAL_RAMP_DARK = [
 function MasteryTrendCard({
   subjects,
   loading,
+  isError,
+  onRetry,
   dataUpdatedAt,
 }: {
   subjects: Subject[];
   loading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   dataUpdatedAt: number | undefined;
 }) {
   const theme = useTheme();
@@ -416,32 +511,35 @@ function MasteryTrendCard({
   // here now because the question "what is my predicted average" is a
   // mastery question, and beside the trend chart it has the context
   // (sample size, direction) the standalone tile lacked.
+  //
+  // Honest delta calculation: compute both averages as raw floats,
+  // take the difference, THEN round. Previously each average was
+  // rounded independently which gave the delta up to a 1pt drift
+  // from the true value. PRODUCT.md "Honesty before flash" applies
+  // even to display arithmetic; a rounded-of-rounded delta isn't
+  // honest, it's a fast lie.
   const subjectsWithPredictions = subjects.filter(
     (s) => s.predictedNextTerm != null,
   );
-  const predictedAverage =
-    subjectsWithPredictions.length > 0
-      ? Math.round(
-          subjectsWithPredictions.reduce(
-            (acc, x) => acc + (x.predictedNextTerm ?? 0),
-            0,
-          ) / subjectsWithPredictions.length,
-        )
+  const n = subjectsWithPredictions.length;
+  const rawPredicted =
+    n > 0
+      ? subjectsWithPredictions.reduce(
+          (acc, x) => acc + (x.predictedNextTerm ?? 0),
+          0,
+        ) / n
       : null;
-
-  // Latest-term average across the same subjects, for an honest delta.
-  const currentAverage =
-    subjectsWithPredictions.length > 0
-      ? Math.round(
-          subjectsWithPredictions.reduce((acc, x) => {
-            const last = (x.termAverages ?? []).at(-1);
-            return acc + (last?.mark ?? 0);
-          }, 0) / subjectsWithPredictions.length,
-        )
+  const rawCurrent =
+    n > 0
+      ? subjectsWithPredictions.reduce((acc, x) => {
+          const last = (x.termAverages ?? []).at(-1);
+          return acc + (last?.mark ?? 0);
+        }, 0) / n
       : null;
+  const predictedAverage = rawPredicted != null ? Math.round(rawPredicted) : null;
   const delta =
-    predictedAverage != null && currentAverage != null
-      ? predictedAverage - currentAverage
+    rawPredicted != null && rawCurrent != null
+      ? Math.round(rawPredicted - rawCurrent)
       : null;
 
   return (
@@ -472,7 +570,9 @@ function MasteryTrendCard({
             </Button>
           </Stack>
 
-          {predictedAverage != null && (
+          {isError && <CardError onRetry={onRetry} what="your mastery trend" />}
+
+          {!isError && predictedAverage != null && (
             <Stack
               direction="row"
               alignItems="flex-end"
@@ -561,7 +661,7 @@ function MasteryTrendCard({
 
           {loading ? (
             <Skeleton variant="rounded" height={240} />
-          ) : empty ? (
+          ) : isError ? null : empty ? (
             <Box sx={{ py: 6, textAlign: "center" }}>
               <Typography
                 variant="body2"
@@ -605,10 +705,14 @@ function MasteryTrendCard({
 function ActiveGoalsCard({
   goals,
   loading,
+  isError,
+  onRetry,
   isEmpty,
 }: {
   goals: { id: string; title: string; progress: number; status: string }[];
   loading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   isEmpty: boolean;
 }) {
   return (
@@ -643,6 +747,8 @@ function ActiveGoalsCard({
               <Skeleton variant="rounded" height={36} />
               <Skeleton variant="rounded" height={36} />
             </Stack>
+          ) : isError ? (
+            <CardError onRetry={onRetry} what="your goals" />
           ) : isEmpty ? (
             <Typography variant="body2" color="text.secondary">
               No active goals yet. Set one to start tracking.
