@@ -138,14 +138,43 @@ export default function WorkspacePage() {
     (s) => s.subjectId === activeAssessment?.subjectId,
   );
 
-  // Tabs for the active assessment's type. Reset to the first tab when
-  // the assessment changes — keeps the user from sitting on a "Draft"
-  // tab that disappeared after they switched to a Maths test.
+  // Tabs for the active assessment's type. The user's tab choice is
+  // persisted to localStorage keyed by assessment id, so:
+  //   (a) coming back to the same SBA restores the tab they were on,
+  //   (b) an HMR remount (e.g. impeccable live editing layout.tsx, or
+  //       any other dev-time hot reload) doesn't snap "Working" back
+  //       to "Practice" because the initial render briefly sees no
+  //       assessment and defaults to tabs[0].
+  // If the persisted value is no longer valid (assessment changed
+  // type, e.g. test -> essay), fall back to the first tab.
   const tabs = activeAssessment ? tabsForType(activeAssessment.type) : ["notes" as TabKey];
   const [tab, setTab] = useState<TabKey>(tabs[0]);
+
+  const tabStorageKey = activeAssessment
+    ? `aptiverse.workspace.tab.${activeAssessment.id}`
+    : null;
+
+  // Restore on assessment change (or first availability after data
+  // load). Only depends on the storage key; we intentionally don't
+  // re-run on tab changes so the user's clicks aren't overwritten by
+  // the persisted value.
   useEffect(() => {
-    if (!tabs.includes(tab)) setTab(tabs[0]);
-  }, [tabs, tab]);
+    if (!tabStorageKey || typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(tabStorageKey) as TabKey | null;
+    if (stored && tabs.includes(stored)) {
+      setTab(stored);
+    } else if (!tabs.includes(tab)) {
+      setTab(tabs[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabStorageKey]);
+
+  // Persist whenever tab changes and is valid for the current tabs.
+  useEffect(() => {
+    if (!tabStorageKey || typeof window === "undefined") return;
+    if (!tabs.includes(tab)) return;
+    window.localStorage.setItem(tabStorageKey, tab);
+  }, [tab, tabStorageKey, tabs]);
 
   // Derived "safe" tab. After switching assessment types, `tab` lags
   // `tabs` by one render (the effect above fixes it on the next pass).
