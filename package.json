@@ -10,8 +10,7 @@
     "type-check": "tsc --noEmit",
     "e2e": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts",
     "e2e:headed": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts --headed",
-    "e2e:ui": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts --ui",
-    "postinstall": "node scripts/copy-mathlive-fonts.mjs"
+    "e2e:ui": "bddgen --config=tests/e2e/playwright.config.ts && playwright test --config=tests/e2e/playwright.config.ts --ui"
   },
   "dependencies": {
     "@emotion/cache": "^11.13.5",
@@ -33,7 +32,6 @@
     "dayjs": "^1.11.13",
     "framer-motion": "^11.15.0",
     "jose": "^6.2.3",
-    "mathlive": "^0.109.2",
     "next": "^16.2.4",
     "next-auth": "^4.24.11",
     "notistack": "^3.0.2",
