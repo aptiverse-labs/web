@@ -11,6 +11,7 @@ import Button from "@mui/material/Button";
 import Skeleton from "@mui/material/Skeleton";
 import AddIcon from "@mui/icons-material/AddOutlined";
 import CloseIcon from "@mui/icons-material/CloseOutlined";
+import EditNoteIcon from "@mui/icons-material/EditNoteOutlined";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Stack-of-steps editor for showing maths working. Each step has a
@@ -166,6 +167,15 @@ function StepCard({
   onRemove: () => void;
   canRemove: boolean;
 }) {
+  // Note input is hidden by default — students often want to dump
+  // equations only and not have to explain each one. We surface a
+  // small "+ Add note" affordance below the math when it's empty;
+  // once content is in there, the input stays visible.
+  const [showNote, setShowNote] = useState(!!step.note);
+  useEffect(() => {
+    if (step.note) setShowNote(true);
+  }, [step.note]);
+
   return (
     <Box
       sx={{
@@ -204,14 +214,18 @@ function StepCard({
         )}
       </Stack>
 
-      <TextField
-        fullWidth
-        size="small"
-        placeholder="What are you doing in this step? (e.g. Differentiate both sides)"
-        value={step.note}
-        onChange={(e) => onChangeNote(e.target.value)}
-        sx={{ mb: 1 }}
-      />
+      {showNote && (
+        <TextField
+          fullWidth
+          size="small"
+          autoFocus={!step.note}
+          placeholder="Optional note (e.g. Differentiate both sides)"
+          value={step.note}
+          onChange={(e) => onChangeNote(e.target.value)}
+          onBlur={() => { if (!step.note.trim()) setShowNote(false); }}
+          sx={{ mb: 1 }}
+        />
+      )}
 
       <MathField
         value={step.latex}
@@ -219,6 +233,24 @@ function StepCard({
         placeholder="Type maths here…"
         ariaLabel={`Step ${index + 1} maths`}
       />
+
+      {!showNote && (
+        <Button
+          onClick={() => setShowNote(true)}
+          startIcon={<EditNoteIcon fontSize="small" />}
+          size="small"
+          variant="text"
+          sx={{
+            mt: 1,
+            color: "text.secondary",
+            fontWeight: 500,
+            textTransform: "none",
+            "&:hover": { color: "primary.main", backgroundColor: "transparent" },
+          }}
+        >
+          Add note
+        </Button>
+      )}
     </Box>
   );
 }

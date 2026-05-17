@@ -43,6 +43,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TasksEditor } from "@/components/workspace/TasksEditor";
 import { StepWorkingEditor } from "@/components/workspace/StepWorkingEditor";
+import { MathKeyboardStyles } from "@/components/workspace/MathKeyboardStyles";
 import {
   useAssessments,
   useSubjects,
@@ -403,6 +404,7 @@ export default function WorkspacePage() {
         </Box>
       </Box>
 
+      <MathKeyboardStyles />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
       <Drawer
