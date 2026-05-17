@@ -308,6 +308,22 @@ function MathLine({
       const field = document.createElement("math-field") as MathFieldEl;
       field.setAttribute("math-virtual-keyboard-policy", "off");
       field.setAttribute("smart-mode", "true");
+      // Belt-and-suspenders: clear MathLive's built-in menu items and
+      // disable the LaTeX-command popover. Our toolbar covers every
+      // structure a student needs; MathLive's own context menu and
+      // backslash-completion add nothing and confuse the surface.
+      // Wrapped in try/catch because the property names + their
+      // presence change across MathLive versions.
+      try {
+        (field as unknown as { menuItems?: unknown[] }).menuItems = [];
+      } catch {
+        // ignore
+      }
+      try {
+        (field as unknown as { popoverPolicy?: string }).popoverPolicy = "off";
+      } catch {
+        // ignore
+      }
       field.value = value;
       lastEmittedRef.current = value;
 
@@ -430,6 +446,14 @@ function MathLine({
                 outline: "none",
               },
             },
+            // MathLive ships its own keyboard-toggle button and a menu
+            // toggle (Insert Matrix / Mode / Font / Cut / Paste …) inside
+            // each math-field. We have our own toolbar, our own remove
+            // affordance, and the virtual keyboard is off — so all of
+            // MathLive's chrome is dead weight. The buttons live in the
+            // element's shadow DOM and are exposed as ::part() handles.
+            "& math-field::part(virtual-keyboard-toggle)": { display: "none !important" },
+            "& math-field::part(menu-toggle)":             { display: "none !important" },
           })}
         />
       </Box>
