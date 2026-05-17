@@ -19,6 +19,8 @@ import {
   type ClassRecord,
   type Notification,
   type DiaryEntry,
+  type WellbeingSummary,
+  type MoodPoint,
   type Reward,
   type Career,
   type StudyGroup,
@@ -178,6 +180,8 @@ export const queryKeys = {
       ? (["school-enquiries"] as const)
       : (["school-enquiries", contacted] as const),
   plans: () => ["entitlements", "plans"] as const,
+  wellbeingSummary: () => ["wellbeing", "summary"] as const,
+  moodTrend: (days: number) => ["wellbeing", "mood-trend", days] as const,
 };
 
 export const useSubjects = () =>
@@ -455,6 +459,26 @@ export const useCounsellors = () =>
   useQuery<Counsellor[]>({
     queryKey: queryKeys.counsellors(),
     queryFn: () => apiClient.get<Counsellor[]>("/api/wellbeing/counsellors"),
+  });
+
+// Wellbeing landing reads its top-row stats from this endpoint. The API
+// currently returns zeroes for everyone — the page treats "moodAvg7d
+// === 0 && streak === 0" as "no check-ins yet" and shows the first-run
+// CTA instead of fake numbers.
+export const useWellbeingSummary = () =>
+  useQuery<WellbeingSummary>({
+    queryKey: queryKeys.wellbeingSummary(),
+    queryFn: () => apiClient.get<WellbeingSummary>("/api/wellbeing/summary"),
+    staleTime: 60_000,
+  });
+
+// 14 days by default — the mood chart's x-axis. Returns [] for accounts
+// with no check-ins; the chart degrades to its empty state.
+export const useMoodTrend = (days = 14) =>
+  useQuery<MoodPoint[]>({
+    queryKey: queryKeys.moodTrend(days),
+    queryFn: () => apiClient.get<MoodPoint[]>(`/api/wellbeing/mood-trend?days=${days}`),
+    staleTime: 60_000,
   });
 
 export const useRewards = () =>

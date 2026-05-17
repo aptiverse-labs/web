@@ -734,6 +734,23 @@ export type DiaryEntry = {
   tags: string[];
 };
 
+// Snapshot for the Wellbeing landing — read from /api/wellbeing/summary.
+// All fields are zero / "none" for a brand-new account; the UI checks
+// hasData() and renders the empty-state CTA when nothing has been logged.
+export type WellbeingSummary = {
+  moodAvg7d: number;          // 0 when no check-ins; 1.0–5.0 otherwise
+  checkinStreakDays: number;
+  stressSignal: "none" | "low" | "moderate" | "high";
+  sleepHours: number;         // average per night over the last 7 days
+};
+
+// One day of the mood trend chart. The API returns an empty array for
+// users with no check-ins; the chart degrades to its empty state.
+export type MoodPoint = {
+  date: string;   // ISO date
+  mood: number;   // 1.0–5.0
+};
+
 export const DIARY_ENTRIES: DiaryEntry[] = [
   {
     id: "d1",
