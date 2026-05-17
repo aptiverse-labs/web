@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -19,7 +20,6 @@ import Link from "next/link";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { motion } from "framer-motion";
-import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { brand } from "@/theme/palette";
 import {
@@ -37,6 +37,23 @@ import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CloudOffOutlinedIcon from "@mui/icons-material/CloudOffOutlined";
 
 dayjs.extend(relativeTime);
+
+// Lazy-load the chart and, transitively, @mui/x-charts (~100-150kb
+// gzipped). The Mastery card sits below the canonical-fold on mobile,
+// and the matching Skeleton in the data-loading branch already
+// reserves the same 240px height, so the chunk swap-in is zero-CLS.
+// SSR is off because the underlying MUI X library renders to a real
+// SVG that wants the document/measurements at runtime.
+const LineChart = dynamic(
+  () =>
+    import("@/components/common/AptiverseLineChart").then(
+      (m) => m.AptiverseLineChart,
+    ),
+  {
+    ssr: false,
+    loading: () => <Skeleton variant="rounded" height={240} />,
+  },
+);
 
 // Hidden hello for the matric (or curious dev) who hits F12. Fires
 // once per session, never on subsequent dashboard mounts. Specific to
