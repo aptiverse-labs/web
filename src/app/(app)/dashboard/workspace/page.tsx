@@ -38,28 +38,59 @@ import ChecklistIcon from "@mui/icons-material/ChecklistOutlined";
 import ViewColumnIcon from "@mui/icons-material/ViewColumnOutlined";
 import ViewStreamIcon from "@mui/icons-material/ViewStreamOutlined";
 import KeyboardIcon from "@mui/icons-material/KeyboardOutlined";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TasksEditor } from "@/components/workspace/TasksEditor";
-import { useAssessments, useSubjects, useUpdateAssessment } from "@/lib/api/queries";
-import type { Assessment, Subject } from "@/lib/mockData";
+import {
+  useAssessments,
+  useSubjects,
+  useUpdateAssessment,
+  usePracticeTests,
+} from "@/lib/api/queries";
+import type { Assessment, AssessmentType, Subject, PracticeTest } from "@/lib/mockData";
 import { useWorkspaceDraft, type AutosaveState } from "@/lib/hooks/useWorkspaceDraft";
 import { useAiHelp, type AiHelpMessage } from "@/lib/hooks/useAiHelp";
 import Link from "next/link";
 import dayjs from "dayjs";
 
-const TABS = ["Notes", "Essay"] as const;
-type TabKey = (typeof TABS)[number];
+// ─── Tab model — adapts to assessment type ────────────────────────────
+// The workspace's centre column is the student's primary surface; it has
+// to fit what they're actually doing. Essay-style SBAs need a long-form
+// draft + research notes. Test/exam SBAs need practice and rough work,
+// not an essay editor that doesn't apply. Investigations and practicals
+// fall in between — notes plus a working area for observations / data.
 
-// Editor view mode. Tabbed shows one panel at a time; split renders
-// Notes + Essay side-by-side in the center column. Split mode is
-// desktop-only — the toggle hides on narrow screens.
+type TabKey = "notes" | "draft" | "working" | "practice";
+
+const TAB_LABELS: Record<TabKey, string> = {
+  notes:    "Notes",
+  draft:    "Draft",
+  working:  "Working",
+  practice: "Practice",
+};
+
+function tabsForType(type: AssessmentType): TabKey[] {
+  switch (type) {
+    case "essay":
+    case "oral":
+      return ["notes", "draft"];
+    case "test":
+    case "exam":
+      return ["practice", "working"];
+    case "investigation":
+    case "practical":
+    case "project":
+      return ["notes", "working"];
+    default:
+      return ["notes"];
+  }
+}
+
 type ViewMode = "tabbed" | "split";
 
 const AI_TUTOR_INPUT_ID = "workspace-ai-tutor-input";
 
-// Reads the current platform so we render the right modifier glyph
-// on the shortcut cheatsheet. macOS gets ⌘, everyone else gets Ctrl.
 function platformModifier(): { key: "metaKey" | "ctrlKey"; label: string } {
   if (typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform)) {
     return { key: "metaKey", label: "⌘" };
@@ -67,14 +98,13 @@ function platformModifier(): { key: "metaKey" | "ctrlKey"; label: string } {
   return { key: "ctrlKey", label: "Ctrl" };
 }
 
-// Returns true if the event originated from an editable element — used
-// to suppress single-letter shortcuts like "?" while the user is typing
-// in an input, textarea, or contenteditable.
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   const tag = target.tagName;
   return tag === "INPUT" || tag === "TEXTAREA" || target.isContentEditable;
 }
+
+// ──────────────────────────────────────────────────────────────────────
 
 export default function WorkspacePage() {
   const theme = useTheme();
@@ -83,8 +113,6 @@ export default function WorkspacePage() {
   const assessmentsQuery = useAssessments();
   const subjectsQuery = useSubjects();
 
-  // Pick the soonest-due, not-yet-graded SBA by default. Falls back to
-  // the first available; null when the user has none.
   const activeAssessments = useMemo<Assessment[]>(
     () =>
       (assessmentsQuery.data ?? [])
@@ -104,21 +132,33 @@ export default function WorkspacePage() {
     (s) => s.id === activeAssessment?.subjectId,
   );
 
-  const [tab, setTab] = useState<TabKey>("Notes");
+  // Tabs for the active assessment's type. Reset to the first tab when
+  // the assessment changes — keeps the user from sitting on a "Draft"
+  // tab that disappeared after they switched to a Maths test.
+  const tabs = activeAssessment ? tabsForType(activeAssessment.type) : ["notes" as TabKey];
+  const [tab, setTab] = useState<TabKey>(tabs[0]);
+  useEffect(() => {
+    if (!tabs.includes(tab)) setTab(tabs[0]);
+  }, [tabs, tab]);
+
   const [viewMode, setViewMode] = useState<ViewMode>("tabbed");
   const [aiOpen, setAiOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
-  // Keyboard shortcuts. Each handler is a no-op when the user is typing
-  // into an editable element (so "?" inside the essay doesn't pop the
-  // cheatsheet). Modifier-prefixed shortcuts run from anywhere.
+  // Split view only makes sense with at least two tabs AND on desktop.
+  const splitEligible = isDesktop && tabs.length >= 2;
+  useEffect(() => {
+    if (!splitEligible && viewMode === "split") setViewMode("tabbed");
+  }, [splitEligible, viewMode]);
+
+  // Keyboard shortcuts. The mapping adapts to the available tabs:
+  // ⌘1 = first tab, ⌘2 = second tab (if present).
   useEffect(() => {
     const mod = platformModifier();
     const onKey = (e: KeyboardEvent) => {
       const editing = isEditableTarget(e.target);
 
-      // ? — open the shortcut cheatsheet. Only when not typing.
       if (!editing && e.key === "?" && !e[mod.key] && !e.altKey) {
         e.preventDefault();
         setShortcutsOpen(true);
@@ -127,39 +167,32 @@ export default function WorkspacePage() {
 
       if (!e[mod.key]) return;
 
-      // ⌘1 / ⌘2 — switch tabs.
-      if (e.key === "1") {
+      if (e.key === "1" && tabs[0]) {
         e.preventDefault();
         setViewMode("tabbed");
-        setTab("Notes");
+        setTab(tabs[0]);
         return;
       }
-      if (e.key === "2") {
+      if (e.key === "2" && tabs[1]) {
         e.preventDefault();
         setViewMode("tabbed");
-        setTab("Essay");
+        setTab(tabs[1]);
         return;
       }
-
-      // ⌘\ — toggle split view (desktop-only by design; on narrow
-      // screens it falls back to tabbed mode anyway).
       if (e.key === "\\") {
         e.preventDefault();
-        if (isDesktop) setViewMode((v) => (v === "split" ? "tabbed" : "split"));
+        if (splitEligible) setViewMode((v) => (v === "split" ? "tabbed" : "split"));
         return;
       }
-
-      // ⌘K — focus the AI tutor input. On mobile, open the drawer first.
       if (e.key.toLowerCase() === "k") {
         e.preventDefault();
         if (!isDesktop) setAiOpen(true);
-        // setTimeout 0 lets the drawer mount before we focus.
         setTimeout(() => document.getElementById(AI_TUTOR_INPUT_ID)?.focus(), 0);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isDesktop]);
+  }, [isDesktop, splitEligible, tabs]);
 
   if (assessmentsQuery.isLoading || subjectsQuery.isLoading) {
     return (
@@ -175,7 +208,7 @@ export default function WorkspacePage() {
       <>
         <PageHeader
           title="Workspace"
-          description="Plan, write, and ask. Autosave on."
+          description="Plan, practice, write. Autosave on."
           breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Workspace" }]}
         />
         <Card>
@@ -183,7 +216,7 @@ export default function WorkspacePage() {
             <EmptyState
               icon={<ChecklistIcon />}
               title="Nothing to work on yet"
-              description="Log an SBA — a test, essay, investigation, project — and the workspace will open with it as the active task."
+              description="Log an SBA — a test, essay, investigation, project — and the workspace will open with the right tools for it."
               action={
                 <Button component={Link} href="/dashboard/assessments/new" variant="contained">
                   Add an assessment
@@ -196,35 +229,70 @@ export default function WorkspacePage() {
     );
   }
 
+  const editorSlots = (
+    <>
+      {tab === "notes"    && <NotesPanel    assessmentId={activeId} />}
+      {tab === "draft"    && <DraftPanel    assessmentId={activeId} draftTitle={activeAssessment.title} />}
+      {tab === "working"  && <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />}
+      {tab === "practice" && <PracticePanel assessment={activeAssessment} subject={subject} />}
+    </>
+  );
+
+  const splitSlots = tabs.length >= 2 && (
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        "& > :first-of-type": { borderRight: 1, borderColor: "divider" },
+      }}
+    >
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        <PaneHeader label={TAB_LABELS[tabs[0]]} />
+        <PanelByKey
+          tabKey={tabs[0]}
+          activeId={activeId}
+          assessment={activeAssessment}
+          subject={subject}
+        />
+      </Box>
+      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+        <PaneHeader label={TAB_LABELS[tabs[1]]} />
+        <PanelByKey
+          tabKey={tabs[1]}
+          activeId={activeId}
+          assessment={activeAssessment}
+          subject={subject}
+        />
+      </Box>
+    </Box>
+  );
+
   return (
     <>
       <PageHeader
         title="Workspace"
-        description="Plan, write, and ask. Autosave on."
+        description="Plan, practice, write. Autosave on."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Workspace" }]}
         actions={
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            <TextField
-              select
-              size="small"
-              value={activeId ?? ""}
-              onChange={(e) => setActiveId(e.target.value)}
-              sx={{ minWidth: { xs: "100%", sm: 280 } }}
-            >
-              {activeAssessments.map((a) => {
-                const subj = (subjectsQuery.data ?? []).find((s) => s.id === a.subjectId);
-                return (
-                  <MenuItem key={a.id} value={a.id}>
-                    {subj?.name ?? a.subjectId} · {a.title}
-                  </MenuItem>
-                );
-              })}
-            </TextField>
-          </Stack>
+          <TextField
+            select
+            size="small"
+            value={activeId ?? ""}
+            onChange={(e) => setActiveId(e.target.value)}
+            sx={{ minWidth: { xs: "100%", sm: 280 } }}
+          >
+            {activeAssessments.map((a) => {
+              const subj = (subjectsQuery.data ?? []).find((s) => s.id === a.subjectId);
+              return (
+                <MenuItem key={a.id} value={a.id}>
+                  {subj?.name ?? a.subjectId} · {a.title}
+                </MenuItem>
+              );
+            })}
+          </TextField>
         }
       />
 
-      {/* Mobile-only quick-open buttons for the rails. */}
       {!isDesktop && (
         <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
           <Button
@@ -252,43 +320,42 @@ export default function WorkspacePage() {
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "1fr", md: "300px 1fr 340px" },
-          gap: 3,
+          gap: { xs: 2, md: 3 },
           alignItems: "start",
         }}
       >
-        {/* Left rail — hidden on mobile (lives in the drawer) */}
         <Box sx={{ display: { xs: "none", md: "block" } }}>
           <LeftRail assessment={activeAssessment} subject={subject} />
         </Box>
 
-        {/* Editor */}
-        <Card sx={{ minHeight: { xs: 480, md: 620 } }}>
+        <Card sx={{ minHeight: { xs: 420, md: 620 } }}>
           <CardContent sx={{ p: 0, pb: "0 !important" }}>
             <Stack
               direction="row"
               alignItems="center"
               justifyContent="space-between"
-              sx={{ borderBottom: 1, borderColor: "divider", px: { xs: 1, sm: 2 }, pr: { xs: 1, sm: 1.5 } }}
+              sx={{ borderBottom: 1, borderColor: "divider", px: { xs: 1, sm: 2 }, pr: { xs: 0.5, sm: 1.5 } }}
             >
               {viewMode === "tabbed" ? (
                 <Tabs
                   value={tab}
-                  onChange={(_, v) => setTab(v)}
+                  onChange={(_, v: TabKey) => setTab(v)}
                   variant="scrollable"
                   scrollButtons={false}
+                  sx={{ minHeight: 44 }}
                 >
-                  {TABS.map((t) => (
-                    <Tab key={t} label={t} value={t} />
+                  {tabs.map((t) => (
+                    <Tab key={t} label={TAB_LABELS[t]} value={t} sx={{ minHeight: 44 }} />
                   ))}
                 </Tabs>
               ) : (
                 <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em", py: 1.5 }}>
-                  Notes + Essay
+                  {TAB_LABELS[tabs[0]]} + {TAB_LABELS[tabs[1]]}
                 </Typography>
               )}
 
               <Stack direction="row" spacing={0.5} alignItems="center">
-                {isDesktop && (
+                {splitEligible && (
                   <ToggleButtonGroup
                     value={viewMode}
                     exclusive
@@ -297,14 +364,10 @@ export default function WorkspacePage() {
                     sx={{ "& .MuiToggleButton-root": { px: 1, border: 0 } }}
                   >
                     <ToggleButton value="tabbed" aria-label="Tabbed view">
-                      <Tooltip title="Tabbed view">
-                        <ViewStreamIcon fontSize="small" />
-                      </Tooltip>
+                      <Tooltip title="Tabbed view"><ViewStreamIcon fontSize="small" /></Tooltip>
                     </ToggleButton>
-                    <ToggleButton value="split" aria-label="Split view (Notes + Essay)">
-                      <Tooltip title="Split view (Notes + Essay)">
-                        <ViewColumnIcon fontSize="small" />
-                      </Tooltip>
+                    <ToggleButton value="split" aria-label="Split view">
+                      <Tooltip title="Split view"><ViewColumnIcon fontSize="small" /></Tooltip>
                     </ToggleButton>
                   </ToggleButtonGroup>
                 )}
@@ -316,37 +379,14 @@ export default function WorkspacePage() {
               </Stack>
             </Stack>
 
-            {viewMode === "split" && isDesktop ? (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  // Subtle vertical divider between the two panes.
-                  "& > :first-of-type": {
-                    borderRight: 1,
-                    borderColor: "divider",
-                  },
-                }}
-              >
-                <Box sx={{ p: { xs: 2, sm: 3 } }}>
-                  <PaneHeader label="Notes" />
-                  <NotesPanel assessmentId={activeId} />
-                </Box>
-                <Box sx={{ p: { xs: 2, sm: 3 } }}>
-                  <PaneHeader label="Essay" />
-                  <EssayPanel assessmentId={activeId} essayTitle={activeAssessment.title} />
-                </Box>
-              </Box>
+            {viewMode === "split" && splitSlots ? (
+              splitSlots
             ) : (
-              <Box sx={{ p: { xs: 2, sm: 3 } }}>
-                {tab === "Notes" && <NotesPanel assessmentId={activeId} />}
-                {tab === "Essay" && <EssayPanel assessmentId={activeId} essayTitle={activeAssessment.title} />}
-              </Box>
+              <Box sx={{ p: { xs: 2, sm: 3 } }}>{editorSlots}</Box>
             )}
           </CardContent>
         </Card>
 
-        {/* Right rail */}
         <Box sx={{ display: { xs: "none", md: "block" } }}>
           <RightRail assessment={activeAssessment} subject={subject} />
         </Box>
@@ -354,12 +394,11 @@ export default function WorkspacePage() {
 
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
 
-      {/* Mobile drawers */}
       <Drawer
         anchor="left"
         open={!isDesktop && contextOpen}
         onClose={() => setContextOpen(false)}
-        PaperProps={{ sx: { width: { xs: "90vw", sm: 320 } } }}
+        PaperProps={{ sx: { width: { xs: "92vw", sm: 340 } } }}
       >
         <DrawerHeader title="Plan" onClose={() => setContextOpen(false)} />
         <Box sx={{ p: 2 }}>
@@ -381,6 +420,25 @@ export default function WorkspacePage() {
   );
 }
 
+function PanelByKey({
+  tabKey,
+  activeId,
+  assessment,
+  subject,
+}: {
+  tabKey: TabKey;
+  activeId: string | null;
+  assessment: Assessment;
+  subject?: Subject;
+}) {
+  switch (tabKey) {
+    case "notes":    return <NotesPanel    assessmentId={activeId} />;
+    case "draft":    return <DraftPanel    assessmentId={activeId} draftTitle={assessment.title} />;
+    case "working":  return <WorkingPanel  assessmentId={activeId} subjectName={subject?.name} />;
+    case "practice": return <PracticePanel assessment={assessment} subject={subject} />;
+  }
+}
+
 function PaneHeader({ label }: { label: string }) {
   return (
     <Typography
@@ -396,8 +454,8 @@ function PaneHeader({ label }: { label: string }) {
 function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const mod = platformModifier();
   const rows: { keys: string[]; label: string }[] = [
-    { keys: [mod.label, "1"],  label: "Open Notes" },
-    { keys: [mod.label, "2"],  label: "Open Essay" },
+    { keys: [mod.label, "1"],  label: "Open first tab" },
+    { keys: [mod.label, "2"],  label: "Open second tab" },
     { keys: [mod.label, "\\"], label: "Toggle split view (desktop)" },
     { keys: [mod.label, "K"],  label: "Focus AI tutor input" },
     { keys: ["?"],             label: "Show this cheatsheet" },
@@ -405,9 +463,6 @@ function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () => void
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      {/* DialogTitle renders an <h2>; inner Typographys explicitly use
-          <div>/<span> so we don't nest headings inside it (invalid HTML
-          + React hydration error). The visual styling stays the same. */}
       <DialogTitle sx={{ pb: 1 }}>
         <Typography
           component="div"
@@ -474,6 +529,7 @@ function DrawerHeader({ title, onClose }: { title: string; onClose: () => void }
 // ============================================================
 // LEFT RAIL — active SBA · pomodoro · tasks (real)
 // ============================================================
+
 function LeftRail({ assessment, subject }: { assessment: Assessment; subject: Subject | undefined }) {
   const daysOut = dayjs(assessment.dueDate).diff(dayjs(), "day");
   const dueChip =
@@ -496,7 +552,7 @@ function LeftRail({ assessment, subject }: { assessment: Assessment; subject: Su
             {assessment.title}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {subject?.name ?? assessment.subjectId}
+            {subject?.name ?? assessment.subjectId} · {assessment.type}
           </Typography>
           <Stack direction="row" spacing={0.75} sx={{ mt: 1.5 }} flexWrap="wrap" useFlexGap>
             <Chip label={dueChip.label} size="small" color={dueChip.color} variant="outlined" />
@@ -505,7 +561,7 @@ function LeftRail({ assessment, subject }: { assessment: Assessment; subject: Su
         </CardContent>
       </Card>
 
-      <FocusTimer />
+      <FocusTimer assessmentId={assessment.id} />
 
       <Card>
         <CardContent sx={{ p: 2.5 }}>
@@ -519,42 +575,94 @@ function LeftRail({ assessment, subject }: { assessment: Assessment; subject: Su
               </Typography>
             </Box>
           </Stack>
-          <TasksEditor
-            assessmentId={assessment.id}
-            tasks={assessment.tasks ?? []}
-            compact
-          />
+          <TasksEditor assessmentId={assessment.id} tasks={assessment.tasks ?? []} compact />
         </CardContent>
       </Card>
     </Stack>
   );
 }
 
-function FocusTimer() {
-  const [secs, setSecs] = useState(25 * 60);
-  const [running, setRunning] = useState(false);
-  const ref = useRef<ReturnType<typeof setInterval> | null>(null);
+// ─── Focus timer — Pomodoro that survives a refresh ───────────────────
+//
+// State is persisted to localStorage keyed by the active SBA id. We store
+// "what was the target end time when the timer was started" rather than
+// the elapsed seconds, so the displayed countdown stays in sync after a
+// page reload regardless of how long the user was away.
 
+const POMODORO_SECONDS = 25 * 60;
+const POMODORO_STORAGE_PREFIX = "aptiverse.pomodoro.";
+
+type PomodoroState =
+  | { kind: "idle";    remaining: number }
+  | { kind: "running"; endsAt: number }
+  | { kind: "paused";  remaining: number };
+
+function FocusTimer({ assessmentId }: { assessmentId: string }) {
+  const storageKey = `${POMODORO_STORAGE_PREFIX}${assessmentId}`;
+  const [state, setState] = useState<PomodoroState>({ kind: "idle", remaining: POMODORO_SECONDS });
+  const [now, setNow] = useState(() => Date.now());
+
+  // Restore from localStorage on mount + on assessment switch.
   useEffect(() => {
-    if (running) {
-      ref.current = setInterval(() => setSecs((s) => Math.max(0, s - 1)), 1000);
-    } else if (ref.current) {
-      clearInterval(ref.current);
+    try {
+      const raw = window.localStorage.getItem(storageKey);
+      if (!raw) {
+        setState({ kind: "idle", remaining: POMODORO_SECONDS });
+        return;
+      }
+      const parsed = JSON.parse(raw) as PomodoroState;
+      if (parsed.kind === "running") {
+        const left = Math.max(0, Math.ceil((parsed.endsAt - Date.now()) / 1000));
+        setState(left > 0 ? parsed : { kind: "idle", remaining: POMODORO_SECONDS });
+      } else {
+        setState(parsed);
+      }
+    } catch {
+      setState({ kind: "idle", remaining: POMODORO_SECONDS });
     }
-    return () => {
-      if (ref.current) clearInterval(ref.current);
-    };
-  }, [running]);
+  }, [storageKey]);
 
-  // Auto-stop at zero so the timer doesn't sit at 00:00 with the
-  // animation still active.
+  // Persist on every state change.
   useEffect(() => {
-    if (secs === 0 && running) setRunning(false);
-  }, [secs, running]);
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(state));
+    } catch {
+      // localStorage can be disabled (private mode); refresh resets timer.
+    }
+  }, [state, storageKey]);
 
+  // Tick once a second only while running.
+  useEffect(() => {
+    if (state.kind !== "running") return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [state.kind]);
+
+  const secs = state.kind === "running"
+    ? Math.max(0, Math.ceil((state.endsAt - now) / 1000))
+    : state.remaining;
+  const done = secs === 0;
   const m = Math.floor(secs / 60);
   const s = secs % 60;
-  const pct = ((25 * 60 - secs) / (25 * 60)) * 100;
+  const pct = ((POMODORO_SECONDS - secs) / POMODORO_SECONDS) * 100;
+
+  // Auto-flip running → idle at zero so the label changes naturally.
+  useEffect(() => {
+    if (state.kind === "running" && done) {
+      setState({ kind: "idle", remaining: POMODORO_SECONDS });
+    }
+  }, [done, state.kind]);
+
+  const start = () => {
+    const remaining = state.kind === "paused" ? state.remaining : POMODORO_SECONDS;
+    setState({ kind: "running", endsAt: Date.now() + remaining * 1000 });
+  };
+  const pause = () => {
+    if (state.kind === "running") {
+      setState({ kind: "paused", remaining: secs });
+    }
+  };
+  const reset = () => setState({ kind: "idle", remaining: POMODORO_SECONDS });
 
   return (
     <Card>
@@ -580,26 +688,20 @@ function FocusTimer() {
           variant="determinate"
           value={pct}
           sx={{ mb: 2, height: 4, borderRadius: 999 }}
-          color={secs === 0 ? "success" : "primary"}
+          color={done ? "success" : "primary"}
         />
         <Stack direction="row" spacing={1}>
           <Button
-            startIcon={running ? <PauseIcon /> : <PlayArrowIcon />}
+            startIcon={state.kind === "running" ? <PauseIcon /> : <PlayArrowIcon />}
             variant="contained"
             fullWidth
-            onClick={() => setRunning((r) => !r)}
-            disabled={secs === 0}
+            onClick={state.kind === "running" ? pause : start}
+            disabled={done && state.kind !== "running"}
           >
-            {running ? "Pause" : secs === 25 * 60 ? "Start" : "Resume"}
+            {state.kind === "running" ? "Pause" : state.kind === "paused" ? "Resume" : "Start"}
           </Button>
           <Tooltip title="Reset">
-            <IconButton
-              onClick={() => {
-                setRunning(false);
-                setSecs(25 * 60);
-              }}
-              aria-label="Reset timer"
-            >
+            <IconButton onClick={reset} aria-label="Reset timer">
               <RestartAltIcon />
             </IconButton>
           </Tooltip>
@@ -610,54 +712,163 @@ function FocusTimer() {
 }
 
 // ============================================================
-// EDITOR PANELS — wired to useWorkspaceDraft for autosave
+// EDITOR PANELS
 // ============================================================
+
 function AutosaveBadge({ state }: { state: AutosaveState }) {
   let label: string;
   let color: "default" | "success" | "warning" | "error" = "default";
   if (state.status === "saving") {
-    label = "Saving…";
-    color = "warning";
+    label = "Saving…"; color = "warning";
   } else if (state.status === "saved" && state.lastSavedAt) {
-    label = `Saved ${dayjs(state.lastSavedAt).format("HH:mm")}`;
-    color = "success";
+    label = `Saved ${dayjs(state.lastSavedAt).format("HH:mm")}`; color = "success";
   } else if (state.status === "dirty") {
-    label = "Unsaved";
-    color = "warning";
+    label = "Unsaved"; color = "warning";
   } else if (state.status === "error") {
-    label = "Save failed";
-    color = "error";
+    label = "Save failed"; color = "error";
   } else {
     label = "Idle";
   }
   return <Chip label={label} size="small" color={color === "default" ? undefined : color} variant="outlined" />;
 }
 
+// Plain-text notes — works for any subject.
 function NotesPanel({ assessmentId }: { assessmentId: string | null }) {
   const draft = useWorkspaceDraft(assessmentId, "notes");
   const [value, setValue] = useState(draft.initialContent);
-  useEffect(() => {
-    setValue(draft.initialContent);
-  }, [draft.initialContent]);
+  useEffect(() => { setValue(draft.initialContent); }, [draft.initialContent]);
 
   return (
     <Stack spacing={1.5}>
       <TextField
         fullWidth
         multiline
-        minRows={18}
+        minRows={14}
         placeholder="Start typing your notes… autosave is on."
         value={value}
-        onChange={(e) => {
-          setValue(e.target.value);
-          draft.queueSave(e.target.value);
+        onChange={(e) => { setValue(e.target.value); draft.queueSave(e.target.value); }}
+        sx={{
+          "& .MuiOutlinedInput-root": { bgcolor: "transparent", border: 0 },
+          "& fieldset": { border: 0 },
         }}
+      />
+      <Stack direction="row" justifyContent="flex-end">
+        <AutosaveBadge state={draft.state} />
+      </Stack>
+    </Stack>
+  );
+}
+
+// Long-form draft — only shown for essay/oral assessments.
+function DraftPanel({ assessmentId, draftTitle }: { assessmentId: string | null; draftTitle: string }) {
+  const draft = useWorkspaceDraft(assessmentId, "essay");
+  const [value, setValue] = useState(draft.initialContent);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({
+    open: false, msg: "", severity: "success",
+  });
+  const updateAssessment = useUpdateAssessment();
+
+  useEffect(() => { setValue(draft.initialContent); }, [draft.initialContent]);
+
+  const trimmed = value.trim();
+  const wordCount = trimmed ? trimmed.split(/\s+/).length : 0;
+  const sentenceCount = trimmed ? (trimmed.match(/[.!?]+(\s|$)/g) ?? []).length || 1 : 0;
+  const readMinutes = wordCount === 0 ? 0 : Math.max(1, Math.round(wordCount / 200));
+
+  const submit = async () => {
+    if (!assessmentId) return;
+    try {
+      draft.queueSave(value);
+      await updateAssessment.mutateAsync({ id: assessmentId, status: "submitted" });
+      setSnackbar({ open: true, msg: "Draft submitted.", severity: "success" });
+    } catch (err) {
+      setSnackbar({ open: true, msg: err instanceof Error ? err.message : "Couldn't submit.", severity: "error" });
+    }
+  };
+
+  return (
+    <Stack spacing={2}>
+      <TextField fullWidth label="Title" value={draftTitle} disabled />
+      <TextField
+        fullWidth
+        multiline
+        minRows={14}
+        placeholder="Open with a hook your reader can't ignore…"
+        value={value}
+        onChange={(e) => { setValue(e.target.value); draft.queueSave(e.target.value); }}
+        sx={{ "& textarea": { fontSize: "1rem", lineHeight: 1.7 } }}
+      />
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1.5}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "center" }}
+      >
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+          <Typography variant="caption" color="text.secondary">{wordCount} {wordCount === 1 ? "word" : "words"}</Typography>
+          {sentenceCount > 0 && (
+            <>
+              <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
+              <Typography variant="caption" color="text.secondary">{sentenceCount} {sentenceCount === 1 ? "sentence" : "sentences"}</Typography>
+              <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
+              <Typography variant="caption" color="text.secondary">~{readMinutes} min read</Typography>
+            </>
+          )}
+          <AutosaveBadge state={draft.state} />
+        </Stack>
+        <Button variant="contained" onClick={submit} disabled={!assessmentId || updateAssessment.isPending || !trimmed}>
+          {updateAssessment.isPending ? "Submitting…" : "Submit draft"}
+        </Button>
+      </Stack>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar((s) => ({ ...s, open: false }))}>
+          {snackbar.msg}
+        </Alert>
+      </Snackbar>
+    </Stack>
+  );
+}
+
+// Rough work — for maths/physics steps, lab observations, project sketches.
+// Same autosave channel as the legacy "scratchpad" panel so old drafts
+// carry over. Mono font because students typing equations and tables want
+// columns to line up.
+function WorkingPanel({
+  assessmentId,
+  subjectName,
+}: {
+  assessmentId: string | null;
+  subjectName?: string;
+}) {
+  const draft = useWorkspaceDraft(assessmentId, "scratchpad");
+  const [value, setValue] = useState(draft.initialContent);
+  useEffect(() => { setValue(draft.initialContent); }, [draft.initialContent]);
+
+  return (
+    <Stack spacing={1.5}>
+      <TextField
+        fullWidth
+        multiline
+        minRows={14}
+        placeholder={
+          subjectName
+            ? `${subjectName} working — show your steps, jot equations, line up columns…`
+            : "Show your working — steps, equations, sketches as plain text…"
+        }
+        value={value}
+        onChange={(e) => { setValue(e.target.value); draft.queueSave(e.target.value); }}
         sx={{
           "& .MuiOutlinedInput-root": { bgcolor: "transparent", border: 0 },
           "& fieldset": { border: 0 },
           "& textarea": {
             fontFamily: "ui-monospace, 'SF Mono', Menlo, monospace",
             fontSize: "0.95rem",
+            lineHeight: 1.6,
           },
         }}
       />
@@ -668,122 +879,143 @@ function NotesPanel({ assessmentId }: { assessmentId: string | null }) {
   );
 }
 
-function EssayPanel({ assessmentId, essayTitle }: { assessmentId: string | null; essayTitle: string }) {
-  const draft = useWorkspaceDraft(assessmentId, "essay");
-  const [value, setValue] = useState(draft.initialContent);
-  const [snackbar, setSnackbar] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({
-    open: false,
-    msg: "",
-    severity: "success",
-  });
-  const updateAssessment = useUpdateAssessment();
+// Practice tab — shown for tests/exams. Lists real practice tests
+// filtered to the SBA's subject, with one-click "Start" jumping to the
+// existing /dashboard/practice/[id] route.
+function PracticePanel({
+  assessment,
+  subject,
+}: {
+  assessment: Assessment;
+  subject?: Subject;
+}) {
+  const query = usePracticeTests();
+  const all = query.data ?? [];
+  const forSubject = useMemo(
+    () => all.filter((t) => t.subjectId === assessment.subjectId),
+    [all, assessment.subjectId],
+  );
 
-  useEffect(() => {
-    setValue(draft.initialContent);
-  }, [draft.initialContent]);
+  if (query.isLoading) {
+    return (
+      <Stack spacing={1.5}>
+        <Skeleton variant="rounded" height={88} />
+        <Skeleton variant="rounded" height={88} />
+        <Skeleton variant="rounded" height={88} />
+      </Stack>
+    );
+  }
 
-  // Reading stats. 200 wpm is the standard "average adult silent
-  // reading" benchmark — close enough for a student to judge whether
-  // their essay's on length.
-  const trimmed = value.trim();
-  const wordCount = trimmed ? trimmed.split(/\s+/).length : 0;
-  const sentenceCount = trimmed
-    ? (trimmed.match(/[.!?]+(\s|$)/g) ?? []).length || 1
-    : 0;
-  const readMinutes = wordCount === 0 ? 0 : Math.max(1, Math.round(wordCount / 200));
-
-  const submit = async () => {
-    if (!assessmentId) return;
-    try {
-      draft.queueSave(value);
-      await updateAssessment.mutateAsync({ id: assessmentId, status: "submitted" });
-      setSnackbar({ open: true, msg: "Draft submitted. Saved + marked as submitted.", severity: "success" });
-    } catch (err) {
-      setSnackbar({
-        open: true,
-        msg: err instanceof Error ? err.message : "Couldn't submit draft.",
-        severity: "error",
-      });
-    }
-  };
+  if (forSubject.length === 0) {
+    return (
+      <Box sx={{ py: 5, textAlign: "center" }}>
+        <Box
+          sx={{
+            width: 44,
+            height: 44,
+            borderRadius: 1.5,
+            mx: "auto",
+            mb: 1.5,
+            display: "grid",
+            placeItems: "center",
+            color: "primary.main",
+            bgcolor: (t) =>
+              t.palette.mode === "dark"
+                ? "rgba(116,181,174,0.12)"
+                : "rgba(15,105,99,0.08)",
+          }}
+        >
+          <ChecklistIcon fontSize="small" />
+        </Box>
+        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
+          No practice yet for {subject?.name ?? "this subject"}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 380, mx: "auto", mb: 2 }}>
+          Once we have aligned practice for {subject?.name ?? "your subject"}, you'll be able to start a timed run from here.
+        </Typography>
+        <Button component={Link} href="/dashboard/practice" variant="outlined" endIcon={<ArrowForwardIcon />}>
+          Browse all practice
+        </Button>
+      </Box>
+    );
+  }
 
   return (
-    <Stack spacing={2}>
-      <TextField fullWidth label="Title" value={essayTitle} disabled />
-      <TextField
-        fullWidth
-        multiline
-        minRows={16}
-        placeholder="Open with a hook your reader can't ignore…"
-        value={value}
-        onChange={(e) => {
-          setValue(e.target.value);
-          draft.queueSave(e.target.value);
-        }}
-        sx={{
-          "& textarea": { fontSize: "1rem", lineHeight: 1.7 },
-        }}
-      />
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        spacing={1.5}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
-      >
-        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
-          <Typography variant="caption" color="text.secondary">
-            {wordCount} {wordCount === 1 ? "word" : "words"}
-          </Typography>
-          {sentenceCount > 0 && (
-            <>
-              <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
-              <Typography variant="caption" color="text.secondary">
-                {sentenceCount} {sentenceCount === 1 ? "sentence" : "sentences"}
-              </Typography>
-              <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
-              <Typography variant="caption" color="text.secondary">
-                ~{readMinutes} min read
-              </Typography>
-            </>
-          )}
-          <AutosaveBadge state={draft.state} />
-        </Stack>
-        <Stack direction="row" spacing={1}>
-          <Button
-            variant="contained"
-            onClick={submit}
-            disabled={!assessmentId || updateAssessment.isPending || !value.trim()}
-          >
-            {updateAssessment.isPending ? "Submitting…" : "Submit draft"}
-          </Button>
-        </Stack>
-      </Stack>
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      >
-        <Alert
-          severity={snackbar.severity}
-          variant="filled"
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        >
-          {snackbar.msg}
-        </Alert>
-      </Snackbar>
+    <Stack spacing={1.5}>
+      <Typography variant="body2" color="text.secondary">
+        Practice for {subject?.name ?? "this subject"} — pick one to start a timed run.
+      </Typography>
+      {forSubject.map((p) => <PracticeRow key={p.id} test={p} />)}
     </Stack>
   );
 }
 
+function PracticeRow({ test }: { test: PracticeTest }) {
+  return (
+    <Box
+      sx={{
+        p: 2,
+        borderRadius: 1.5,
+        border: 1,
+        borderColor: "divider",
+        display: "flex",
+        gap: 2,
+        alignItems: "center",
+        transition: "border-color 150ms ease",
+        "&:hover": { borderColor: "text.secondary" },
+      }}
+    >
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600 }} noWrap>
+          {test.title}
+        </Typography>
+        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mt: 0.5, flexWrap: "wrap" }} useFlexGap>
+          <Typography variant="caption" color="text.secondary">
+            {test.questionCount} questions
+          </Typography>
+          <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
+          <Typography variant="caption" color="text.secondary">
+            {test.durationMinutes} min
+          </Typography>
+          <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
+          <Chip
+            label={test.difficulty}
+            size="small"
+            variant="outlined"
+            sx={{ textTransform: "capitalize" }}
+          />
+          {test.bestScore != null && (
+            <>
+              <Box sx={{ width: 3, height: 3, borderRadius: "50%", bgcolor: "text.disabled" }} />
+              <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>
+                Best {test.bestScore}%
+              </Typography>
+            </>
+          )}
+        </Stack>
+      </Box>
+      <Button
+        component={Link}
+        href={`/dashboard/practice/${test.id}`}
+        variant="contained"
+        size="small"
+        sx={{ flexShrink: 0 }}
+      >
+        Start
+      </Button>
+    </Box>
+  );
+}
+
 // ============================================================
-// RIGHT RAIL — AI tutor + rubric (honest empty when none attached)
+// RIGHT RAIL — AI tutor only (rubric moved to the assessment page —
+// it's a marking surface, not a "while working" surface)
 // ============================================================
+
 function RightRail({ assessment, subject }: { assessment: Assessment; subject: Subject | undefined }) {
   return (
     <Stack spacing={2.5} sx={{ position: { md: "sticky" }, top: { md: 88 } }}>
       <AiTutorChat assessment={assessment} subject={subject} />
-      <RubricCard rubric={assessment.rubric} />
     </Stack>
   );
 }
@@ -800,18 +1032,12 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, ask.isPending]);
 
   const send = () => {
     const text = input.trim();
     if (!text) return;
-    // One-shot system context on the first user turn so the bot knows
-    // what the user is working on. /api/ai/help only accepts
-    // user/assistant roles, so we prepend rather than send a separate
-    // system turn.
     const contextLine = `[Context: working on "${assessment.title}"${subject ? ` for ${subject.name}` : ""}, due ${dayjs(assessment.dueDate).format("DD MMM")}.]`;
     const userMessage: AiHelpMessage = {
       role: "user",
@@ -823,8 +1049,7 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
     ask.mutate(
       { messages: next },
       {
-        onSuccess: (data) =>
-          setMessages((m) => [...m, { role: "assistant", content: data.reply }]),
+        onSuccess: (data) => setMessages((m) => [...m, { role: "assistant", content: data.reply }]),
         onError: (err) =>
           setMessages((m) => [
             ...m,
@@ -834,7 +1059,7 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
                 err.status === 503
                   ? "The AI is unavailable right now. Try again in a moment."
                   : err.status === 402
-                    ? "You've used this month's Quick AI replies. Upgrade your plan or wait for next month."
+                    ? "You've used this month's quick AI replies. Upgrade your plan or wait for next month."
                     : "Something went wrong on my side. Try again in a moment.",
             },
           ]),
@@ -843,20 +1068,13 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
   };
 
   return (
-    <Card sx={{ height: { xs: 460, md: 540 }, display: "flex", flexDirection: "column" }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={1.5}
-        sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}
-      >
+    <Card sx={{ height: { xs: 420, md: 540 }, display: "flex", flexDirection: "column" }}>
+      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
         <Avatar sx={{ bgcolor: "primary.main", width: 32, height: 32 }}>
           <SmartToyIcon fontSize="small" sx={{ color: "primary.contrastText" }} />
         </Avatar>
         <Box sx={{ flex: 1 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-            AI tutor
-          </Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>AI tutor</Typography>
           <Typography variant="caption" color={ask.isPending ? "warning.main" : "success.main"}>
             {ask.isPending ? "Thinking…" : "Online"}
           </Typography>
@@ -877,39 +1095,13 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
                 color: m.role === "user" ? "primary.contrastText" : "text.primary",
               }}
             >
-              <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>
-                {m.content}
-              </Typography>
+              <Typography variant="body2" sx={{ whiteSpace: "pre-wrap" }}>{m.content}</Typography>
             </Box>
           ))}
           {ask.isPending && (
-            <Box
-              sx={{
-                alignSelf: "flex-start",
-                px: 1.5,
-                py: 1,
-                borderRadius: 2,
-                bgcolor: "action.hover",
-                display: "flex",
-                gap: 0.5,
-              }}
-            >
+            <Box sx={{ alignSelf: "flex-start", px: 1.5, py: 1, borderRadius: 2, bgcolor: "action.hover", display: "flex", gap: 0.5 }}>
               {[0, 1, 2].map((i) => (
-                <Box
-                  key={i}
-                  sx={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: "50%",
-                    bgcolor: "primary.main",
-                    animation: "blink 1.4s ease-in-out infinite",
-                    animationDelay: `${i * 0.15}s`,
-                    "@keyframes blink": {
-                      "0%, 80%, 100%": { opacity: 0.25 },
-                      "40%": { opacity: 1 },
-                    },
-                  }}
-                />
+                <Box key={i} sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "primary.main", animation: "blink 1.4s ease-in-out infinite", animationDelay: `${i * 0.15}s`, "@keyframes blink": { "0%, 80%, 100%": { opacity: 0.25 }, "40%": { opacity: 1 } } }} />
               ))}
             </Box>
           )}
@@ -933,62 +1125,11 @@ function AiTutorChat({ assessment, subject }: { assessment: Assessment; subject:
             disabled={ask.isPending}
             inputProps={{ id: AI_TUTOR_INPUT_ID }}
           />
-          <IconButton
-            color="primary"
-            onClick={send}
-            disabled={!input.trim() || ask.isPending}
-            aria-label="Send"
-          >
+          <IconButton color="primary" onClick={send} disabled={!input.trim() || ask.isPending} aria-label="Send">
             <SendIcon />
           </IconButton>
         </Stack>
       </Box>
-    </Card>
-  );
-}
-
-function RubricCard({ rubric }: { rubric: Assessment["rubric"] }) {
-  const hasRubric = Array.isArray(rubric) && rubric.length > 0;
-
-  return (
-    <Card>
-      <CardContent sx={{ p: 2.5 }}>
-        <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
-          Marking
-        </Typography>
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: hasRubric ? 1.5 : 1 }}>
-          Rubric
-        </Typography>
-        {hasRubric ? (
-          <Stack spacing={1.5}>
-            {rubric!.map((r) => (
-              <Box key={r.criterion}>
-                <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {r.criterion}
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                    {r.weight}%
-                  </Typography>
-                </Stack>
-                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
-                  {r.description}
-                </Typography>
-                <LinearProgress
-                  variant="determinate"
-                  value={r.weight}
-                  color="primary"
-                  sx={{ height: 4, borderRadius: 999 }}
-                />
-              </Box>
-            ))}
-          </Stack>
-        ) : (
-          <Typography variant="body2" color="text.secondary">
-            No rubric attached. When your teacher shares one, it'll appear here with criteria and weights.
-          </Typography>
-        )}
-      </CardContent>
     </Card>
   );
 }
