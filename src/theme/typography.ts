@@ -72,7 +72,9 @@ export const typography: TypographyVariantsOptions = {
     fontSize: "0.6875rem",
     fontWeight: 600,
     lineHeight: 1.5,
-    letterSpacing: "0.06em",
+    // 0.08em is what most call-sites had inlined as `sx={{ letterSpacing: "0.08em" }}`.
+    // Centralising here so surfaces don't have to override.
+    letterSpacing: "0.08em",
     textTransform: "uppercase",
   },
   button: {

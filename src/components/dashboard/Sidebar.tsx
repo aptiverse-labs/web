@@ -93,7 +93,7 @@ function SidebarContent({
           <Box key={s.heading} sx={{ mb: 1.5 }}>
             <Typography
               variant="overline"
-              sx={{ px: 1.5, color: "text.secondary", fontWeight: 600, letterSpacing: "0.06em" }}
+              sx={{ px: 1.5, color: "text.secondary" }}
             >
               {s.heading}
             </Typography>
