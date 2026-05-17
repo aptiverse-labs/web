@@ -113,6 +113,14 @@ export function MathEditor({ value, onChange }: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const fieldRef = useRef<MathFieldEl | null>(null);
   const onChangeRef = useRef(onChange);
+  // Last value we emitted via onChange. We use this to detect when
+  // the incoming `value` prop is just our own echo (parent updated
+  // state and re-rendered) vs. a genuinely external change (assessment
+  // switched, server normalised the LaTeX). Without this guard every
+  // keystroke would round-trip through state and we'd write the value
+  // back into the field mid-typing — re-parsing, re-rendering, jumping
+  // the cursor. Classic controlled-imperative editor pitfall.
+  const lastEmittedRef = useRef<string>(value);
   const [ready, setReady] = useState(false);
   const [moreEl, setMoreEl] = useState<HTMLElement | null>(null);
 
@@ -133,8 +141,13 @@ export function MathEditor({ value, onChange }: Props) {
       field.setAttribute("math-virtual-keyboard-policy", "off");
       field.setAttribute("smart-mode", "true");
       field.value = value;
+      lastEmittedRef.current = value;
 
-      const onInput = () => onChangeRef.current(field.value);
+      const onInput = () => {
+        const v = field.value;
+        lastEmittedRef.current = v;
+        onChangeRef.current(v);
+      };
       field.addEventListener("input", onInput);
 
       host.appendChild(field);
@@ -152,13 +165,24 @@ export function MathEditor({ value, onChange }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reflect external value changes back into the field, but only when
-  // they actually diverge — otherwise typing would fight a re-render
-  // every keystroke.
+  // Sync external value changes back into the field. Skip:
+  //   1. Our own echo (incoming value === last value we emitted)
+  //   2. While the field is focused (user is mid-typing; never disrupt)
+  // Together these stop the "characters get re-added" jitter while
+  // still picking up legitimate external changes (assessment switch,
+  // undo from elsewhere) when the field isn't focused.
   useEffect(() => {
     const f = fieldRef.current;
     if (!f) return;
-    if (f.value !== value) f.value = value;
+    if (value === lastEmittedRef.current) return;
+    if (typeof document !== "undefined") {
+      const active = document.activeElement;
+      if (active === f || f.contains(active as Node | null)) return;
+    }
+    if (f.value !== value) {
+      f.value = value;
+      lastEmittedRef.current = value;
+    }
   }, [value]);
 
   const insertTemplate = (tpl: Template) => {
