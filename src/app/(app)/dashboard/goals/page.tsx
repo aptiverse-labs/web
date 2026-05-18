@@ -296,14 +296,24 @@ function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
   const { enqueueSnackbar } = useSnackbar();
   const del = useDeleteGoal();
   const { confirm, dialog: confirmDialog } = useConfirm();
+  // verified -> achievement (Sacred-Amber; teacher-confirmed is the
+  // genuine earned moment). completed -> success (forest, "growing
+  // well", student self-marks complete). active -> primary. at_risk
+  // -> warning. info-blue (the old completed value) isn't a brand
+  // zone we use.
   const tone =
     goal.status === "at_risk"
       ? "warning"
       : goal.status === "verified"
-      ? "success"
+      ? "achievement"
       : goal.status === "completed"
-      ? "info"
+      ? "success"
       : "primary";
+  // MUI's LinearProgress doesn't accept "achievement" as a color
+  // (it's a custom palette key we augmented). Map achievement ->
+  // success for the bar since verified === 100% always anyway.
+  const barColor: "warning" | "success" | "primary" =
+    tone === "achievement" ? "success" : tone;
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -336,7 +346,7 @@ function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
         flexDirection: "column",
         textDecoration: "none",
         color: "inherit",
-        transition: "border-color 150ms, box-shadow 150ms",
+        transition: "border-color 180ms cubic-bezier(0.165, 0.84, 0.44, 1)",
         "&:hover": { borderColor: "primary.main" },
       }}
     >
@@ -376,7 +386,7 @@ function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
           <LinearProgress
             variant="determinate"
             value={goal.progress}
-            color={tone}
+            color={barColor}
             sx={{ height: 8, borderRadius: 999 }}
           />
 
@@ -404,7 +414,7 @@ function GoalCard({ goal, subject }: { goal: Goal; subject?: Subject }) {
                 gap: 1.5,
               }}
             >
-              <EmojiEventsIcon sx={{ color: "warning.main" }} />
+              <EmojiEventsIcon sx={{ color: "achievement.main" }} />
               <Typography variant="caption" sx={{ fontWeight: 500 }}>
                 {goal.reward}
               </Typography>

@@ -20,7 +20,7 @@ import {
   type Assessment,
   type Subject,
 } from "@/lib/mockData";
-import { formatDate, formatRelative } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 import { RelativeTime } from "@/components/common/RelativeTime";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import dayjs from "dayjs";

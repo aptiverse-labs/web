@@ -14,6 +14,7 @@ import { QueryStates } from "@/components/common/QueryStates";
 import { StatCard } from "@/components/common/StatCard";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { useSubjects } from "@/lib/api/queries";
+import { brand } from "@/theme/palette";
 import type { Subject } from "@/lib/mockData";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import InsightsIcon from "@mui/icons-material/InsightsOutlined";
@@ -54,18 +55,20 @@ function MasteryView({ subjects }: { subjects: Subject[] }) {
 
   return (
     <>
+      {/* 3-up stat row instead of 4-up. "Subjects tracked" was filler
+          (count is already visible in the sidebar nav and bar chart
+          below); info-blue isn't a brand zone we use elsewhere. The
+          remaining three carry meaningful signal: where you are
+          overall, where you're strong, where you're stuck. */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <StatCard label="Overall mastery" value={`${overall}%`} icon={<TrendingUpIcon />} color="primary" />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <StatCard label="Strongest topic" value={`${strongest[0]?.mastery ?? 0}%`} hint={strongest[0]?.name ?? "None yet"} color="success" />
         </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+        <Grid size={{ xs: 12, sm: 4 }}>
           <StatCard label="Weakest topic" value={`${weakest[0]?.mastery ?? 0}%`} hint={weakest[0]?.name ?? "None yet"} color="warning" />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Subjects tracked" value={subjects.length} color="info" />
         </Grid>
       </Grid>
 
@@ -160,8 +163,8 @@ function MasteryView({ subjects }: { subjects: Subject[] }) {
                 height={320}
                 xAxis={[{ data: subjects.map((s) => s.code), scaleType: "band" }]}
                 series={[
-                  { data: subjects.map((s) => s.currentAverage ?? null), label: "Current term", color: "#0F6963" },
-                  { data: subjects.map((s) => s.predictedNextTerm ?? null), label: "Predicted next", color: "#F25C2E" },
+                  { data: subjects.map((s) => s.currentAverage ?? null), label: "Current term", color: brand.teal[600] },
+                  { data: subjects.map((s) => s.predictedNextTerm ?? null), label: "Predicted next", color: brand.terracotta[500] },
                 ]}
                 margin={{ top: 16, right: 24, bottom: 32, left: 40 }}
                 grid={{ horizontal: true }}

@@ -89,10 +89,10 @@ function SubjectView({
     <>
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Current average" value={subject.currentAverage != null ? `${subject.currentAverage}%` : "—"} color="primary" />
+          <StatCard label="Current average" value={subject.currentAverage != null ? `${subject.currentAverage}%` : "–"} color="primary" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Predicted next term" value={subject.predictedNextTerm != null ? `${subject.predictedNextTerm}%` : "—"} hint="AI forecast" color="info" />
+          <StatCard label="Predicted next term" value={subject.predictedNextTerm != null ? `${subject.predictedNextTerm}%` : "–"} hint="Weighted projection" color="primary" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard label="Upcoming SBAs" value={subject.upcomingSBA ?? 0} hint="this term" color="warning" />

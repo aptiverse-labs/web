@@ -10,7 +10,8 @@ export type StatusKind =
   | "info"
   | "neutral"
   | "primary"
-  | "secondary";
+  | "secondary"
+  | "achievement";
 
 export type StatusChipProps = Omit<ChipProps, "color"> & {
   kind?: StatusKind;
@@ -27,6 +28,9 @@ export function StatusChip({ kind = "neutral", dot, sx, ...rest }: StatusChipPro
     neutral: theme.palette.text.secondary,
     primary: theme.palette.primary.main,
     secondary: theme.palette.secondary.main,
+    // Sacred-Amber Rule (DESIGN.md): reserved for earned milestones
+    // (verified goals, real streaks, claimed rewards). Never decorative.
+    achievement: theme.palette.achievement.main,
   } satisfies Record<StatusKind, string>;
 
   const c = colorMap[kind];
