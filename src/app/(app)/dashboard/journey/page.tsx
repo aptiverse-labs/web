@@ -15,6 +15,7 @@ import { motion } from "framer-motion";
 import { CardError } from "@/components/common/CardError";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryStates } from "@/components/common/QueryStates";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { useSubjects, useAssessments } from "@/lib/api/queries";
 import type { Subject, Assessment } from "@/lib/mockData";
 import { enter, enterStagger } from "@/lib/motion";
@@ -35,7 +36,7 @@ export default function JourneyPage() {
   // QueryStates only takes one query; this page genuinely needs two, so
   // we combine the states manually here rather than fight the helper.
   return (
-    <>
+    <AtmosphericBackdrop>
       <PageHeader
         title="Your learning journey"
         description="Every assessment is a landmark. Each one logged becomes part of the picture of how you're growing."
@@ -62,7 +63,7 @@ export default function JourneyPage() {
           assessments={assessmentsQuery.data ?? []}
         />
       )}
-    </>
+    </AtmosphericBackdrop>
   );
 }
 

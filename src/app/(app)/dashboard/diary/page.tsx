@@ -16,6 +16,7 @@ import { useDiaryEntries } from "@/lib/api/queries";
 import type { DiaryEntry } from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
 import { RelativeTime } from "@/components/common/RelativeTime";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 
 const MOOD_EMOJI: Record<number, { emoji: string; label: string; color: string }> = {
   1: { emoji: "😞", label: "Really tough", color: "#D14B4B" },
@@ -29,7 +30,7 @@ export default function DiaryPage() {
   const query = useDiaryEntries();
 
   return (
-    <>
+    <AtmosphericBackdrop>
       <PageHeader
         title="Diary"
         description="Private space to think out loud — wins, gripes, gratitude. AI nudges you with prompts; nothing leaves your device unless you say so."
@@ -52,7 +53,7 @@ export default function DiaryPage() {
       >
         {(entries) => <EntriesList entries={entries} />}
       </QueryStates>
-    </>
+    </AtmosphericBackdrop>
   );
 }
 

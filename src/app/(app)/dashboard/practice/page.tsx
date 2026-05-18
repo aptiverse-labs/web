@@ -17,6 +17,7 @@ import GpsFixedIcon from "@mui/icons-material/GpsFixedOutlined";
 import QuizIcon from "@mui/icons-material/QuizOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryStates } from "@/components/common/QueryStates";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { usePracticeTests, useSubjects } from "@/lib/api/queries";
 import type { PracticeTest, Subject } from "@/lib/mockData";
 import Link from "next/link";
@@ -26,7 +27,7 @@ export default function PracticePage() {
   const subjectsQuery = useSubjects();
 
   return (
-    <>
+    <AtmosphericBackdrop>
       <PageHeader
         title="Practice tests"
         description="AI-generated drills and past papers, aligned to your upcoming SBAs."
@@ -73,7 +74,7 @@ export default function PracticePage() {
       >
         {(tests) => <PracticeList tests={tests} subjects={subjectsQuery.data ?? []} />}
       </QueryStates>
-    </>
+    </AtmosphericBackdrop>
   );
 }
 

@@ -12,6 +12,7 @@ import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarC
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryStates } from "@/components/common/QueryStates";
 import { StatCard } from "@/components/common/StatCard";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { useSubjects } from "@/lib/api/queries";
 import type { Subject } from "@/lib/mockData";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
@@ -21,7 +22,7 @@ export default function MasteryPage() {
   const query = useSubjects();
 
   return (
-    <>
+    <AtmosphericBackdrop>
       <PageHeader
         title="Mastery"
         description="Where you're growing, where you're stuck — and what's coming next term."
@@ -38,7 +39,7 @@ export default function MasteryPage() {
       >
         {(subjects) => <MasteryView subjects={subjects} />}
       </QueryStates>
-    </>
+    </AtmosphericBackdrop>
   );
 }
 

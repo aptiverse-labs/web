@@ -14,6 +14,7 @@ import DescriptionIcon from "@mui/icons-material/DescriptionOutlined";
 import SchoolIcon from "@mui/icons-material/SchoolOutlined";
 import TipsAndUpdatesOutlinedIcon from "@mui/icons-material/TipsAndUpdatesOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 
 // Aptiverse intentionally does not host past papers — the Department of
 // Basic Education maintains the authoritative archive, and re-hosting risks
@@ -73,7 +74,7 @@ const SUBJECTS: { name: string; subtitle: string; tip: string }[] = [
 
 export default function PastPapersPage() {
   return (
-    <>
+    <AtmosphericBackdrop>
       <PageHeader
         title="Past papers"
         description="Real NSC past papers, hosted by the Department of Basic Education. We point you to the official archive — your study plan + AI practice live here at Aptiverse."
@@ -225,7 +226,7 @@ export default function PastPapersPage() {
           </Typography>
         </Stack>
       </Box>
-    </>
+    </AtmosphericBackdrop>
   );
 }
 

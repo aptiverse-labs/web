@@ -32,6 +32,7 @@ import { useConfirm } from "@/components/common/ConfirmDialog";
 import { useGoals, useSubjects, useCreateGoal, useDeleteGoal, type CreateGoalInput } from "@/lib/api/queries";
 import type { Goal, Subject } from "@/lib/mockData";
 import { RelativeTime } from "@/components/common/RelativeTime";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 
 const TABS = ["Active", "At risk", "Completed", "Verified"] as const;
 type TabValue = (typeof TABS)[number];
@@ -51,7 +52,7 @@ export default function GoalsPage() {
   const subjects = subjectsQuery.data ?? [];
 
   return (
-    <>
+    <AtmosphericBackdrop>
       <PageHeader
         title="Goals"
         description="AI sets healthy goals based on your history. You make them happen. Schools verify the wins."
@@ -85,7 +86,7 @@ export default function GoalsPage() {
         onClose={() => setDialogOpen(false)}
         subjects={subjects}
       />
-    </>
+    </AtmosphericBackdrop>
   );
 }
 

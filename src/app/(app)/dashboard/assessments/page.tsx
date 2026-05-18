@@ -22,6 +22,7 @@ import {
 } from "@/lib/mockData";
 import { formatDate, formatRelative } from "@/lib/format";
 import { RelativeTime } from "@/components/common/RelativeTime";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import dayjs from "dayjs";
 import Link from "next/link";
 
@@ -30,7 +31,7 @@ export default function AssessmentsPage() {
   const subjectsQuery = useSubjects();
 
   return (
-    <>
+    <AtmosphericBackdrop>
       <PageHeader
         title="Assessments"
         description="Every SBA, test, project and exam — schedule, weighting, and predicted vs actual marks."
@@ -57,7 +58,7 @@ export default function AssessmentsPage() {
       >
         {(assessments) => <AssessmentsList assessments={assessments} subjects={subjectsQuery.data ?? []} />}
       </QueryStates>
-    </>
+    </AtmosphericBackdrop>
   );
 }
 

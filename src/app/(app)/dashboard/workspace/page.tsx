@@ -41,6 +41,7 @@ import ViewColumnIcon from "@mui/icons-material/ViewColumnOutlined";
 import ViewStreamIcon from "@mui/icons-material/ViewStreamOutlined";
 import KeyboardIcon from "@mui/icons-material/KeyboardOutlined";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForwardOutlined";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { PageHeader } from "@/components/common/PageHeader";
 import { EmptyState } from "@/components/common/EmptyState";
 import { TasksEditor } from "@/components/workspace/TasksEditor";
@@ -336,34 +337,7 @@ export default function WorkspacePage() {
             : { label: `Due in ${heroDaysOut} days`, color: "default" as const };
 
   return (
-    // Atmospheric backdrop. Warm radial gradient via ::before pseudo,
-    // anchored top-right, secondary at 4-6% alpha. Same pattern as the
-    // dashboard's atmospheric craft -- the workspace's idle state
-    // picks up the same "Aptiverse, not generic notes app" texture.
-    <Box
-      sx={{
-        position: "relative",
-        ml: { xs: -2, sm: -3, lg: -5 },
-        mr: { xs: -2, sm: -3, lg: -5 },
-        mt: { xs: -3, md: -4 },
-        px: { xs: 2, sm: 3, lg: 5 },
-        pt: { xs: 3, md: 4 },
-        pb: { xs: 3, md: 4 },
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          background: (t) =>
-            `radial-gradient(60% 50% at 100% 0%, ${alpha(
-              t.palette.secondary.main,
-              t.palette.mode === "dark" ? 0.06 : 0.04,
-            )}, transparent 70%)`,
-          zIndex: 0,
-        },
-        "& > *": { position: "relative", zIndex: 1 },
-      }}
-    >
+    <AtmosphericBackdrop>
       {/* Breadcrumbs */}
       <Breadcrumbs
         separator={<NavigateNextIcon fontSize="small" />}
@@ -621,7 +595,7 @@ export default function WorkspacePage() {
           <RightRail assessment={activeAssessment} subject={subject} />
         </Box>
       </Drawer>
-    </Box>
+    </AtmosphericBackdrop>
   );
 }
 

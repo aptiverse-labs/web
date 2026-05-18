@@ -20,6 +20,7 @@ import Link from "next/link";
 import dayjs from "dayjs";
 import { motion } from "framer-motion";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { CardError } from "@/components/common/CardError";
 import { LastSynced } from "@/components/common/LastSynced";
 import { SectionHeader } from "@/components/common/SectionHeader";
@@ -90,36 +91,7 @@ export default function StudentDashboardPage() {
     .slice(0, 3);
 
   return (
-    // Atmospheric warm aura behind the dashboard content. A radial
-    // gradient anchored to the top-right corner using the brand's
-    // secondary (terracotta) at <=4% opacity, so the page reads as
-    // "warmer Aptiverse" without dominating. Sits behind everything
-    // via the ::before pseudo + a child positive z-index; the
-    // negative gutters extend the wash into the layout's edge padding.
-    <Box
-      sx={{
-        position: "relative",
-        ml: { xs: -2, sm: -3, lg: -5 },
-        mr: { xs: -2, sm: -3, lg: -5 },
-        mt: { xs: -3, md: -4 },
-        px: { xs: 2, sm: 3, lg: 5 },
-        pt: { xs: 3, md: 4 },
-        pb: { xs: 3, md: 4 },
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          background: (t) =>
-            `radial-gradient(60% 50% at 100% 0%, ${alpha(
-              t.palette.secondary.main,
-              t.palette.mode === "dark" ? 0.06 : 0.04,
-            )}, transparent 70%)`,
-          zIndex: 0,
-        },
-        "& > *": { position: "relative", zIndex: 1 },
-      }}
-    >
+    <AtmosphericBackdrop>
       <WelcomeBanner />
 
       <UpcomingAssessmentsCard
@@ -152,7 +124,7 @@ export default function StudentDashboardPage() {
           />
         </Grid>
       </Grid>
-    </Box>
+    </AtmosphericBackdrop>
   );
 }
 

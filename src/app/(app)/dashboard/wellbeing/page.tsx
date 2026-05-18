@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { CardError } from "@/components/common/CardError";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useWellbeingSummary, useMoodTrend } from "@/lib/api/queries";
@@ -49,7 +50,7 @@ export default function WellbeingPage() {
   const hardError = summaryQ.isError;
 
   return (
-    <>
+    <AtmosphericBackdrop>
       <PageHeader
         title="Wellbeing"
         description="Daily check-ins, breathing tools, and people to talk to. Small habits, real signal."
@@ -79,7 +80,7 @@ export default function WellbeingPage() {
       <Box sx={{ mt: 4 }}>
         <QuickTools />
       </Box>
-    </>
+    </AtmosphericBackdrop>
   );
 }
 

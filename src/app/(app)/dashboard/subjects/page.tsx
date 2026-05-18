@@ -28,6 +28,7 @@ import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useSnackbar } from "notistack";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useConfirm } from "@/components/common/ConfirmDialog";
+import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import {
   useSubjects,
   useCurricula,
@@ -91,7 +92,7 @@ export default function SubjectsPage() {
   // Loading state — show skeleton header + grid until profile resolves
   if (profileQuery.isLoading || subjectsQuery.isLoading) {
     return (
-      <>
+      <AtmosphericBackdrop>
         <PageHeader title="Subjects" breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Subjects" }]} />
         <Grid container spacing={3}>
           {[0, 1, 2, 3].map((i) => (
@@ -100,7 +101,7 @@ export default function SubjectsPage() {
             </Grid>
           ))}
         </Grid>
-      </>
+      </AtmosphericBackdrop>
     );
   }
 
