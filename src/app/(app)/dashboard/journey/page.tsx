@@ -186,7 +186,7 @@ function Hero({
               </Typography>
               <Stack direction="row" alignItems="baseline" spacing={1} sx={{ mt: 0.5, mb: 1.5 }}>
                 <Typography variant="h3" component="div" sx={{ fontWeight: 600, lineHeight: 1.05 }}>
-                  {overallAverage != null ? overallAverage : "—"}
+                  {overallAverage != null ? overallAverage : "–"}
                 </Typography>
                 <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 500 }}>
                   {overallAverage != null ? "%" : "no marks yet"}
@@ -239,7 +239,7 @@ function Hero({
                     {nextUp.title}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-                    {nextUpSubjectName ?? "—"} · due {dayjs(nextUp.dueDate).format("DD MMM")}
+                    {nextUpSubjectName ?? "Unlinked"} · due {dayjs(nextUp.dueDate).format("DD MMM")}
                     {nextUp.predictedMark != null ? ` · prediction ${nextUp.predictedMark}%` : ""}
                   </Typography>
                   <Stack direction="row" spacing={1}>
@@ -340,7 +340,7 @@ function SubjectRowCard({ row }: { row: SubjectRow }) {
   const { subject: s, total, graded, upcoming, averageMark, predictedMark } = row;
   const hasMarks = averageMark != null;
   const aboveBar = hasMarks && averageMark! >= PASS_MARK;
-  const headlineValue = hasMarks ? `${averageMark}%` : predictedMark != null ? `${predictedMark}%` : "—";
+  const headlineValue = hasMarks ? `${averageMark}%` : predictedMark != null ? `${predictedMark}%` : "–";
   const headlineHint = hasMarks
     ? `${graded} graded`
     : predictedMark != null
@@ -477,7 +477,7 @@ function NoAssessmentsYet({ subjectCount }: { subjectCount: number }) {
             Log your first assessment
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 460, mx: "auto", mb: 3 }}>
-            You're enrolled in {subjectCount} subject{subjectCount === 1 ? "" : "s"}. Each SBA you log becomes a landmark here — predicted, then graded, then the next one.
+            You're enrolled in {subjectCount} subject{subjectCount === 1 ? "" : "s"}. Each SBA you log becomes a landmark here: predicted, then graded, then the next one.
           </Typography>
           <Stack direction="row" spacing={1.5} justifyContent="center">
             <Button component={Link} href="/dashboard/assessments/new" variant="contained" endIcon={<ArrowForwardIcon />}>

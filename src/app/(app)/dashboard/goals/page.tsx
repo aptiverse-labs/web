@@ -70,7 +70,7 @@ export default function GoalsPage() {
           icon: <FlagIcon />,
           title: "No goals yet",
           description:
-            "Goals turn your subjects and SBAs into a plan you can actually follow. Start with one — you can always add more.",
+            "Goals turn your subjects and SBAs into a plan you can actually follow. Start with one. You can always add more.",
           action: (
             <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
               Add your first goal

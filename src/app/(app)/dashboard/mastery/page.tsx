@@ -25,7 +25,7 @@ export default function MasteryPage() {
     <AtmosphericBackdrop>
       <PageHeader
         title="Mastery"
-        description="Where you're growing, where you're stuck — and what's coming next term."
+        description="Where you're growing, where you're stuck, and what's coming next term."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Mastery" }]}
       />
 
@@ -59,10 +59,10 @@ function MasteryView({ subjects }: { subjects: Subject[] }) {
           <StatCard label="Overall mastery" value={`${overall}%`} icon={<TrendingUpIcon />} color="primary" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Strongest topic" value={`${strongest[0]?.mastery ?? 0}%`} hint={strongest[0]?.name ?? "—"} color="success" />
+          <StatCard label="Strongest topic" value={`${strongest[0]?.mastery ?? 0}%`} hint={strongest[0]?.name ?? "None yet"} color="success" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
-          <StatCard label="Weakest topic" value={`${weakest[0]?.mastery ?? 0}%`} hint={weakest[0]?.name ?? "—"} color="warning" />
+          <StatCard label="Weakest topic" value={`${weakest[0]?.mastery ?? 0}%`} hint={weakest[0]?.name ?? "None yet"} color="warning" />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <StatCard label="Subjects tracked" value={subjects.length} color="info" />

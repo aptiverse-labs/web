@@ -34,7 +34,7 @@ export default function AssessmentsPage() {
     <AtmosphericBackdrop>
       <PageHeader
         title="Assessments"
-        description="Every SBA, test, project and exam — schedule, weighting, and predicted vs actual marks."
+        description="Every SBA, test, project and exam. Schedule, weighting, and predicted vs actual marks."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Assessments" }]}
         actions={
           <Button variant="contained" startIcon={<AddIcon />} component={Link} href="/dashboard/assessments/new">
@@ -146,13 +146,13 @@ function AssessmentsList({ assessments, subjects }: { assessments: Assessment[];
                 <LinearProgress variant="determinate" value={r.predictedMark} sx={{ height: 6, borderRadius: 999, mt: 0.5 }} color="primary" />
               </Stack>
             ) : (
-              "—"
+              "–"
             ),
         },
         {
           key: "actualMark",
           header: "Mark",
-          render: (r) => (r.actualMark != null ? `${r.actualMark}%` : "—"),
+          render: (r) => (r.actualMark != null ? `${r.actualMark}%` : "–"),
         },
         {
           key: "status",

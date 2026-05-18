@@ -108,22 +108,22 @@ export default function SubjectsPage() {
   // State 1 — user has no curriculum yet → curriculum picker
   if (!profile?.curriculumId) {
     return (
-      <>
+      <AtmosphericBackdrop>
         <PageHeader
           title="Subjects"
           description="Pick your curriculum to see the subject catalog. You can change this later in settings."
           breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Subjects" }]}
         />
         <CurriculumPicker curricula={curriculaQuery.data ?? []} loading={curriculaQuery.isLoading} />
-      </>
+      </AtmosphericBackdrop>
     );
   }
 
   return (
-    <>
+    <AtmosphericBackdrop>
       <PageHeader
         title="Subjects"
-        description="Your FET-phase subjects. Add the ones you're studying — marks and topic mastery fill in as you log assessments."
+        description="Your FET-phase subjects. Add the ones you're studying. Marks and topic mastery fill in as you log assessments."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Subjects" }]}
         actions={
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
@@ -156,7 +156,7 @@ export default function SubjectsPage() {
         userGrade={profile.grade ?? 12}
         existingSubjectIds={new Set(subjects.map((s) => s.subjectId))}
       />
-    </>
+    </AtmosphericBackdrop>
   );
 }
 
@@ -473,7 +473,7 @@ function SubjectCard({ subject: s }: { subject: Subject }) {
 
   const remove = async () => {
     if (s.isCompulsory) {
-      enqueueSnackbar(`${s.name} is compulsory on your curriculum — can't remove.`, {
+      enqueueSnackbar(`${s.name} is compulsory on your curriculum. Can't remove.`, {
         variant: "info",
       });
       return;
@@ -546,7 +546,7 @@ function SubjectCard({ subject: s }: { subject: Subject }) {
               Current
             </Typography>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              {s.currentAverage != null ? `${s.currentAverage}%` : "—"}
+              {s.currentAverage != null ? `${s.currentAverage}%` : "–"}
             </Typography>
           </Box>
           <Box>
