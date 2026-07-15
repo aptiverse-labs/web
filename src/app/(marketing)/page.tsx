@@ -11,8 +11,8 @@ import {
   GraduationCap,
   Users,
   Presentation,
-  WifiOff,
-  Languages,
+  BookOpenCheck,
+  ShieldCheck,
   FileCheck2,
 } from "lucide-react";
 import { Hero } from "@/components/marketing/Hero";
@@ -37,14 +37,21 @@ export default function HomePage() {
           </Typography>
         </Stack>
 
+        {/* Claims checked against the tutor's actual system prompt.
+            "Stays in scope for your course" was the opposite of the truth: the
+            prompt says "Answer the question you are actually asked. Never tell
+            a student that a subject or level is not your focus." And it points
+            you to no sources, so "points you to the right source" described
+            nothing. What it really does is know your level and subjects, which
+            is worth saying plainly. */}
         <FeatureShowcase
-          eyebrow="Curriculum-aware study assistant"
-          title="Anchored to your work, not the whole internet."
-          body="The study assistant follows your curriculum and your own material, so it explains in the right terms and points you to the right source, not a random web page."
+          eyebrow="A tutor that knows what you are studying"
+          title="It knows your subjects, so you stop re-explaining yourself."
+          body="It reads your grade or your modules from your profile, so a Grade 11 term test and a second-year module get answered differently. Ask it anything academic and it helps, whatever the subject."
           bullets={[
-            "Stays in scope for your course",
-            "Explains a concept, then sets you a question to try",
-            "Guides you through the work instead of handing over answers",
+            "Pitched at your level, not a generic one",
+            "Shows the working step by step, and sets you original questions to try",
+            "Gives structure on essays instead of writing them for you",
           ]}
           demo={<TutorChatDemo />}
         />
@@ -153,8 +160,10 @@ export default function HomePage() {
 const ROLES = [
   {
     icon: <GraduationCap size={18} />,
+    // Not "watch your results climb". We cannot promise an outcome, and a
+    // student who works and does not climb was told a lie about themselves.
     title: "Students",
-    description: "Plan, practise, and watch your results climb, with wellbeing built in.",
+    description: "Plan your term, practise what you are weakest at, and keep track of how you are doing.",
     href: "/for-students",
     accent: "primary" as const,
   },
@@ -174,23 +183,38 @@ const ROLES = [
   },
 ];
 
+// Every line here has to survive someone opening the app and checking.
+//
+// What used to be here did not. "The diary works offline and practice caches"
+// described a feature that does not exist in any form: there is no service
+// worker, no manifest, no local store, nothing. "All 11 official languages"
+// was both unbuilt and wrong, since South Africa has had 12 since South African
+// Sign Language was recognised in 2023. And "real past papers" implied a
+// library we host, when /dashboard/past-papers is a link to the DBE's own
+// public archive.
+//
+// A parent deciding where their money goes deserves better than three
+// sentences we would have to walk back.
 const SA_CONTEXT = [
   {
-    icon: <WifiOff size={18} />,
-    title: "Data-light and offline",
-    description: "The diary works offline and practice caches, syncing next time you are online.",
-    accent: "primary" as const,
-  },
-  {
-    icon: <Languages size={18} />,
-    title: "All 11 official languages",
-    description: "The AI explains and replies in any of South Africa's 11 official languages.",
+    icon: <BookOpenCheck size={18} />,
+    title: "CAPS and university, together",
+    description:
+      "Grade 10 to 12 on the CAPS curriculum, and your own modules if you are at university. The assistant pitches to whichever you are actually doing.",
     accent: "primary" as const,
   },
   {
     icon: <FileCheck2 size={18} />,
-    title: "Curriculum-aligned",
-    description: "Built around South African universities and curricula, with real past papers and course material.",
+    title: "Straight to the DBE archive",
+    description:
+      "Past papers come from the Department of Basic Education's official NSC archive. We point you at the real thing rather than a copy of it.",
+    accent: "primary" as const,
+  },
+  {
+    icon: <ShieldCheck size={18} />,
+    title: "Your diary stays yours",
+    description:
+      "What you write is private. Families see how you are tracking, never what you wrote.",
     accent: "primary" as const,
   },
 ];

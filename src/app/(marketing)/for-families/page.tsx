@@ -444,7 +444,13 @@ const FAQ = [
   },
   {
     q: "Can I read my child's diary or messages?",
-    a: "No. The diary is end-to-end encrypted on your child's device. You see trends, streaks, and celebrations, never the words. That boundary is deliberate and cannot be turned off.",
+    // Was: "the diary is end-to-end encrypted on your child's device". It is
+    // not, and answering a parent's direct privacy question with a technical
+    // guarantee we do not implement is the worst place in the product to be
+    // loose with the truth. The access boundary is real and enforced in the
+    // API; the encryption was invented. Say the part that is true, and say
+    // honestly what we can see.
+    a: "No. There is no screen anywhere in the parent view that shows diary entries, and no endpoint that returns them. You see mood trends, streaks and celebrations, never the words. That boundary is deliberate and cannot be turned off. To be straight with you about the limits: entries are stored on our servers, not encrypted on your child's device, and our systems read them to spot a rough patch. So we can see them, and staff access is governed by our privacy policy. What is guaranteed is that you cannot.",
   },
   {
     q: "My children are different ages. Does that work?",

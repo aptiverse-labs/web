@@ -25,7 +25,7 @@ import {
   ClipboardCheck,
   Compass,
   GraduationCap,
-  WifiOff,
+  BookOpenCheck,
   Languages,
   Gauge,
   ChevronDown,
@@ -134,7 +134,9 @@ export default function ForStudentsPage() {
           reverse
           eyebrow="Wellbeing"
           title="Marks matter. So do you."
-          body="A 60-second daily check-in tracks the trend, not the snapshot, and surfaces help before you have to ask. Your diary is encrypted on your device, so it stays yours."
+          // "Your diary is encrypted on your device" was not true, and this is
+          // the page where a student decides whether to be honest in it.
+          body="A 60-second daily check-in tracks the trend, not the snapshot, and surfaces help before you have to ask. Your family sees the trend, never what you wrote."
           bullets={[
             "Catches a stressful stretch early",
             "A break any time, or a counsellor on paid plans",
@@ -317,9 +319,12 @@ const STEPS = [
 
 const SA_CONTEXT = [
   {
-    icon: <WifiOff size={18} />,
-    title: "Data-light and offline",
-    description: "The diary works offline and practice caches, syncing next time you are online.",
+    icon: <BookOpenCheck size={18} />,
+    // Was "Data-light and offline". No service worker, no local store, no
+    // sync: the whole feature was imaginary.
+    title: "CAPS and university, together",
+    description:
+      "Grade 10 to 12 on CAPS, or your own modules if you are at university. The assistant pitches to whichever you are doing.",
     accent: "primary" as const,
   },
   {

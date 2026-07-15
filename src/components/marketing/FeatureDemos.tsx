@@ -666,7 +666,10 @@ export function MoodCheckInDemo() {
 // ============================================================
 export function DiaryEncryptedDemo() {
   return (
-    <MockAppFrame title="aptiverse.co.za/dashboard/diary" badge="End-to-end encrypted">
+    // Badge was "End-to-end encrypted". It is not: DiaryEntry.Content is a
+    // plain column and the server reads it to compute sentiment. A padlock in a
+    // mock is still a claim, so it says what is actually guaranteed instead.
+    <MockAppFrame title="aptiverse.co.za/dashboard/diary" badge="Not shared with family">
       <Stack spacing={2}>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Box>

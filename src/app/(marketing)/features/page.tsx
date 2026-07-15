@@ -139,15 +139,30 @@ export default function FeaturesPage() {
           demo={<MoodCheckInDemo />}
         />
 
+        {/* This block claimed the diary was "encrypted on your device, so the
+            key never leaves your phone" and "end-to-end encrypted, even we
+            cannot read it". None of that was true. DiaryEntry.Content is a
+            plain string column, there is no client-side crypto anywhere in this
+            app, and the server writes SentimentAnalysis and KeyThemes onto the
+            entry, which is only possible because the server reads the text.
+
+            It also claimed the diary works offline, which nothing implements.
+
+            This one mattered more than the rest: it invited a teenager to write
+            something they would only write somewhere truly private, on a
+            promise the system cannot keep. What is written below is what the
+            product actually does. If we want to make the stronger claim, we
+            have to build it first, and building it means giving up the
+            sentiment analysis that reads the text. */}
         <FeatureShowcase
           reverse
           eyebrow="Private diary"
-          title="A place to think that no one else can read."
-          body="The diary is encrypted on your device, so the key never leaves your phone. Reflect honestly, because it is genuinely yours, not ours and not your parents'."
+          title="Yours, and not your parents' reading material."
+          body="Write honestly about how the term is going. Your family sees whether you are checking in and how your mood is tracking, never a word of what you actually wrote."
           bullets={[
-            "End-to-end encrypted, even we cannot read it",
+            "Families see mood trends, never entries",
             "Gentle nightly prompts to reflect",
-            "Works offline, syncs when you are back online",
+            "Flags a rough patch to you, so you can decide what to do about it",
           ]}
           demo={<DiaryEncryptedDemo />}
         />
@@ -241,7 +256,9 @@ const WELLBEING_EXTRAS = [
   {
     icon: <Lock size={18} />,
     title: "Private diary",
-    description: "End-to-end encrypted on your device. Not us, not your parents. Only you.",
+    // Was "End-to-end encrypted on your device. Not us, not your parents."
+    // The second half is true and enforced. The first was never built.
+    description: "Your family sees your mood trend, never your entries.",
     accent: "secondary" as const,
   },
   {
