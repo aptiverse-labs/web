@@ -36,7 +36,16 @@ import {
 
 // Print isolation: hide the whole app shell and show only #report-doc, so the
 // browser's Save-as-PDF produces a clean document, not the dashboard chrome.
+// `@page { margin: 0 }`, matching PracticeRunner's print paper.
+//
+// The browser prints its own header and footer (page URL, title, timestamp)
+// into the page margin, which is why a printed report was signing itself
+// "localhost:3000/dashboard/reports". A zero page margin leaves the browser
+// nowhere to put them, so they go away. The 16mm the document actually needs
+// then comes from padding on #report-doc, where it is ours rather than the
+// browser's. Same trick, same reason, now in both places.
 const printStyles = {
+  "@page": { margin: 0 },
   "@media print": {
     "body *": { visibility: "hidden" as const },
     "#report-doc, #report-doc *": { visibility: "visible" as const },
@@ -45,11 +54,11 @@ const printStyles = {
       left: 0,
       top: 0,
       width: "100%",
+      padding: "16mm",
       margin: 0,
       boxShadow: "none",
       border: "none",
     },
-    "@page": { margin: "16mm" },
   },
 };
 
