@@ -433,9 +433,9 @@ function CourseCard({
 
         {course.topics.length > 0 ? (
           <AptiverseDonut
-            height={184}
-            innerRadius={46}
-            outerRadius={76}
+            height={148}
+            innerRadius={38}
+            outerRadius={62}
             centerValue={course.mastery != null ? `${course.mastery}%` : "—"}
             centerLabel="mastery"
             data={course.bands.map((b) => ({
@@ -448,7 +448,7 @@ function CourseCard({
           <Stack
             alignItems="center"
             justifyContent="center"
-            sx={{ flex: 1, minHeight: 150, py: 2, textAlign: "center" }}
+            sx={{ flex: 1, minHeight: 108, py: 1, textAlign: "center" }}
           >
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, maxWidth: 220 }}>
               No practised topics yet, so there is no mastery to show.
