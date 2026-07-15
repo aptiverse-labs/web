@@ -8,10 +8,23 @@ import { LineChart, type LineChartProps } from "@mui/x-charts/LineChart";
 export function AptiverseLineChart(props: LineChartProps) {
   const theme = useTheme();
 
+  // A legend appears as soon as there is more than one series, and not before.
+  //
+  // This used to be a flat `hideLegend`, which meant no caller ever got one:
+  // every multi-series chart in the app shipped with two or three coloured
+  // lines and nothing anywhere saying which was which. Colour was carrying
+  // identity on its own, which is unreadable for anyone who cannot separate the
+  // hues and merely annoying for everyone else.
+  //
+  // Still suppressed for a single series, where the card title already names
+  // the line and a legend would just repeat it.
+  const seriesCount = props.series?.length ?? 0;
+  const hideLegend = props.hideLegend ?? seriesCount < 2;
+
   return (
     <LineChart
-      hideLegend
       {...props}
+      hideLegend={hideLegend}
       xAxis={(props.xAxis ?? []).map((a) => ({
         ...a,
         disableLine: true,
