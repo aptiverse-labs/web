@@ -42,7 +42,7 @@ export default function NewAssessmentPage() {
     <>
       <PageHeader
         title="New assessment"
-        description="Log an SBA, test, project, or exam. Fill in marks as the term progresses."
+        description="Log a test, essay, project, or exam. Fill in marks as the term progresses."
         breadcrumbs={[
           { label: "Dashboard", href: "/dashboard" },
           { label: "Assessments", href: "/dashboard/assessments" },

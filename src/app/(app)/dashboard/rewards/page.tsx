@@ -10,7 +10,6 @@ import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import LinearProgress from "@mui/material/LinearProgress";
 import Divider from "@mui/material/Divider";
-import Tooltip from "@mui/material/Tooltip";
 import { alpha } from "@mui/material/styles";
 import Link from "next/link";
 import {
@@ -18,23 +17,44 @@ import {
   Flame,
   Trophy,
   Award,
-  HandCoins,
   Check,
   ClipboardCheck,
   CalendarCheck,
+  Brain,
+  Zap,
+  FileText,
+  Hourglass,
+  Gift,
 } from "lucide-react";
+import { useSnackbar } from "notistack";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryStates } from "@/components/common/QueryStates";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { RelativeTime } from "@/components/common/RelativeTime";
+import { useConfirm } from "@/components/common/ConfirmDialog";
 import {
   useStudentPoints,
   usePointsLedger,
   useAchievements,
-  useAllowances,
+  useRewards,
+  useActiveGrants,
+  useRedeemReward,
 } from "@/lib/api/queries";
-import type { StudentPoints, Achievement, Allowance } from "@/lib/mockData";
-import { formatCurrency } from "@/lib/format";
+import type { StudentPoints, Achievement, Reward, Grant, QuotaKey } from "@/lib/mockData";
+
+// What each metered quota is called in a sentence a student would use, and the
+// icon that stands for it. Keyed by the server's PlanQuota keys, which is the
+// same key the usage meter enforces: if a key ever appears here that the meter
+// does not know, the reward would be points for nothing, so the fallback stays
+// deliberately plain rather than inventing a friendly name.
+const QUOTA: Record<QuotaKey, { label: string; icon: React.ReactElement }> = {
+  "ai.deep": { label: "Deep tutor sessions", icon: <Brain size={16} /> },
+  "ai.quick": { label: "Quick questions", icon: <Zap size={16} /> },
+  "practice.generate": { label: "Practice tests", icon: <FileText size={16} /> },
+};
+
+const quotaLabel = (key: QuotaKey) => QUOTA[key]?.label ?? key;
+const quotaIcon = (key: QuotaKey) => QUOTA[key]?.icon ?? <Gift size={16} />;
 
 export default function RewardsPage() {
   const pointsQuery = useStudentPoints();
@@ -43,7 +63,7 @@ export default function RewardsPage() {
     <AtmosphericBackdrop>
       <PageHeader
         title="Rewards"
-        description="Everything here is counted from work you actually did. Points come from goals the system checked against your practice, your marks and your check-ins."
+        description="Points come from goals the system checked against your own practice. Spend them on more of what the platform can actually hand over: deeper tutor sessions, more questions, more practice."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Rewards" }]}
         actions={
           <Button
@@ -71,13 +91,18 @@ export default function RewardsPage() {
           <Stack spacing={3}>
             <LevelCard points={points} />
 
+            {/* Time-boxed and already paid for, so it outranks everything else
+                on the page: a window the student cannot see is a window they
+                will not use. */}
+            <ActiveGrantsCard />
+
             <Grid container spacing={3}>
               <Grid size={{ xs: 12, lg: 7 }}>
-                <AchievementsCard />
+                <RewardsCard balance={points.balance} />
               </Grid>
               <Grid size={{ xs: 12, lg: 5 }}>
                 <Stack spacing={3}>
-                  <AllowancesCard />
+                  <AchievementsCard />
                   <LedgerCard />
                 </Stack>
               </Grid>
@@ -121,7 +146,7 @@ function LevelCard({ points }: { points: StudentPoints }) {
               {points.rank}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              {points.balance.toLocaleString()} points
+              {points.balance.toLocaleString()} points to spend
               {points.totalEarned !== points.balance
                 ? ` · ${points.totalEarned.toLocaleString()} earned all time`
                 : ""}
@@ -204,11 +229,238 @@ function Counter({
   );
 }
 
+/**
+ * Top-ups the student is holding right now.
+ *
+ * Rendered only when there is something live. An empty "no top-ups" card would
+ * repeat what the catalogue directly below it already says, and the point of
+ * this card is urgency: these expire.
+ */
+function ActiveGrantsCard() {
+  const query = useActiveGrants();
+  const grants = query.data;
+
+  if (!grants || grants.length === 0) return null;
+
+  return (
+    <Card
+      sx={{
+        borderColor: (t) => alpha(t.palette.success.main, 0.35),
+        bgcolor: (t) => alpha(t.palette.success.main, 0.06),
+      }}
+    >
+      <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+          <Hourglass size={20} />
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Active right now
+          </Typography>
+        </Stack>
+
+        <Grid container spacing={2}>
+          {grants.map((g) => (
+            <Grid key={g.id} size={{ xs: 12, sm: 6, md: 4 }}>
+              <ActiveGrantRow grant={g} />
+            </Grid>
+          ))}
+        </Grid>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ActiveGrantRow({ grant: g }: { grant: Grant }) {
+  return (
+    <Stack
+      spacing={0.75}
+      sx={{
+        height: "100%",
+        p: 1.5,
+        borderRadius: 2,
+        border: 1,
+        borderColor: "divider",
+        bgcolor: "background.paper",
+      }}
+    >
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ color: "text.secondary" }}>
+        {quotaIcon(g.quotaKey)}
+        <Typography variant="caption" noWrap>
+          {quotaLabel(g.quotaKey)}
+        </Typography>
+      </Stack>
+
+      <Typography sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+        +{g.bonus} extra
+      </Typography>
+
+      <Typography variant="caption" color="text.secondary">
+        Expires <RelativeTime iso={g.expiresAt} />
+      </Typography>
+    </Stack>
+  );
+}
+
+/**
+ * What points can buy.
+ *
+ * Everything here is a number the usage meter already enforces, raised for a
+ * fixed window, so a redeemed reward is live the moment it is bought. That is
+ * the whole reason the catalogue is shaped this way: the page it replaced sold
+ * tutor hours and masterclasses that nobody could hand over.
+ */
+function RewardsCard({ balance }: { balance: number }) {
+  const query = useRewards();
+
+  return (
+    <Card sx={{ height: "100%" }}>
+      <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+        <Stack
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ mb: 0.5 }}
+        >
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Gift size={20} />
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              Spend your points
+            </Typography>
+          </Stack>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ flexShrink: 0, fontVariantNumeric: "tabular-nums" }}
+          >
+            {balance.toLocaleString()} available
+          </Typography>
+        </Stack>
+
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+          Each one raises a limit on your plan for a set number of days. It goes live straight away.
+        </Typography>
+
+        <QueryStates
+          query={query}
+          empty={{
+            icon: <Gift />,
+            title: "Nothing to spend on yet",
+            description: "The catalogue is unavailable right now. Try again shortly.",
+          }}
+        >
+          {(rewards) => (
+            <Stack spacing={1.5}>
+              {rewards.map((r) => (
+                <RewardRow key={r.code} reward={r} balance={balance} />
+              ))}
+            </Stack>
+          )}
+        </QueryStates>
+      </CardContent>
+    </Card>
+  );
+}
+
+function RewardRow({ reward: r, balance }: { reward: Reward; balance: number }) {
+  const redeem = useRedeemReward();
+  const { enqueueSnackbar } = useSnackbar();
+  const { confirm, dialog: confirmDialog } = useConfirm();
+
+  const short = Math.max(0, r.costPoints - balance);
+
+  const handleRedeem = async () => {
+    // Points are spent for good, so this asks first. The cost and the window
+    // are both in the question because they are what the student is trading.
+    const ok = await confirm({
+      title: `Spend ${r.costPoints.toLocaleString()} points?`,
+      description: `You get ${r.title.toLowerCase()} for ${r.days} days. Points are spent for good, and this window starts now.`,
+      confirmLabel: "Redeem",
+    });
+    if (!ok) return;
+    try {
+      const grant = await redeem.mutateAsync(r.code);
+      enqueueSnackbar(
+        `Done. ${r.title} is live until ${new Date(grant.expiresAt).toLocaleDateString(undefined, {
+          day: "numeric",
+          month: "short",
+        })}.`,
+        { variant: "success" },
+      );
+    } catch (err) {
+      enqueueSnackbar(
+        `Couldn't redeem${err instanceof Error ? `: ${err.message}` : ""}`,
+        { variant: "error" },
+      );
+    }
+  };
+
+  return (
+    <>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={{ xs: 1.5, sm: 2 }}
+        alignItems={{ sm: "center" }}
+        sx={{
+          p: 2,
+          borderRadius: 2,
+          border: 1,
+          borderColor: "divider",
+          opacity: r.affordable ? 1 : 0.72,
+        }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Typography sx={{ fontWeight: 600 }}>{r.title}</Typography>
+            <Chip
+              size="small"
+              variant="outlined"
+              icon={quotaIcon(r.quotaKey)}
+              label={quotaLabel(r.quotaKey)}
+              sx={{ "& .MuiChip-icon": { ml: 0.75 } }}
+            />
+          </Stack>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {r.description}
+          </Typography>
+        </Box>
+
+        <Stack
+          spacing={0.75}
+          alignItems={{ xs: "flex-start", sm: "flex-end" }}
+          sx={{ flexShrink: 0 }}
+        >
+          <Typography
+            sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", lineHeight: 1.2 }}
+          >
+            {r.costPoints.toLocaleString()} pts
+          </Typography>
+          <Button
+            size="small"
+            variant={r.affordable ? "contained" : "outlined"}
+            disabled={!r.affordable || redeem.isPending}
+            onClick={handleRedeem}
+          >
+            {redeem.isPending ? "Redeeming…" : "Redeem"}
+          </Button>
+          {/* The gap, not just a locked button: "180 points short" is a number
+              they can close, and it names the next verified goal as the way. */}
+          {!r.affordable && (
+            <Typography variant="caption" color="text.secondary">
+              {short.toLocaleString()} points short
+            </Typography>
+          )}
+        </Stack>
+      </Stack>
+      {confirmDialog}
+    </>
+  );
+}
+
 function AchievementsCard() {
   const query = useAchievements();
 
   return (
-    <Card sx={{ height: "100%" }}>
+    <Card>
       <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2.5 }}>
           <Trophy size={20} />
@@ -298,132 +550,6 @@ function AchievementRow({ achievement: a }: { achievement: Achievement }) {
       >
         {a.earned ? "Earned" : `${a.progress} / ${a.target}`}
       </Typography>
-    </Stack>
-  );
-}
-
-/**
- * Money a parent has promised against a goal. The status here is the honest
- * part: it only reaches "earned" when the goal verified against real evidence,
- * so there is nothing to argue about. Paid is the parent's word, because only
- * they know whether the cash actually changed hands.
- */
-function AllowancesCard() {
-  const query = useAllowances();
-
-  return (
-    <Card>
-      <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
-          <HandCoins size={20} />
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            Allowances
-          </Typography>
-        </Stack>
-
-        <QueryStates
-          query={query}
-          empty={{
-            icon: <HandCoins />,
-            title: "No allowances pledged",
-            description:
-              "A parent linked to your account can promise an allowance against any goal you set.",
-          }}
-        >
-          {(allowances) => (
-            <Stack spacing={2} divider={<Divider />}>
-              {allowances.map((a) => (
-                <AllowanceRow key={a.id} allowance={a} />
-              ))}
-              <Typography variant="caption" color="text.secondary">
-                Aptiverse records the promise and whether it was paid. The money moves between you
-                and your parent, never through us.
-              </Typography>
-            </Stack>
-          )}
-        </QueryStates>
-      </CardContent>
-    </Card>
-  );
-}
-
-function AllowanceRow({ allowance: a }: { allowance: Allowance }) {
-  const tone =
-    a.status === "paid"
-      ? "success"
-      : a.status === "earned"
-      ? "achievement"
-      : a.status === "cancelled"
-      ? "default"
-      : "primary";
-
-  const statusLabel =
-    a.status === "pledged"
-      ? "Not yet earned"
-      : a.status === "earned"
-      ? "Earned, awaiting payment"
-      : a.status === "paid"
-      ? "Paid"
-      : "Cancelled";
-
-  return (
-    <Stack spacing={1}>
-      <Stack direction="row" spacing={1.5} alignItems="baseline" justifyContent="space-between">
-        <Typography sx={{ fontWeight: 600, minWidth: 0 }} noWrap>
-          {a.goalTitle}
-        </Typography>
-        <Typography
-          sx={{ fontWeight: 700, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}
-          color={a.status === "cancelled" ? "text.disabled" : "text.primary"}
-        >
-          {formatCurrency(a.amountZar)}
-        </Typography>
-      </Stack>
-
-      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-        <Chip
-          size="small"
-          label={statusLabel}
-          sx={
-            tone === "default"
-              ? undefined
-              : {
-                  bgcolor: (t) => alpha(t.palette[tone].main, 0.14),
-                  color: (t) => t.palette[tone].dark,
-                  fontWeight: 600,
-                }
-          }
-        />
-        <Typography variant="caption" color="text.secondary">
-          from {a.sponsorName}
-        </Typography>
-        {a.paidAt && (
-          <Typography variant="caption" color="text.secondary">
-            · paid <RelativeTime iso={a.paidAt} />
-          </Typography>
-        )}
-      </Stack>
-
-      {a.status === "pledged" && (
-        <Tooltip title={a.goalTarget}>
-          <Box>
-            <LinearProgress
-              variant="determinate"
-              value={a.goalProgress}
-              sx={{ height: 4, borderRadius: 999 }}
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-              {a.goalProgress}% of the way there
-            </Typography>
-          </Box>
-        </Tooltip>
-      )}
-
-      {a.note && (
-        <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
-          {a.note}
-        </Typography>
-      )}
     </Stack>
   );
 }

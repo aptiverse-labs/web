@@ -246,7 +246,7 @@ function QuickActionsRail() {
   );
 }
 
-// ─── Upcoming SBAs (the canonical "what next") ────────────────────────
+// ─── Upcoming assessments (the canonical "what next") ─────────────────
 
 type UpcomingItem = {
   id: string;
@@ -282,7 +282,7 @@ function UpcomingAssessmentsCard({
       <CardContent sx={{ p: { xs: 2.5, sm: 4 } }}>
         <SectionHeader
           overline="Up next"
-          title="Upcoming SBAs"
+          title="Upcoming assessments"
           mb={2.5}
           action={
             <Button
@@ -303,7 +303,7 @@ function UpcomingAssessmentsCard({
             <Skeleton variant="rounded" height={56} />
           </Stack>
         ) : isError ? (
-          <CardError onRetry={onRetry} what="your upcoming SBAs" />
+          <CardError onRetry={onRetry} what="your upcoming assessments" />
         ) : isEmpty ? (
           <Box sx={{ py: 5, textAlign: "center" }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>

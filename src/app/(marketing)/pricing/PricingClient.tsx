@@ -78,7 +78,6 @@ const PLAN_COPY: Record<string, PlanCopy> = {
       "Adaptive practice that scales to you",
       "Past papers and resources with worked solutions",
       "Mastery predictions per subject",
-      "Career planner",
       "Around {aiQuick} quick and {aiDeep} deep AI sessions a month",
       "Priority email support",
     ],
@@ -209,7 +208,7 @@ const FAQ = [
   },
   {
     q: "Does this work for university, not just school?",
-    a: "Yes. Aptiverse works from Grade R to university. The tools adapt to your stage, so a university student sees modules and coursework, and a school student sees subjects and past papers.",
+    a: "Yes. Aptiverse works from Grade 10 to university. The tools adapt to your stage, so a university student sees courses and coursework, and a school student sees subjects and past papers.",
   },
   {
     q: "Why is there an AI limit?",

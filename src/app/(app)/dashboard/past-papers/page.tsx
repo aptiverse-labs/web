@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -9,12 +11,14 @@ import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
+import Skeleton from "@mui/material/Skeleton";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DescriptionIcon from "@mui/icons-material/DescriptionOutlined";
 import SchoolIcon from "@mui/icons-material/SchoolOutlined";
 import TipsAndUpdatesOutlinedIcon from "@mui/icons-material/TipsAndUpdatesOutlined";
 import { PageHeader } from "@/components/common/PageHeader";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
+import { useAcademicProfile } from "@/lib/api/queries";
 
 // Aptiverse intentionally does not host past papers — the Department of
 // Basic Education maintains the authoritative archive, and re-hosting risks
@@ -73,6 +77,46 @@ const SUBJECTS: { name: string; subtitle: string; tip: string }[] = [
 ];
 
 export default function PastPapersPage() {
+  const profileQuery = useAcademicProfile();
+  const router = useRouter();
+  const isTertiary = profileQuery.data?.educationLevel === "tertiary";
+
+  // These are NSC papers, i.e. the high-school matric exam. A university
+  // student has no use for them, so send them to practice instead. Wait for
+  // the profile to resolve first: educationLevel is undefined on the first
+  // render, and acting on that would bounce high-school students too.
+  useEffect(() => {
+    if (profileQuery.isSuccess && isTertiary) {
+      router.replace("/dashboard/practice");
+    }
+  }, [profileQuery.isSuccess, isTertiary, router]);
+
+  // Skeleton until the profile resolves, and while a tertiary student is
+  // being redirected, so the NSC page never flashes for them.
+  if (profileQuery.isLoading || isTertiary) {
+    return (
+      <AtmosphericBackdrop>
+        <PageHeader
+          title="Past papers"
+          breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Past papers" }]}
+        />
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, md: 8 }}>
+            <Skeleton variant="rounded" height={140} sx={{ mb: 3 }} />
+            <Stack spacing={1.5}>
+              {[0, 1, 2, 3].map((i) => (
+                <Skeleton key={i} variant="rounded" height={110} />
+              ))}
+            </Stack>
+          </Grid>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Skeleton variant="rounded" height={380} />
+          </Grid>
+        </Grid>
+      </AtmosphericBackdrop>
+    );
+  }
+
   return (
     <AtmosphericBackdrop>
       <PageHeader

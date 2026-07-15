@@ -44,6 +44,11 @@ export type CatalogSubject = {
 };
 
 export type AcademicProfile = {
+  firstName: string;
+  lastName: string;
+  // Read-only: identifies the account and is the password-reset channel.
+  // The update endpoint does not accept it.
+  email: string | null;
   curriculumId: string | null;
   grade: number | null;
   school: string | null;
@@ -164,11 +169,47 @@ export type Goal = {
   targetValue?: number | null;
   currentValue: number;
   topicFilter?: string | null;
+  /**
+   * Before the goal verifies this is a projection (the floor for landing
+   * exactly on target). After it verifies it is the figure actually paid,
+   * settled against the gain over baseline. Always 0 when `rewarded` is false.
+   */
   rewardPoints: number;
   achievedAt?: string | null;
+  /**
+   * Where the student stood when they set the goal, in targetValue's unit.
+   * Points are paid on the distance past this, so a target without it is
+   * unreadable. Null for kinds with no baseline (custom, streaks, counts).
+   */
+  baselineValue?: number | null;
+  /** "foundation" | "core" | "challenge". Set at verification; the multiplier. */
+  achievedDifficulty?: string | null;
+  /** The assessment this goal is preparing for, when there is one. */
+  assessmentId?: number | null;
   /** False only for "custom". Gates the manual progress control. */
   autoVerified: boolean;
-  allowance?: Allowance | null;
+  /**
+   * Whether this kind pays points at all. Measurable and rewarded are
+   * different questions: a streak is checked but pays nothing. Server-stated
+   * so the UI never implies a payout that never arrives.
+   */
+  rewarded: boolean;
+};
+
+/**
+ * What a goal of a given shape would be measured against, asked before it
+ * exists. The server rejects a rewarded target at or below the baseline, so
+ * the dialog shows this next to the target input rather than letting the
+ * student meet that error blind.
+ */
+export type GoalBaseline = {
+  kind: GoalKind;
+  rewarded: boolean;
+  baseline?: number | null;
+  /** Lowest target the server will accept: baseline + 1. */
+  minimumTarget?: number | null;
+  /** What the supplied target would pay at minimum. Null if no target sent. */
+  projectedPoints?: number | null;
 };
 
 export type StudentPoints = {
@@ -202,26 +243,42 @@ export type Achievement = {
   target: number;
 };
 
-export type AllowanceStatus = "pledged" | "earned" | "paid" | "cancelled";
+/**
+ * A metered feature a reward can top up. Matches the server's PlanQuota keys,
+ * which is what makes a redeemed reward genuinely live: the usage meter adds
+ * active grants to the plan limit.
+ */
+export type QuotaKey = "ai.deep" | "ai.quick" | "practice.generate";
 
 /**
- * A parent's promise of money against a goal. Aptiverse records the pledge and
- * the receipt; it never holds or moves the funds.
+ * Something points can buy: a time-boxed top-up on a metered feature. The
+ * catalogue is fixed server-side because each entry is joined to a quota the
+ * meter actually enforces.
  */
-export type Allowance = {
+export type Reward = {
+  code: string;
+  title: string;
+  description: string;
+  quotaKey: QuotaKey;
+  /** Added on top of the plan's monthly limit while the grant is live. */
+  bonus: number;
+  /** How long the top-up lasts, in days. */
+  days: number;
+  costPoints: number;
+  /** Server-computed, so a disabled button and a 400 can never disagree. */
+  affordable: boolean;
+};
+
+/** A top-up the student is currently holding. */
+export type Grant = {
   id: string;
-  goalId: string;
-  goalTitle: string;
-  studentId: string;
-  studentName: string;
-  sponsorName: string;
-  amountZar: number;
-  status: AllowanceStatus;
-  earnedAt?: string | null;
-  paidAt?: string | null;
-  note?: string | null;
-  goalProgress: number;
-  goalTarget: string;
+  rewardCode: string;
+  title: string;
+  quotaKey: QuotaKey;
+  bonus: number;
+  pointsSpent: number;
+  grantedAt: string;
+  expiresAt: string;
 };
 
 export type PracticeTest = {

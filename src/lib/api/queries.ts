@@ -19,7 +19,9 @@ import {
   type StudentPoints,
   type PointsEntry,
   type Achievement,
-  type Allowance,
+  type Reward,
+  type Grant,
+  type GoalBaseline,
   type Career,
   type StudyGroup,
   type Curriculum,
@@ -155,7 +157,14 @@ export const queryKeys = {
   points: () => ["goals", "points"] as const,
   pointsLedger: () => ["goals", "points", "ledger"] as const,
   achievements: () => ["goals", "achievements"] as const,
-  allowances: () => ["goals", "allowances"] as const,
+  rewards: () => ["goals", "rewards"] as const,
+  activeGrants: () => ["goals", "rewards", "active"] as const,
+  goalBaseline: (
+    kind: string,
+    subjectId?: string | null,
+    topicFilter?: string | null,
+    targetValue?: number | null,
+  ) => ["goals", "baseline", kind, subjectId ?? "", topicFilter ?? "", targetValue ?? 0] as const,
   careers: () => ["careers"] as const,
   tutorConversations: () => ["ai", "conversations"] as const,
   tutorConversation: (id: string) => ["ai", "conversation", id] as const,
@@ -219,7 +228,11 @@ export const useAcademicProfile = () =>
     queryFn: () => apiClient.get<AcademicProfile>("/api/academic-planning/me/profile"),
   });
 
+// No `email`: the API rejects it by omission, and changing an account's
+// identity / reset channel needs a verification round-trip, not a form field.
 export type UpdateAcademicProfileInput = {
+  firstName?: string;
+  lastName?: string;
   curriculumId?: string;
   grade?: number;
   school?: string;
@@ -632,6 +645,12 @@ export type CreateGoalInput = {
   targetValue?: number | null;
   /** Only meaningful for topic_mastery: narrows the goal to one topic. */
   topicFilter?: string | null;
+  /**
+   * The assessment this goal is preparing for. Links the goal to the thing
+   * that actually motivated it, so it reads "for your Maths SBA on the 14th"
+   * instead of floating free.
+   */
+  assessmentId?: number | null;
   /**
    * Free-text "what done looks like", used only for custom goals. Every
    * measurable kind generates its own label server-side so the card and the
@@ -1102,12 +1121,12 @@ export const useLogDiary = () => {
   });
 };
 
-// ── Points, achievements and allowances ───────────────────────────────
+// ── Points, achievements and rewards ──────────────────────────────────
 //
-// There is no rewards catalogue hook here any more. /api/goals/rewards used to
-// return a shop of tutor hours and masterclasses that nothing could actually
-// deliver, with a Redeem button wired to nothing. What replaced it is the set
-// below: numbers the server derives from real work.
+// The rewards catalogue used to be a shop of tutor hours and masterclasses
+// that nothing could deliver, with a Redeem button wired to nothing. It is
+// back, but every entry is now a quota the meter already enforces, raised for
+// a fixed window, so redeeming one genuinely changes what the student can do.
 
 /**
  * Balance, level, rank and streaks. The server re-evaluates every measurable
@@ -1131,27 +1150,76 @@ export const useAchievements = () =>
     queryFn: () => apiClient.get<Achievement[]>("/api/goals/achievements"),
   });
 
-export const useAllowances = () =>
-  useQuery<Allowance[]>({
-    queryKey: queryKeys.allowances(),
-    queryFn: () => apiClient.get<Allowance[]>("/api/goals/allowances"),
+/**
+ * What points can buy: time-boxed top-ups on metered features. `affordable` is
+ * computed server-side against the live balance, so the button and the API
+ * cannot disagree about what the student can have.
+ */
+export const useRewards = () =>
+  useQuery<Reward[]>({
+    queryKey: queryKeys.rewards(),
+    queryFn: () => apiClient.get<Reward[]>("/api/goals/rewards"),
+  });
+
+/** Top-ups the student is holding right now, soonest to expire first. */
+export const useActiveGrants = () =>
+  useQuery<Grant[]>({
+    queryKey: queryKeys.activeGrants(),
+    queryFn: () => apiClient.get<Grant[]>("/api/goals/rewards/active"),
   });
 
 /**
- * Marking an allowance paid is the sponsor's own word that cash changed hands.
- * Aptiverse moves no money, so this is a receipt, not a transaction.
+ * Spend points on a reward. The server debits and grants in one transaction,
+ * so there is no state where the points are gone and the top-up never arrived.
+ * The new grant raises the real usage limit immediately, which is why the
+ * usage query is invalidated alongside the points.
  */
-export const useMarkAllowancePaid = () => {
+export const useRedeemReward = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.patch<Allowance>(`/api/goals/allowances/${id}/paid`, {}),
+    mutationFn: (code: string) => apiClient.post<Grant>(`/api/goals/rewards/${code}/redeem`, {}),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: queryKeys.allowances() });
-      void qc.invalidateQueries({ queryKey: queryKeys.goals() });
+      void qc.invalidateQueries({ queryKey: queryKeys.activeGrants() });
+      // Balance changed, so affordability did too.
+      void qc.invalidateQueries({ queryKey: queryKeys.rewards() });
+      void qc.invalidateQueries({ queryKey: queryKeys.points() });
+      void qc.invalidateQueries({ queryKey: queryKeys.pointsLedger() });
+      // Prefix-matches ["entitlements","me"] and ["entitlements","me","usage"]:
+      // the grant raises the real limit, so the meter is stale the moment this
+      // returns.
+      void qc.invalidateQueries({ queryKey: ["entitlements", "me"] });
+      invalidateNotifications(qc);
     },
   });
 };
+
+/**
+ * Where the student stands before they pick a target, and what that target
+ * would pay.
+ *
+ * Creating a rewarded goal at or below the baseline is rejected outright, so
+ * the dialog asks this first and shows the number next to the input. Pricing
+ * stays server-side deliberately: re-deriving the curve here would quote a
+ * figure that drifts from the one actually paid.
+ */
+export const useGoalBaseline = (
+  kind: GoalKind,
+  subjectId?: string | null,
+  topicFilter?: string | null,
+  targetValue?: number | null,
+  enabled = true,
+) =>
+  useQuery<GoalBaseline>({
+    queryKey: queryKeys.goalBaseline(kind, subjectId, topicFilter, targetValue),
+    queryFn: () => {
+      const params = new URLSearchParams({ kind });
+      if (subjectId) params.set("subjectId", subjectId);
+      if (topicFilter) params.set("topicFilter", topicFilter);
+      if (targetValue && targetValue > 0) params.set("targetValue", String(targetValue));
+      return apiClient.get<GoalBaseline>(`/api/goals/baseline?${params.toString()}`);
+    },
+    enabled,
+  });
 
 // ── AI tutor (the /dashboard/chatbot academic assistant) ───────────────
 export type AiChatMessage = { role: "user" | "assistant"; content: string };

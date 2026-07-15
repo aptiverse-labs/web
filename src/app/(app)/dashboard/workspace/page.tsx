@@ -109,6 +109,12 @@ export default function WorkspacePage() {
   // already-taken one -> its results), and Back returns to the catalogue.
   const directTestId = searchParams.get("test");
 
+  // A specific assessment opened from its detail page (`?assessment=<id>`).
+  // Without this the workspace always snapped to the soonest-due assessment,
+  // so "Open workspace" from an assessment page could land you on a different
+  // one entirely.
+  const requestedAssessmentId = searchParams.get("assessment");
+
   const assessmentsQuery = useAssessments();
   const academic = useAcademicUnits();
 
@@ -123,8 +129,14 @@ export default function WorkspacePage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   useEffect(() => {
     if (activeId && activeAssessments.some((a) => a.id === activeId)) return;
-    setActiveId(activeAssessments[0]?.id ?? null);
-  }, [activeAssessments, activeId]);
+    // Honour ?assessment= when it names an assessment the workspace can
+    // actually open; otherwise fall back to soonest-due as before.
+    const requested =
+      requestedAssessmentId && activeAssessments.some((a) => a.id === requestedAssessmentId)
+        ? requestedAssessmentId
+        : null;
+    setActiveId(requested ?? activeAssessments[0]?.id ?? null);
+  }, [activeAssessments, activeId, requestedAssessmentId]);
 
   const activeAssessment = activeAssessments.find((a) => a.id === activeId);
 
@@ -140,6 +152,15 @@ export default function WorkspacePage() {
   const unitName = activeAssessment
     ? (academic.nameFor(activeAssessment.subjectId) ?? prettifyUnitId(activeAssessment.subjectId))
     : undefined;
+
+  // "SBA" (School-Based Assessment) is CAPS high-school language. A university
+  // student logs plain assessments, so the noun follows education level the
+  // same way course/subject already does on the assessments page.
+  //
+  // Safe to read academic.isTertiary here: every surface that uses taskNoun
+  // renders below the `academic.isLoading` skeleton guard, so the profile has
+  // resolved and we are never branching on an undefined educationLevel.
+  const taskNoun = academic.isTertiary ? "assessment" : "SBA";
 
   // Tabs for the active assessment's type. The user's tab choice is
   // persisted to localStorage keyed by assessment id, so:
@@ -251,7 +272,7 @@ export default function WorkspacePage() {
             <EmptyState
               icon={<ChecklistIcon />}
               title="Nothing to work on yet"
-              description="Log an SBA — a test, essay, investigation, project — and the workspace will open with the right tools for it."
+              description="Log a test, essay, investigation, or project and the workspace will open with the right tools for it."
               action={
                 <Button component={Link} href="/dashboard/assessments/new" variant="contained">
                   Add an assessment
@@ -349,7 +370,7 @@ export default function WorkspacePage() {
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="overline" color="text.secondary">
-            Active SBA
+            Active {taskNoun}
           </Typography>
           {activeAssessment ? (
             <>
@@ -403,7 +424,7 @@ export default function WorkspacePage() {
           <TextField
             select
             size="small"
-            label="Switch SBA"
+            label={`Switch ${taskNoun}`}
             value={activeId ?? ""}
             onChange={(e) => setActiveId(e.target.value)}
             sx={{ minWidth: { xs: "100%", sm: 300 }, flexShrink: 0 }}
@@ -415,7 +436,7 @@ export default function WorkspacePage() {
                 const a = activeAssessments.find((x) => x.id === val);
                 return (
                   <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
-                    {a?.title ?? "Select an SBA"}
+                    {a?.title ?? `Select an ${taskNoun}`}
                   </Typography>
                 );
               },
@@ -1013,6 +1034,12 @@ function PracticePanel({
   onRunningChange?: (running: boolean) => void;
 }) {
   const query = usePracticeTests();
+  const academic = useAcademicUnits();
+  // Falls back to the right noun when the unit name can't be resolved: a uni
+  // student studies courses, not subjects. The query is already cached by the
+  // page above, so this hook costs no extra request.
+  const thisUnit = `this ${academic.unitNoun}`;
+  const yourUnit = `your ${academic.unitNoun}`;
   const all = query.data ?? [];
   const forSubject = useMemo(
     () => all.filter((t) => t.subjectId === assessment.subjectId),
@@ -1082,10 +1109,10 @@ function PracticePanel({
           <ChecklistIcon fontSize="small" />
         </Box>
         <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5 }}>
-          No practice yet for {unitName ?? "this subject"}
+          No practice yet for {unitName ?? thisUnit}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 380, mx: "auto", mb: 2 }}>
-          Generate a test for {unitName ?? "your subject"} from the Practice page, then start it right here.
+          Generate a test for {unitName ?? yourUnit} from the Practice page, then start it right here.
         </Typography>
         <Button component={Link} href="/dashboard/practice" variant="outlined" endIcon={<ArrowForwardIcon />}>
           Go to Practice
@@ -1097,7 +1124,7 @@ function PracticePanel({
   return (
     <Stack spacing={1.5}>
       <Typography variant="body2" color="text.secondary">
-        Practice for {unitName ?? "this subject"} — pick one to start a timed run here.
+        Practice for {unitName ?? thisUnit}. Pick one to start a timed run here.
       </Typography>
       {forSubject.map((p) => (
         <PracticeRow key={p.id} test={p} onStart={() => setRunningTestId(p.id)} />

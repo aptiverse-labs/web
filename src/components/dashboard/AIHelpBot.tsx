@@ -40,7 +40,7 @@ export function AIHelpBot() {
     {
       role: "assistant",
       content:
-        "I'm Aptiverse's help bot. Ask me how to do something, like \"how do I add a subject?\" or \"where do I log an SBA?\"",
+        "I'm Aptiverse's help bot. Ask me how to do something, like \"how do I log an assessment?\" or \"where do I see my marks?\"",
     },
   ]);
   const [quotaSnapshot, setQuotaSnapshot] = useState<{ used: number; limit: number } | null>(null);
@@ -358,9 +358,12 @@ export function AIHelpBot() {
   );
 }
 
+// Kept neutral on purpose: this bot is mounted in the shell for every role
+// (student, parent, teacher, admin) and for both education levels, so it can't
+// assume the reader has CAPS subjects and SBAs.
 const SUGGESTIONS = [
-  "How do I add a subject?",
-  "Where do I log an SBA?",
+  "How do I log an assessment?",
+  "Where do I see my marks?",
   "How do I see my mastery?",
   "What's the difference between Pro and Max?",
 ];

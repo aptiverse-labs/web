@@ -58,7 +58,7 @@ export default function ForStudentsPage() {
                 Study with a plan, not panic.
               </Typography>
               <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, maxWidth: 520 }}>
-                Know what to practise next, watch where your marks are heading, and get a nudge to rest before you burn out. From Grade R to your final year at university.
+                Know what to practise next, watch where your marks are heading, and get a nudge to rest before you burn out. From Grade 10 to your final year at university.
               </Typography>
               <Stack direction="row" spacing={1.5} sx={{ pt: 1 }} flexWrap="wrap" useFlexGap>
                 <Button component={Link} href="/register" variant="contained" color="secondary" size="large">
@@ -166,10 +166,10 @@ export default function ForStudentsPage() {
               icon={<GraduationCap size={20} />}
               label="At university"
               items={[
-                "Modules, credits, and coursework deadlines",
-                "Course material and your own uploads",
-                "Forecasts per module, not just per subject",
-                "Career matching for after you graduate",
+                "Courses, lecturers, and coursework deadlines",
+                "Your own notes, drafts, and uploads per assessment",
+                "Forecasts per course, built from marks you log",
+                "Career goals tracked against your course marks",
               ]}
             />
           </Grid>
@@ -380,8 +380,8 @@ const FEATURES = [
   },
   {
     icon: <Compass size={18} />,
-    title: "Career match",
-    description: "Match your marks and interests to realistic career paths, grounded in SA data.",
+    title: "Career goals",
+    description: "Name the field you're aiming at and track it against your real marks and mastery.",
     accent: "secondary" as const,
   },
   {
@@ -405,7 +405,7 @@ const FAQ = [
   },
   {
     q: "I am at university, not school. Does it fit?",
-    a: "Yes. Switch your stage and Aptiverse shows modules, credits, and coursework instead of subjects and SBAs, with forecasts per module and career matching for after you graduate.",
+    a: "Yes. Switch your stage and Aptiverse shows the courses you are enrolled in and their coursework instead of subjects and SBAs, with forecasts per course and career matching for after you graduate.",
   },
   {
     q: "Does the assistant just give me the answers?",

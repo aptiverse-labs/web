@@ -61,7 +61,7 @@ function PracticeFallback() {
     <AtmosphericBackdrop>
       <PageHeader
         title="Practice tests"
-        description="AI-generated drills aligned to your weakest topics, plus any set for your SBAs."
+        description="AI-generated drills aligned to your weakest topics."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Practice" }]}
       />
       <Skeleton variant="rounded" height={280} />
@@ -94,7 +94,7 @@ function PracticeContent() {
     <AtmosphericBackdrop>
       <PageHeader
         title="Practice tests"
-        description="AI-generated drills aligned to your weakest topics, plus any set for your SBAs."
+        description="AI-generated drills aligned to your weakest topics."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Practice" }]}
         actions={
           <Button

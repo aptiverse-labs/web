@@ -15,6 +15,10 @@ export type FeatureKey =
   | "wellbeing.basic"
   | "past_papers.read"
   | "universities.read"
+  // Career navigator: admission and progression targets. Free on purpose. The
+  // key survives because the entitlements seeder still lists it; nothing in the
+  // app gates on it any more.
+  | "career_navigator"
   | "calendar"
   | "notifications"
   | "settings"
@@ -35,7 +39,6 @@ export type FeatureKey =
   | "past_papers.solved"
   | "sba.coach"
   | "mastery.predictions"
-  | "career_navigator"
   | "rewards.redeem"
   | "tutor.connect"
   | "study_groups"
@@ -133,6 +136,10 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanCode> = {
   "wellbeing.basic": "free",
   "past_papers.read": "free",
   "universities.read": "free",
+  // Was "student.pro". Un-gated: a student who cannot afford a plan is exactly
+  // the student who most needs to know they are 12 marks short of the degree
+  // they want, and which subject those 12 marks are in.
+  career_navigator: "free",
   calendar: "free",
   notifications: "free",
   settings: "free",
@@ -153,7 +160,6 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanCode> = {
   "past_papers.solved": "student.pro",
   "sba.coach": "student.pro",
   "mastery.predictions": "student.pro",
-  career_navigator: "student.pro",
   "rewards.redeem": "student.pro",
   "tutor.connect": "student.pro",
   study_groups: "student.pro",
