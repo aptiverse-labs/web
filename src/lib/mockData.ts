@@ -135,17 +135,93 @@ export const ASSESSMENT_STATUS_LABELS: Record<AssessmentStatus, string> = {
   graded: "Graded",
 };
 
+// What a goal is checked against. Everything except "custom" is measured by
+// the server from work the student actually did, so the client must not offer
+// to edit their progress.
+export type GoalKind =
+  | "custom"
+  | "practice_tests"
+  | "practice_score"
+  | "topic_mastery"
+  | "assessment_mark"
+  | "checkin_streak"
+  | "practice_streak";
+
 export type Goal = {
   id: string;
   subjectId?: string;
   title: string;
   description: string;
+  /** Generated server-side from kind + targetValue. Never sent on create. */
   target: string;
   progress: number;
   status: "active" | "completed" | "verified" | "at_risk";
   dueDate: string;
   category: "academic" | "wellbeing" | "habit" | "career";
   reward?: string;
+
+  kind: GoalKind;
+  targetValue?: number | null;
+  currentValue: number;
+  topicFilter?: string | null;
+  rewardPoints: number;
+  achievedAt?: string | null;
+  /** False only for "custom". Gates the manual progress control. */
+  autoVerified: boolean;
+  allowance?: Allowance | null;
+};
+
+export type StudentPoints = {
+  studentId: string;
+  balance: number;
+  totalEarned: number;
+  level: number;
+  rank: string;
+  pointsIntoLevel: number;
+  pointsPerLevel: number;
+  checkinStreakDays: number;
+  practiceStreakDays: number;
+  goalsVerified: number;
+  testsSubmitted: number;
+};
+
+export type PointsEntry = {
+  id: string;
+  points: number;
+  description: string;
+  source: string;
+  date: string;
+};
+
+export type Achievement = {
+  code: string;
+  title: string;
+  description: string;
+  earned: boolean;
+  progress: number;
+  target: number;
+};
+
+export type AllowanceStatus = "pledged" | "earned" | "paid" | "cancelled";
+
+/**
+ * A parent's promise of money against a goal. Aptiverse records the pledge and
+ * the receipt; it never holds or moves the funds.
+ */
+export type Allowance = {
+  id: string;
+  goalId: string;
+  goalTitle: string;
+  studentId: string;
+  studentName: string;
+  sponsorName: string;
+  amountZar: number;
+  status: AllowanceStatus;
+  earnedAt?: string | null;
+  paidAt?: string | null;
+  note?: string | null;
+  goalProgress: number;
+  goalTarget: string;
 };
 
 export type PracticeTest = {
@@ -234,15 +310,6 @@ export type Notification = {
   read: boolean;
 };
 
-export type Reward = {
-  id: string;
-  title: string;
-  description: string;
-  cost: number;
-  category: "course" | "tutor" | "feature" | "badge" | "experience";
-  imageColor: string;
-  available: boolean;
-};
 
 export type StudyGroup = {
   id: string;

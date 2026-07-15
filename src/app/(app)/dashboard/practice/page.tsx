@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
@@ -19,6 +19,7 @@ import DialogActions from "@mui/material/DialogActions";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Switch from "@mui/material/Switch";
 import Alert from "@mui/material/Alert";
+import Skeleton from "@mui/material/Skeleton";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import QuizIcon from "@mui/icons-material/QuizOutlined";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -43,7 +44,32 @@ import type { PracticeTest } from "@/lib/mockData";
 // id is the practice key that tests are keyed on.
 type StudyUnit = { id: string; name: string };
 
+// useSearchParams() opts the whole subtree out of static rendering, and Next 16
+// fails the production build rather than doing it silently. The Suspense
+// boundary is what lets the rest of the page prerender while the query string
+// resolves on the client.
 export default function PracticePage() {
+  return (
+    <Suspense fallback={<PracticeFallback />}>
+      <PracticeContent />
+    </Suspense>
+  );
+}
+
+function PracticeFallback() {
+  return (
+    <AtmosphericBackdrop>
+      <PageHeader
+        title="Practice tests"
+        description="AI-generated drills aligned to your weakest topics, plus any set for your SBAs."
+        breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Practice" }]}
+      />
+      <Skeleton variant="rounded" height={280} />
+    </AtmosphericBackdrop>
+  );
+}
+
+function PracticeContent() {
   const testsQuery = usePracticeTests();
   const subjectsQuery = useSubjects();
   const coursesQuery = useCourses();

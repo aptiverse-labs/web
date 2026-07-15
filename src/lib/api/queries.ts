@@ -15,7 +15,11 @@ import {
   type DiaryEntry,
   type WellbeingSummary,
   type MoodPoint,
-  type Reward,
+  type GoalKind,
+  type StudentPoints,
+  type PointsEntry,
+  type Achievement,
+  type Allowance,
   type Career,
   type StudyGroup,
   type Curriculum,
@@ -148,7 +152,10 @@ export const queryKeys = {
   pastPapers: () => ["past-papers"] as const,
   diary: () => ["diary"] as const,
   counsellors: () => ["counsellors"] as const,
-  rewards: () => ["rewards"] as const,
+  points: () => ["goals", "points"] as const,
+  pointsLedger: () => ["goals", "points", "ledger"] as const,
+  achievements: () => ["goals", "achievements"] as const,
+  allowances: () => ["goals", "allowances"] as const,
   careers: () => ["careers"] as const,
   tutorConversations: () => ["ai", "conversations"] as const,
   tutorConversation: (id: string) => ["ai", "conversation", id] as const,
@@ -615,11 +622,22 @@ export const useGoals = () =>
 export type CreateGoalInput = {
   title: string;
   description?: string;
-  target?: string;
   category?: Goal["category"];
   subjectId?: string | null;
   reward?: string;
   dueDate?: string;
+
+  /** Defaults to "custom" server-side. Anything else requires targetValue. */
+  kind?: GoalKind;
+  targetValue?: number | null;
+  /** Only meaningful for topic_mastery: narrows the goal to one topic. */
+  topicFilter?: string | null;
+  /**
+   * Free-text "what done looks like", used only for custom goals. Every
+   * measurable kind generates its own label server-side so the card and the
+   * check can't drift apart, and anything sent here is ignored.
+   */
+  target?: string;
 };
 
 export const useCreateGoal = () => {
@@ -1084,11 +1102,56 @@ export const useLogDiary = () => {
   });
 };
 
-export const useRewards = () =>
-  useQuery<Reward[]>({
-    queryKey: queryKeys.rewards(),
-    queryFn: () => apiClient.get<Reward[]>("/api/goals/rewards"),
+// ── Points, achievements and allowances ───────────────────────────────
+//
+// There is no rewards catalogue hook here any more. /api/goals/rewards used to
+// return a shop of tutor hours and masterclasses that nothing could actually
+// deliver, with a Redeem button wired to nothing. What replaced it is the set
+// below: numbers the server derives from real work.
+
+/**
+ * Balance, level, rank and streaks. The server re-evaluates every measurable
+ * goal before answering, so this reflects work done since the last page load.
+ */
+export const useStudentPoints = () =>
+  useQuery<StudentPoints>({
+    queryKey: queryKeys.points(),
+    queryFn: () => apiClient.get<StudentPoints>("/api/goals/points/me"),
   });
+
+export const usePointsLedger = () =>
+  useQuery<PointsEntry[]>({
+    queryKey: queryKeys.pointsLedger(),
+    queryFn: () => apiClient.get<PointsEntry[]>("/api/goals/points/ledger"),
+  });
+
+export const useAchievements = () =>
+  useQuery<Achievement[]>({
+    queryKey: queryKeys.achievements(),
+    queryFn: () => apiClient.get<Achievement[]>("/api/goals/achievements"),
+  });
+
+export const useAllowances = () =>
+  useQuery<Allowance[]>({
+    queryKey: queryKeys.allowances(),
+    queryFn: () => apiClient.get<Allowance[]>("/api/goals/allowances"),
+  });
+
+/**
+ * Marking an allowance paid is the sponsor's own word that cash changed hands.
+ * Aptiverse moves no money, so this is a receipt, not a transaction.
+ */
+export const useMarkAllowancePaid = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.patch<Allowance>(`/api/goals/allowances/${id}/paid`, {}),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.allowances() });
+      void qc.invalidateQueries({ queryKey: queryKeys.goals() });
+    },
+  });
+};
 
 // ── AI tutor (the /dashboard/chatbot academic assistant) ───────────────
 export type AiChatMessage = { role: "user" | "assistant"; content: string };

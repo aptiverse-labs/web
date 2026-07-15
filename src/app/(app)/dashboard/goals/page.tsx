@@ -17,13 +17,15 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
+import InputAdornment from "@mui/material/InputAdornment";
 import LinearProgress from "@mui/material/LinearProgress";
+import Tooltip from "@mui/material/Tooltip";
 import { alpha } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
-import RedeemIcon from "@mui/icons-material/RedeemOutlined";
 import FlagIcon from "@mui/icons-material/FlagOutlined";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import SwapVertIcon from "@mui/icons-material/SwapVert";
+import { ShieldCheck, HandCoins, Sparkles } from "lucide-react";
 import { useSnackbar } from "notistack";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CardRow } from "@/components/common/CardRow";
@@ -40,6 +42,7 @@ import {
   type AcademicUnit,
 } from "@/lib/api/queries";
 import type { Goal } from "@/lib/mockData";
+import { formatCurrency } from "@/lib/format";
 import { RelativeTime } from "@/components/common/RelativeTime";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 
@@ -52,6 +55,84 @@ const CATEGORIES: { value: NonNullable<CreateGoalInput["category"]>; label: stri
   { value: "habit", label: "Habit" },
   { value: "career", label: "Career" },
 ];
+
+/**
+ * The kinds a student can pick, and what the server checks each one against.
+ *
+ * `unit` and `noun` exist so the dialog can say "5 tests" or "75 %" without a
+ * switch statement at every call site. `custom` is last deliberately: it is the
+ * only one nobody verifies, so it should read as the fallback it is.
+ */
+const KINDS: {
+  value: NonNullable<CreateGoalInput["kind"]>;
+  label: string;
+  helper: string;
+  unit: string;
+  max?: number;
+  defaultTarget: number;
+  category?: NonNullable<CreateGoalInput["category"]>;
+}[] = [
+  {
+    value: "practice_tests",
+    label: "Submit practice tests",
+    helper: "Counts every practice test you submit. Generate one from any topic.",
+    unit: "tests",
+    defaultTarget: 5,
+    category: "academic",
+  },
+  {
+    value: "practice_score",
+    label: "Hit a practice score",
+    helper: "Your best score on any submitted practice test.",
+    unit: "%",
+    max: 100,
+    defaultTarget: 75,
+    category: "academic",
+  },
+  {
+    value: "topic_mastery",
+    label: "Reach topic mastery",
+    helper: "Mastery is how much of a topic you get right across all your attempts.",
+    unit: "%",
+    max: 100,
+    defaultTarget: 75,
+    category: "academic",
+  },
+  {
+    value: "assessment_mark",
+    label: "Get a mark",
+    helper: "Your best mark on a graded assessment you have logged.",
+    unit: "%",
+    max: 100,
+    defaultTarget: 70,
+    category: "academic",
+  },
+  {
+    value: "practice_streak",
+    label: "Practise every day",
+    helper: "Consecutive days with at least one submitted practice test.",
+    unit: "days",
+    defaultTarget: 7,
+    category: "habit",
+  },
+  {
+    value: "checkin_streak",
+    label: "Check in every day",
+    helper: "Consecutive days you log how you're doing.",
+    unit: "days",
+    defaultTarget: 7,
+    category: "wellbeing",
+  },
+  {
+    value: "custom",
+    label: "Something else",
+    helper: "Nothing to check this against, so you track it yourself.",
+    unit: "",
+    defaultTarget: 0,
+  },
+];
+
+const kindMeta = (kind: string) => KINDS.find((k) => k.value === kind);
 
 export default function GoalsPage() {
   const goalsQuery = useGoals();
@@ -66,7 +147,7 @@ export default function GoalsPage() {
     <AtmosphericBackdrop>
       <PageHeader
         title="Goals"
-        description="AI sets healthy goals based on your history. You make them happen. Schools verify the wins."
+        description="Set a target, then let your own work prove it. Practice tests, marks, mastery and streaks are counted automatically, so a goal is done when the evidence says so."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Goals" }]}
         actions={
           <Button variant="contained" color="secondary" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
@@ -123,15 +204,37 @@ function NewGoalDialog({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [kind, setKind] = useState<NonNullable<CreateGoalInput["kind"]>>("practice_tests");
+  const [targetValue, setTargetValue] = useState<string>("5");
+  const [topicFilter, setTopicFilter] = useState("");
   const [target, setTarget] = useState("");
   const [category, setCategory] = useState<NonNullable<CreateGoalInput["category"]>>("academic");
   const [subjectId, setSubjectId] = useState<string>("");
   const [reward, setReward] = useState("");
   const [dueDate, setDueDate] = useState<string>(defaultDue);
 
+  const meta = kindMeta(kind);
+  const measurable = kind !== "custom";
+
+  // Picking a kind moves the category with it: a practice streak is a habit and
+  // a check-in streak is wellbeing, and making the student restate that in a
+  // second dropdown is just a chance to contradict themselves.
+  const changeKind = (next: NonNullable<CreateGoalInput["kind"]>) => {
+    setKind(next);
+    const m = kindMeta(next);
+    if (m) {
+      setTargetValue(m.defaultTarget ? String(m.defaultTarget) : "");
+      if (m.category) setCategory(m.category);
+    }
+    if (next !== "topic_mastery") setTopicFilter("");
+  };
+
   const reset = () => {
     setTitle("");
     setDescription("");
+    setKind("practice_tests");
+    setTargetValue("5");
+    setTopicFilter("");
     setTarget("");
     setCategory("academic");
     setSubjectId("");
@@ -145,17 +248,39 @@ function NewGoalDialog({
     reset();
   };
 
+  const parsedTarget = Number.parseInt(targetValue, 10);
+  const targetError =
+    !measurable || targetValue === ""
+      ? null
+      : !Number.isFinite(parsedTarget) || parsedTarget <= 0
+      ? "Give it a number above zero."
+      : meta?.max && parsedTarget > meta.max
+      ? `Can't be more than ${meta.max}.`
+      : null;
+
   const submit = async () => {
     const trimmed = title.trim();
     if (!trimmed) {
       enqueueSnackbar("Give your goal a title.", { variant: "warning" });
       return;
     }
+    if (measurable && (targetError || targetValue === "")) {
+      enqueueSnackbar(targetError ?? "This goal needs a target to measure against.", {
+        variant: "warning",
+      });
+      return;
+    }
     try {
       await createGoal.mutateAsync({
         title: trimmed,
         description: description.trim() || undefined,
-        target: target.trim() || undefined,
+        kind,
+        targetValue: measurable ? parsedTarget : null,
+        topicFilter: kind === "topic_mastery" ? topicFilter.trim() || null : null,
+        // Only custom goals carry a hand-written target: every other kind has
+        // its label generated server-side from the kind and the number, so what
+        // the card claims and what the evaluator checks stay the same sentence.
+        target: measurable ? undefined : target.trim() || undefined,
         category,
         subjectId: subjectId || null,
         reward: reward.trim() || undefined,
@@ -195,6 +320,81 @@ function NewGoalDialog({
             fullWidth
             placeholder="What you'll do to get there."
           />
+          <TextField
+            label="What proves it"
+            value={kind}
+            onChange={(e) => changeKind(e.target.value as typeof kind)}
+            select
+            fullWidth
+            helperText={meta?.helper}
+          >
+            {KINDS.map((k) => (
+              <MenuItem key={k.value} value={k.value}>
+                {k.label}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {measurable ? (
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                label="Target"
+                value={targetValue}
+                onChange={(e) => setTargetValue(e.target.value.replace(/[^0-9]/g, ""))}
+                fullWidth
+                required
+                error={!!targetError}
+                helperText={targetError ?? " "}
+                slotProps={{
+                  input: {
+                    endAdornment: meta?.unit ? (
+                      <InputAdornment position="end">{meta.unit}</InputAdornment>
+                    ) : undefined,
+                  },
+                  htmlInput: { inputMode: "numeric" },
+                }}
+              />
+              <TextField
+                label="Due date"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                fullWidth
+                helperText=" "
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Stack>
+          ) : (
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <TextField
+                label="What does done look like?"
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+                fullWidth
+                placeholder="e.g. Finish the Chapter 4 notes"
+              />
+              <TextField
+                label="Due date"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                fullWidth
+                slotProps={{ inputLabel: { shrink: true } }}
+              />
+            </Stack>
+          )}
+
+          {kind === "topic_mastery" && (
+            <TextField
+              label="Topic (optional)"
+              value={topicFilter}
+              onChange={(e) => setTopicFilter(e.target.value)}
+              fullWidth
+              placeholder="e.g. Trigonometry"
+              helperText="Leave blank to measure across every topic you practise."
+            />
+          )}
+
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <TextField
               label="Category"
@@ -225,30 +425,6 @@ function NewGoalDialog({
               ))}
             </TextField>
           </Stack>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <TextField
-              label="Target"
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              fullWidth
-              placeholder='e.g. "75% mastery" or "3 / 3"'
-            />
-            <TextField
-              label="Due date"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              fullWidth
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
-          </Stack>
-          <TextField
-            label="Reward (optional)"
-            value={reward}
-            onChange={(e) => setReward(e.target.value)}
-            fullWidth
-            placeholder="What you'll do when you hit it."
-          />
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -407,6 +583,97 @@ function GoalPriorityRow({ goal, unit }: { goal: Goal; unit?: AcademicUnit }) {
   );
 }
 
+/**
+ * "3 of 5 tests" beats "60%": the raw count is the thing a student can act on,
+ * and it says what the next step is without any arithmetic. Custom goals have
+ * no count to show, so they fall back to whatever the student wrote.
+ */
+function progressLabel(goal: Goal): string {
+  if (!goal.autoVerified || !goal.targetValue) {
+    return goal.target ? `Progress · ${goal.target}` : "Progress";
+  }
+  const meta = kindMeta(goal.kind);
+  const unit = meta?.unit === "%" ? "%" : meta?.unit ? ` ${meta.unit}` : "";
+  if (unit === "%") return `${goal.currentValue}% of ${goal.targetValue}%`;
+  return `${goal.currentValue} of ${goal.targetValue}${unit}`;
+}
+
+/**
+ * The footer carries the two things that make a goal worth having: what it is
+ * worth in points, and whether a parent has money on it. The verified badge is
+ * separate from the status chip on purpose. The chip says where the goal is;
+ * this says nobody had to take the student's word for it.
+ */
+function GoalFooter({ goal }: { goal: Goal }) {
+  const allowance = goal.allowance;
+  const showPoints = goal.rewardPoints > 0;
+
+  if (!showPoints && !allowance && !goal.reward) return undefined;
+
+  return (
+    <Stack spacing={1} sx={{ width: "100%" }}>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        {showPoints && (
+          <Chip
+            size="small"
+            icon={<Sparkles size={13} />}
+            label={`${goal.rewardPoints} pts`}
+            sx={{
+              fontWeight: 600,
+              bgcolor: (t) => alpha(t.palette.achievement.main, 0.14),
+              color: (t) => t.palette.achievement.dark,
+              "& .MuiChip-icon": { color: "inherit", ml: 0.75 },
+            }}
+          />
+        )}
+        {goal.autoVerified && (
+          <Tooltip title="Measured from your work. Nobody can set this by hand.">
+            <Chip
+              size="small"
+              variant="outlined"
+              icon={<ShieldCheck size={13} />}
+              label="Auto-checked"
+              sx={{ "& .MuiChip-icon": { ml: 0.75 } }}
+            />
+          </Tooltip>
+        )}
+        {allowance && allowance.status !== "cancelled" && (
+          <Chip
+            size="small"
+            icon={<HandCoins size={13} />}
+            label={
+              allowance.status === "paid"
+                ? `${formatCurrency(allowance.amountZar)} paid`
+                : allowance.status === "earned"
+                ? `${formatCurrency(allowance.amountZar)} earned`
+                : formatCurrency(allowance.amountZar)
+            }
+            sx={{
+              fontWeight: 600,
+              bgcolor: (t) =>
+                alpha(
+                  allowance.status === "paid" ? t.palette.success.main : t.palette.secondary.main,
+                  0.14,
+                ),
+              color: (t) =>
+                allowance.status === "paid" ? t.palette.success.dark : t.palette.secondary.dark,
+              "& .MuiChip-icon": { color: "inherit", ml: 0.75 },
+            }}
+          />
+        )}
+      </Stack>
+
+      {/* Legacy free-text rewards. New goals don't set this: points and
+          allowances replaced a promise only the student could score. */}
+      {goal.reward && (
+        <Typography variant="caption" color="text.secondary">
+          {goal.reward}
+        </Typography>
+      )}
+    </Stack>
+  );
+}
+
 function GoalCard({ goal, unit }: { goal: Goal; unit?: AcademicUnit }) {
   const { enqueueSnackbar } = useSnackbar();
   const del = useDeleteGoal();
@@ -464,7 +731,7 @@ function GoalCard({ goal, unit }: { goal: Goal; unit?: AcademicUnit }) {
         title={goal.title}
         subtitle={unit?.name}
         description={goal.description}
-        progress={{ value: goal.progress, label: `Progress · ${goal.target}` }}
+        progress={{ value: goal.progress, label: progressLabel(goal) }}
         status={{
           kind: tone,
           dot: goal.status === "active" || goal.status === "at_risk",
@@ -479,28 +746,7 @@ function GoalCard({ goal, unit }: { goal: Goal; unit?: AcademicUnit }) {
             Due <RelativeTime iso={goal.dueDate} />
           </>
         }
-        actions={
-          goal.reward ? (
-            <Box
-              sx={{
-                width: "100%",
-                p: 1.5,
-                borderRadius: 1.5,
-                bgcolor: (t) => alpha(t.palette.achievement.main, 0.1),
-                border: 1,
-                borderColor: (t) => alpha(t.palette.achievement.main, 0.3),
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
-              }}
-            >
-              <RedeemIcon fontSize="small" sx={{ color: "achievement.dark" }} />
-              <Typography variant="caption" sx={{ fontWeight: 500 }}>
-                {goal.reward}
-              </Typography>
-            </Box>
-          ) : undefined
-        }
+        actions={<GoalFooter goal={goal} />}
       />
       {confirmDialog}
     </>
