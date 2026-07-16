@@ -112,6 +112,22 @@ img {
   }
 }
 
+/*
+ * Text selection. Without an explicit rule the browser default keeps each
+ * element's own text colour and only tints the background, so white-on-black
+ * text vanishes against a light highlight and black-on-white against a dark one.
+ * Force a single legible pair everywhere, graphite ink on citron, which reads
+ * in both light and dark mode regardless of the underlying text colour.
+ */
+::selection {
+  background-color: #c3e84f;
+  color: #1b1d22;
+}
+::-moz-selection {
+  background-color: #c3e84f;
+  color: #1b1d22;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
