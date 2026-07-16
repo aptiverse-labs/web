@@ -538,11 +538,21 @@ export function BillingManager({
 // Allowances that differ across plans, in the order they matter to a student.
 // These come straight from each plan's quota rows, so the comparison never
 // invents a number.
+// The WhatsApp row is gone. It advertised "50 / mo" on Pro and "200 / mo" on
+// Max against a channel that cannot send a message: there is no WhatsApp
+// transport in the API, no webhook, no provider, nothing. The quota is real in
+// the sense that a number sits in the plan_quotas table and UsageMeter would
+// happily meter it, which is precisely the problem, because metering a thing
+// that cannot happen is not a feature. Selling a monthly allowance of messages
+// nobody can receive is the clearest kind of false advertising in here.
+//
+// The quota rows stay in the database untouched: dropping them is a migration
+// and a pricing decision, and this file only decides what a paying student is
+// shown. If WhatsApp ships, put the row back.
 const QUOTA_ROWS: { key: string; label: string }[] = [
   { key: "practice.generate", label: "Practice tests" },
   { key: "ai.quick", label: "Quick AI replies" },
   { key: "ai.deep", label: "Deep AI sessions" },
-  { key: "whatsapp", label: "WhatsApp tutor" },
 ];
 
 // Human one-liners per plan. The catalog descriptions carry slugs and em
@@ -562,10 +572,10 @@ const PLAN_TAGLINE: Record<string, string> = {
   // also said "Built for matric" to every university student paying for it.
   //
   // What Max genuinely delivers over Pro is limits, and UsageMeter really does
-  // enforce those, so that is what it says now. The plan comparison beneath still
-  // advertises a WhatsApp quota against a channel that cannot send a message:
-  // that needs a decision about the product, not a rewrite of a string, so it is
-  // flagged rather than quietly papered over.
+  // enforce those, so that is what it says now. WhatsApp has since been dropped
+  // as a direction outright: the quota, the entitlement and the meter are gone
+  // too, not just this sentence. The exam simulator and the weekly debrief are
+  // still unbuilt, so they stay out of here until they work.
   "student.pro": "Deep AI sessions, plus far more practice and quick questions than Free.",
   "student.max": "The highest limits: the most practice tests, quick questions and deep sessions.",
   parent: "One child on Student Pro, plus the parent toolkit.",
@@ -800,14 +810,14 @@ function UsageCard({ usage }: { usage: ReturnType<typeof useUsage> }) {
       label: "Deep AI sessions",
       used: usage.data?.aiDeep.used ?? 0,
       total: usage.data?.aiDeep.limit ?? 0,
-      hint: "Opus-powered deep tutor: long walk-throughs, essay marking, weekly debrief.",
+      // Named the weekly debrief, which does not exist either.
+      hint: "Opus-powered deep tutor: long walk-throughs and essay marking.",
     },
-    {
-      label: "WhatsApp messages",
-      used: usage.data?.whatsapp.used ?? 0,
-      total: usage.data?.whatsapp.limit ?? 0,
-      hint: "Outbound messages from the WhatsApp tutor.",
-    },
+    // The "WhatsApp messages" ring is gone with the rest of the WhatsApp
+    // fiction. It rendered a real meter, filling from a real quota, for
+    // outbound messages the platform has no way to send. A student watching
+    // "200 left" tick down would be watching a number that can only ever say
+    // 200. See QUOTA_ROWS.
   ];
 
   return (

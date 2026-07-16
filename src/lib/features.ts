@@ -50,7 +50,6 @@ export type FeatureKey =
   | "audio.explanations"
   | "study_plan.ai"
   | "ai_debrief.weekly"
-  | "whatsapp.contextual"
 
   // -------- Family entry --------
   | "parent.dashboard"
@@ -64,7 +63,6 @@ export type FeatureKey =
   // -------- Family Pro --------
   | "parent.uni_readiness"
   | "family.shared_calendar"
-  | "family.whatsapp_recap"
   | "counselling.session_included"
 
   // -------- Family Max --------
@@ -171,7 +169,6 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanCode> = {
   "audio.explanations": "student.max",
   "study_plan.ai": "student.max",
   "ai_debrief.weekly": "student.max",
-  "whatsapp.contextual": "student.max",
 
   // Parent track — every parent tier grants the same tooling, so the entry
   // tier (parent, 1 child) is the cheapest plan that unlocks these.
@@ -184,7 +181,6 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanCode> = {
   "family.linked_children": "parent",
   "parent.uni_readiness": "parent",
   "family.shared_calendar": "parent",
-  "family.whatsapp_recap": "parent",
 
   // School-only parent extras (a real counselling session + concierge/coach
   // features). No paid parent tier grants these, so School is the min plan.
