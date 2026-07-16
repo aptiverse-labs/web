@@ -381,11 +381,42 @@ export type StudyGroup = {
   name: string;
   subjectId: string;
   members: number;
+  // Owner-set ceiling on membership; join is refused at capacity.
+  memberCapacity: number;
   privacy: "open" | "invite";
   description: string;
   nextSession?: string;
+  // The viewer's standing in the group: "owner" | "admin" | "member" | ""
+  // (empty when not a member).
+  role: "owner" | "admin" | "member" | "";
   isMember: boolean;
   isOwner: boolean;
+  // True when the viewer can moderate (owner or admin).
+  canManage: boolean;
+  // True when members has reached memberCapacity.
+  isFull: boolean;
+};
+
+// One person on a group's roster, with what the viewer is allowed to do to them.
+export type StudyGroupMember = {
+  userId: string;
+  name: string;
+  role: "owner" | "admin" | "member";
+  joinedAt: string;
+  isYou: boolean;
+  canRemove: boolean;
+  canPromote: boolean;
+};
+
+// A single chat message in a group's transcript.
+export type StudyGroupMessage = {
+  id: string;
+  userId: string;
+  authorName: string;
+  body: string;
+  createdAt: string;
+  isMine: boolean;
+  canDelete: boolean;
 };
 
 export type University = {

@@ -24,6 +24,8 @@ import {
   type GoalBaseline,
   type Career,
   type StudyGroup,
+  type StudyGroupMember,
+  type StudyGroupMessage,
   type Curriculum,
   type CatalogSubject,
   type AcademicProfile,
@@ -1607,11 +1609,21 @@ export const useStudyGroups = () =>
     queryFn: () => apiClient.get<StudyGroup[]>("/api/study-groups"),
   });
 
+// A single group's detail, for the group workspace page. Open groups resolve
+// even for a non-member (so they can preview before joining).
+export const useStudyGroup = (id: string, enabled = true) =>
+  useQuery<StudyGroup>({
+    queryKey: ["study-groups", id, "detail"],
+    queryFn: () => apiClient.get<StudyGroup>(`/api/study-groups/${id}`),
+    enabled: enabled && !!id,
+  });
+
 export type CreateStudyGroupInput = {
   name: string;
   subjectId: string;
   description?: string;
   privacy: "open" | "invite";
+  memberCapacity?: number;
 };
 
 export const useCreateStudyGroup = () => {
@@ -1622,11 +1634,40 @@ export const useCreateStudyGroup = () => {
   });
 };
 
+export type UpdateStudyGroupInput = {
+  name?: string;
+  description?: string;
+  privacy?: "open" | "invite";
+  memberCapacity?: number;
+};
+
+export const useUpdateStudyGroup = (id: string) => {
+  const qc = useQueryClient();
+  return useMutation<StudyGroup, ApiError, UpdateStudyGroupInput>({
+    mutationFn: (body) => apiClient.patch<StudyGroup>(`/api/study-groups/${id}`, body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["study-groups", id, "detail"] });
+      void qc.invalidateQueries({ queryKey: queryKeys.studyGroups() });
+    },
+  });
+};
+
+export const useDeleteStudyGroup = () => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, string>({
+    mutationFn: (id) => apiClient.delete<void>(`/api/study-groups/${id}`),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.studyGroups() }),
+  });
+};
+
 export const useJoinStudyGroup = () => {
   const qc = useQueryClient();
   return useMutation<void, ApiError, string>({
     mutationFn: (id) => apiClient.post<void>(`/api/study-groups/${id}/join`, {}),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.studyGroups() }),
+    onSuccess: (_d, id) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.studyGroups() });
+      void qc.invalidateQueries({ queryKey: ["study-groups", id, "detail"] });
+    },
   });
 };
 
@@ -1634,7 +1675,84 @@ export const useLeaveStudyGroup = () => {
   const qc = useQueryClient();
   return useMutation<void, ApiError, string>({
     mutationFn: (id) => apiClient.post<void>(`/api/study-groups/${id}/leave`, {}),
-    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.studyGroups() }),
+    onSuccess: (_d, id) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.studyGroups() });
+      void qc.invalidateQueries({ queryKey: ["study-groups", id, "detail"] });
+    },
+  });
+};
+
+// ---- Group roster / moderation ----
+
+export const useStudyGroupMembers = (groupId: string, enabled = true) =>
+  useQuery<StudyGroupMember[]>({
+    queryKey: ["study-groups", groupId, "members"],
+    queryFn: () => apiClient.get<StudyGroupMember[]>(`/api/study-groups/${groupId}/members`),
+    enabled: enabled && !!groupId,
+  });
+
+export const useRemoveStudyGroupMember = (groupId: string) => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, string>({
+    mutationFn: (userId) => apiClient.delete<void>(`/api/study-groups/${groupId}/members/${userId}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["study-groups", groupId, "members"] });
+      void qc.invalidateQueries({ queryKey: ["study-groups", groupId, "detail"] });
+      void qc.invalidateQueries({ queryKey: queryKeys.studyGroups() });
+    },
+  });
+};
+
+export const useSetStudyGroupMemberRole = (groupId: string) => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, { userId: string; role: "admin" | "member" | "owner" }>({
+    mutationFn: ({ userId, role }) =>
+      apiClient.post<void>(`/api/study-groups/${groupId}/members/${userId}/role`, { role }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["study-groups", groupId, "members"] });
+      void qc.invalidateQueries({ queryKey: ["study-groups", groupId, "detail"] });
+    },
+  });
+};
+
+// ---- Group chat ----
+
+// Polls the transcript. A group workspace mounts this with a short interval so
+// new messages land without a socket; the query is disabled when the tab is
+// hidden by TanStack's default refetch behaviour.
+export const useStudyGroupMessages = (groupId: string, enabled = true) =>
+  useQuery<StudyGroupMessage[]>({
+    queryKey: ["study-groups", groupId, "messages"],
+    queryFn: () => apiClient.get<StudyGroupMessage[]>(`/api/study-groups/${groupId}/messages`),
+    enabled: enabled && !!groupId,
+    refetchInterval: 4000,
+  });
+
+export const useSendStudyGroupMessage = (groupId: string) => {
+  const qc = useQueryClient();
+  return useMutation<StudyGroupMessage, ApiError, string>({
+    mutationFn: (body) =>
+      apiClient.post<StudyGroupMessage>(`/api/study-groups/${groupId}/messages`, { body }),
+    onSuccess: (msg) => {
+      // Splice the sent message in immediately so the composer feels instant;
+      // the next poll reconciles.
+      qc.setQueryData<StudyGroupMessage[]>(["study-groups", groupId, "messages"], (prev) =>
+        prev ? (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]) : [msg],
+      );
+    },
+  });
+};
+
+export const useDeleteStudyGroupMessage = (groupId: string) => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, string>({
+    mutationFn: (messageId) =>
+      apiClient.delete<void>(`/api/study-groups/${groupId}/messages/${messageId}`),
+    onSuccess: (_d, messageId) => {
+      qc.setQueryData<StudyGroupMessage[]>(["study-groups", groupId, "messages"], (prev) =>
+        prev ? prev.filter((m) => m.id !== messageId) : prev,
+      );
+    },
   });
 };
 
