@@ -23,6 +23,7 @@ import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { useRoleStore, type Role } from "@/providers/RoleProvider";
 import { registerStep2Schema, type RegisterValues } from "@/lib/schemas";
+import { homeRouteForRole } from "@/lib/home-route";
 import { api } from "@/lib/api/client";
 
 // Self-signup is intentionally limited to roles a person can claim on
@@ -136,8 +137,8 @@ function RegisterForm() {
     onSuccess: (r) => {
       if (!r.redirecting) {
         // Students go to the onboarding step to set their academic profile;
-        // everyone else straight to their dashboard.
-        setTimeout(() => router.push(isStudent ? "/onboarding" : "/dashboard"), 400);
+        // everyone else straight to their own role's dashboard.
+        setTimeout(() => router.push(isStudent ? "/onboarding" : homeRouteForRole(role)), 400);
       }
     },
   });

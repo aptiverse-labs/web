@@ -183,6 +183,7 @@ export const TUTOR_NAV: NavSection[] = [
     items: [
       { label: "Sessions", href: "/tutor/sessions", icon: CalendarMonthIcon },
       { label: "Students", href: "/tutor/students", icon: SchoolIcon },
+      { label: "Study groups", href: "/dashboard/study-groups", icon: ForumIcon },
       { label: "Reviews", href: "/tutor/reviews", icon: EmojiEventsIcon },
     ],
   },

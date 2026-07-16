@@ -18,6 +18,7 @@ import Link from "next/link";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { loginSchema, type LoginValues } from "@/lib/schemas";
+import { homeRouteForRole } from "@/lib/home-route";
 
 export default function LoginPage() {
   return (
@@ -33,30 +34,6 @@ function LoginSkeleton() {
       <Typography variant="h3" sx={{ fontWeight: 700 }}>Sign in</Typography>
     </Stack>
   );
-}
-
-// Maps a NextAuth session role to that role's dashboard root. Used post-
-// login when no specific callbackUrl was supplied — without this every
-// role was being dropped onto /dashboard (student) and bouncing into the
-// "Wrong role for this area" RoleGuard.
-function dashboardForRole(role: string | undefined | null): string {
-  switch ((role ?? "").toLowerCase()) {
-    case "teacher":
-      return "/teacher";
-    case "parent":
-      return "/parent";
-    case "tutor":
-      return "/tutor";
-    case "schooladmin":
-    case "school_admin":
-    case "school-admin":
-      return "/school-admin";
-    case "admin":
-    case "superuser":
-      return "/admin";
-    default:
-      return "/dashboard";
-  }
 }
 
 // True only when the API access token is present AND still in date.
@@ -114,7 +91,7 @@ function LoginInner() {
     if (!tokenStillValid(token)) return;
     const role = (session?.user as { role?: string } | undefined)?.role;
     router.replace(
-      !rawCallback || rawCallback === "/dashboard" ? dashboardForRole(role) : rawCallback,
+      !rawCallback || rawCallback === "/dashboard" ? homeRouteForRole(role) : rawCallback,
     );
   }, [status, session, rawCallback, router]);
 
@@ -149,7 +126,7 @@ function LoginInner() {
     const session = await getSession();
     const role = (session?.user as { role?: string } | undefined)?.role;
     const dest =
-      !rawCallback || rawCallback === "/dashboard" ? dashboardForRole(role) : rawCallback;
+      !rawCallback || rawCallback === "/dashboard" ? homeRouteForRole(role) : rawCallback;
     router.push(dest);
     router.refresh();
   }

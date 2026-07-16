@@ -6,20 +6,11 @@ import Link from "next/link";
 import LockIcon from "@mui/icons-material/LockOutlined";
 import { EmptyState } from "./EmptyState";
 import { useRoleStore, type Role } from "@/providers/RoleProvider";
+import { homeRouteForRole } from "@/lib/home-route";
 
 export type RoleGuardProps = {
   allow: Role | Role[];
   children: React.ReactNode;
-};
-
-const HOME_FOR_ROLE: Record<Role, string> = {
-  student: "/dashboard",
-  parent: "/parent",
-  teacher: "/teacher",
-  school_admin: "/school-admin",
-  tutor: "/tutor",
-  admin: "/admin",
-  super_admin: "/admin",
 };
 
 // Wraps a section of the app that only specific roles may access. Admins
@@ -43,7 +34,7 @@ export function RoleGuard({ allow, children }: RoleGuardProps) {
           .map((r) => r.replace("_", " "))
           .join(" / ")}. Switch role in the top bar, or head back to your own dashboard.`}
         action={
-          <Button component={Link} href={HOME_FOR_ROLE[role]} variant="contained">
+          <Button component={Link} href={homeRouteForRole(role)} variant="contained">
             Go to my dashboard
           </Button>
         }
