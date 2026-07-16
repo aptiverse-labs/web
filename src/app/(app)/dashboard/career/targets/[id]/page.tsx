@@ -8,13 +8,14 @@ import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
 import Skeleton from "@mui/material/Skeleton";
 import LinearProgress from "@mui/material/LinearProgress";
 import Alert from "@mui/material/Alert";
 import Divider from "@mui/material/Divider";
 import Tooltip from "@mui/material/Tooltip";
-import { alpha, useTheme } from "@mui/material/styles";
+import { alpha, useTheme, type Theme } from "@mui/material/styles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -34,7 +35,8 @@ import { CardError } from "@/components/common/CardError";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { TargetDialog } from "@/components/career/TargetDialog";
-import { ReachChip, requirementTone, targetTone, toneHex } from "@/components/career/ReachChip";
+import { ReachChip, requirementTone, targetTone, toneHex, type Tone } from "@/components/career/ReachChip";
+import { heroGradient, riseSx } from "@/app/(app)/dashboard/study-groups/shared";
 import {
   useAcademicUnits,
   useAcademicSignals,
@@ -258,10 +260,11 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
                   </Box>
                 ) : (
                   <Stack divider={<Divider />} spacing={0}>
-                    {reach.requirements.map((r) => (
+                    {reach.requirements.map((r, i) => (
                       <RequirementRow
                         key={r.id}
                         r={r}
+                        index={i}
                         goal={goals.find((g) => g.id === r.goalId) ?? null}
                         mastery={masteryQuery.data ?? []}
                       />
@@ -299,72 +302,172 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
 
 // ── summary ───────────────────────────────────────────────────────────
 
+const INK = "#F6F7F5";
+
+// Light-on-graphite tone colours for the gradient hero. The card toneHex leans
+// on text.disabled for neutral and success.main for clear, both of which sink
+// into the dark slab; here citron carries "on track", amber "short", a lighter
+// red "blocked", so the same four states stay legible on the band.
+function heroToneHex(t: Theme, tone: Tone): string {
+  switch (tone) {
+    case "success":
+      return t.palette.secondary.main;
+    case "warning":
+      return t.palette.warning.main;
+    case "error":
+      return t.palette.error.light;
+    default:
+      return alpha(INK, 0.75);
+  }
+}
+
+// The verdict band. PageHeader already carries the programme and institution, so
+// this hero is free to lead with the one thing the student opened the page for:
+// the reach status, in a word, next to the deadline pressure and a compact
+// count of what is met versus what is not.
 function SummaryCard({ reach, unitNoun }: { reach: TargetReach; unitNoun: string }) {
   const theme = useTheme();
   const tone = targetTone(reach.status);
-  const hex = toneHex(theme, tone);
+  const hex = heroToneHex(theme, tone);
   const { target } = reach;
 
   const daysLeft = target.deadline
     ? Math.ceil((Number(new Date(target.deadline)) - Date.now()) / 86_400_000)
     : null;
+  const nearNow = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
+
+  const measured = reach.clearCount + reach.short.length;
 
   return (
-    <Card>
-      <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 2, sm: 3 }}
-          alignItems={{ xs: "flex-start", sm: "center" }}
-        >
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 0.75 }}>
-              <Box
-                aria-hidden
-                sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: hex, flexShrink: 0 }}
-              />
-              <ReachChip tone={tone} label={reachLabel(reach)} />
-              {reach.status === "clear" && (
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "success.main" }}>
-                  Every requirement you&apos;ve entered is met
-                </Typography>
-              )}
-            </Stack>
-            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: "68ch" }}>
-              {summaryLine(reach, unitNoun)}
+    <Paper
+      elevation={0}
+      sx={(t) => ({
+        ...heroGradient(t),
+        borderRadius: 3,
+        p: { xs: 2.5, sm: 3.5 },
+        overflow: "hidden",
+      })}
+    >
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={{ xs: 2.5, md: 4 }}
+        alignItems={{ xs: "flex-start", md: "center" }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography
+            variant="overline"
+            sx={{ color: alpha(INK, 0.6), letterSpacing: "0.1em", display: "block" }}
+          >
+            Reach
+          </Typography>
+          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 1 }}>
+            <Box
+              aria-hidden
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
+                bgcolor: hex,
+                boxShadow: `0 0 0 4px ${alpha(hex, 0.2)}`,
+                flexShrink: 0,
+              }}
+            />
+            <Typography variant="h5" sx={{ fontWeight: 800, color: hex, lineHeight: 1.1 }}>
+              {reachLabel(reach)}
             </Typography>
-          </Box>
+          </Stack>
+          <Typography variant="body2" sx={{ color: alpha(INK, 0.82), maxWidth: "60ch" }}>
+            {summaryLine(reach, unitNoun)}
+          </Typography>
 
           {daysLeft !== null && (
             <Stack
               direction="row"
-              spacing={1}
+              spacing={0.75}
               alignItems="center"
               sx={{
-                px: 1.75,
-                py: 1.25,
+                mt: 2,
+                px: 1.25,
+                py: 0.75,
                 borderRadius: 1.5,
-                flexShrink: 0,
-                bgcolor: (t) =>
-                  alpha(daysLeft <= 30 ? t.palette.warning.main : t.palette.text.primary, 0.06),
+                width: "fit-content",
+                bgcolor: nearNow ? alpha("#F5B851", 0.18) : alpha(INK, 0.1),
               }}
             >
-              <Box sx={{ color: daysLeft <= 30 ? "warning.main" : "text.secondary", display: "flex" }}>
-                <CalendarClock size={16} />
+              <Box sx={{ display: "flex", color: nearNow ? "#F5CE85" : alpha(INK, 0.8) }}>
+                <CalendarClock size={14} />
               </Box>
-              <Box>
-                <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
-                  {daysLeft < 0 ? "Closed" : daysLeft === 0 ? "Closes today" : `${daysLeft} days to apply`}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {formatDate(target.deadline!)}
-                </Typography>
-              </Box>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 600, color: nearNow ? "#F5CE85" : alpha(INK, 0.85) }}
+              >
+                {daysLeft < 0
+                  ? `Closed ${formatDate(target.deadline!)}`
+                  : daysLeft === 0
+                    ? "Closes today"
+                    : `${daysLeft} day${daysLeft === 1 ? "" : "s"} to apply · ${formatDate(target.deadline!)}`}
+              </Typography>
             </Stack>
           )}
-        </Stack>
-      </CardContent>
-    </Card>
+        </Box>
+
+        {measured > 0 && (
+          <Stack
+            direction="row"
+            spacing={{ xs: 2.5, sm: 3.5 }}
+            sx={{ flexShrink: 0, width: { xs: "100%", md: "auto" } }}
+            justifyContent={{ xs: "space-between", md: "flex-end" }}
+          >
+            <HeroStat
+              value={reach.clearCount}
+              label={reach.clearCount === 1 ? "met" : "met"}
+              tint={reach.clearCount > 0 ? (t) => t.palette.secondary.main : undefined}
+            />
+            <HeroStat
+              value={reach.short.length}
+              label="short"
+              tint={reach.short.length > 0 ? (t) => t.palette.warning.main : undefined}
+            />
+            {reach.blocked.length > 0 && (
+              <HeroStat
+                value={reach.blocked.length}
+                label={reach.blocked.length === 1 ? "blocked" : "blocked"}
+                tint={(t) => t.palette.error.light}
+              />
+            )}
+          </Stack>
+        )}
+      </Stack>
+    </Paper>
+  );
+}
+
+function HeroStat({
+  value,
+  label,
+  tint,
+}: {
+  value: number;
+  label: string;
+  tint?: (t: Theme) => string;
+}) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        sx={{
+          fontWeight: 800,
+          fontSize: "1.9rem",
+          lineHeight: 1,
+          fontVariantNumeric: "tabular-nums",
+          color: tint ?? INK,
+        }}
+      >
+        {value}
+      </Typography>
+      <Typography variant="caption" sx={{ color: alpha(INK, 0.7), whiteSpace: "nowrap" }}>
+        {label}
+      </Typography>
+    </Box>
   );
 }
 
@@ -441,10 +544,12 @@ function BlockedCard({
 
 function RequirementRow({
   r,
+  index,
   goal,
   mastery,
 }: {
   r: RequirementView;
+  index: number;
   goal: Goal | null;
   mastery: { subjectId: string; topic: string; mastery: number }[];
 }) {
@@ -461,7 +566,7 @@ function RequirementRow({
     .slice(0, 3);
 
   return (
-    <Box sx={{ py: 2 }}>
+    <Box sx={{ py: 2, ...riseSx(index) }}>
       <Stack direction="row" spacing={1.5} alignItems="flex-start">
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="body2" sx={{ fontWeight: 700 }}>

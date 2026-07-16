@@ -8,6 +8,7 @@ import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
+import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
 import Skeleton from "@mui/material/Skeleton";
 import LinearProgress from "@mui/material/LinearProgress";
@@ -29,7 +30,8 @@ import { CardError } from "@/components/common/CardError";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { TargetDialog } from "@/components/career/TargetDialog";
 import { WhatIfPanel, type WhatIfUnit } from "@/components/career/WhatIfPanel";
-import { ReachChip, targetTone, toneHex } from "@/components/career/ReachChip";
+import { ReachChip, targetTone, toneHex, type Tone } from "@/components/career/ReachChip";
+import { heroGradient, riseSx } from "@/app/(app)/dashboard/study-groups/shared";
 import {
   useAcademicUnits,
   useAcademicSignals,
@@ -65,17 +67,19 @@ import { formatDate } from "@/lib/format";
 // The ordering is the feature. A student applying to five institutions carries
 // five vague dreads; a list sorted by reach converts that into one sentence.
 
-function band(v: number): { color: "success" | "primary" | "warning"; label: string } {
-  if (v >= 80) return { color: "success", label: "Strong" };
-  if (v >= 50) return { color: "primary", label: "Building" };
-  return { color: "warning", label: "Keep going" };
-}
-
 function bandHex(t: Theme, v: number): string {
   if (v >= 80) return t.palette.success.main;
   if (v >= 50) return t.palette.primary.main;
   return t.palette.warning.main;
 }
+
+// Days until a deadline, floored at today. Negative (already closed) is dropped
+// by the caller so "nearest deadline" never points at a date in the past.
+function daysUntil(iso: string): number {
+  return Math.ceil((Number(new Date(iso)) - Date.now()) / 86_400_000);
+}
+
+const INK = "#F6F7F5";
 
 type RankedUnit = {
   unit: AcademicUnit;
@@ -177,6 +181,8 @@ export default function CareerPage() {
           {blocked.length > 0 && (
             <SubjectChoiceAlert blocked={blocked} unitNoun={academic.unitNoun} />
           )}
+
+          {ranked.length > 0 && <CareerHero ranked={ranked} whatIf={whatIfActive} />}
 
           {whatIfActive && (
             <Alert severity="info" icon={<FlaskConical size={18} />}>
@@ -354,14 +360,13 @@ function PlansCard({
           </Box>
         ) : (
           <>
-            <PlansOverview ranked={ranked} />
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, maxWidth: "60ch" }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2.5, maxWidth: "60ch" }}>
               Closest first. The number is your biggest single gap, because an application is
               judged on the requirement you missed, not the average of the ones you met.
             </Typography>
             <Stack spacing={1.5}>
-              {ranked.map((r) => (
-                <PlanRow key={r.target.id} reach={r} />
+              {ranked.map((r, i) => (
+                <PlanRow key={r.target.id} reach={r} index={i} />
               ))}
             </Stack>
           </>
@@ -371,61 +376,182 @@ function PlansCard({
   );
 }
 
-// A one-glance rollup across every active plan. It exists for the exact student
-// this feature is for: the one carrying five applications at once. Every count
-// here is read straight off the same triage the list below is built from, so the
-// summary and the list can never disagree. Shown only from two plans up, because
-// with one plan the row below already says everything this would.
-function PlansOverview({ ranked }: { ranked: TargetReach[] }) {
-  if (ranked.length < 2) return null;
-
+// The band at the top of the page: one glance that turns five vague dreads into
+// one sentence. Every count is read off the same triage the list below is built
+// from, so the summary and the list can never disagree. It carries the
+// graphite-to-citron gradient the app reserves for its few "this is yours"
+// surfaces, and states the rollup in words and in stat tiles at once.
+function CareerHero({ ranked, whatIf }: { ranked: TargetReach[]; whatIf: boolean }) {
   const onTrack = ranked.filter((r) => r.status === "clear").length;
   const shortCount = ranked.filter((r) => r.status === "short").length;
   const blockedCount = ranked.filter((r) => r.status === "blocked").length;
   const unmeasured = ranked.filter((r) => r.status === "unknown" || r.status === "empty").length;
+  const needsWork = shortCount + blockedCount;
 
   const nearest = ranked
     .map((r) => r.target.deadline)
     .filter((d): d is string => !!d)
-    .map((d) => Math.ceil((Number(new Date(d)) - Date.now()) / 86_400_000))
+    .map(daysUntil)
     .filter((days) => days >= 0)
     .sort((a, b) => a - b)[0];
 
+  // The one-line reading, built from the same numbers as the tiles so it can
+  // never drift from them. Ordered good-news-first: a student scanning this
+  // should land on what is going right before what still needs doing.
+  const bits: string[] = [];
+  if (onTrack > 0) bits.push(`${onTrack} on track`);
+  if (shortCount > 0) bits.push(`${shortCount} within reach`);
+  if (blockedCount > 0) bits.push(blockedCount === 1 ? "1 blocked" : `${blockedCount} blocked`);
+  if (unmeasured > 0) bits.push(`${unmeasured} to measure`);
+  const summary = bits.length ? `${bits.join(", ")}.` : "Nothing measured yet.";
+  const nearNow = nearest !== undefined && nearest <= 30;
+
   return (
-    <Stack
-      direction="row"
-      spacing={1}
-      flexWrap="wrap"
-      useFlexGap
-      alignItems="center"
-      sx={{ mt: 1.5, mb: 2.5 }}
+    <Paper
+      elevation={0}
+      sx={(t) => ({
+        ...heroGradient(t),
+        borderRadius: 3,
+        p: { xs: 2.5, sm: 3.5 },
+        overflow: "hidden",
+      })}
     >
-      {onTrack > 0 && <ReachChip tone="success" label={`${onTrack} on track`} />}
-      {shortCount > 0 && <ReachChip tone="warning" label={`${shortCount} short`} />}
-      {blockedCount > 0 && (
-        <ReachChip tone="error" label={blockedCount === 1 ? "1 blocked" : `${blockedCount} blocked`} />
-      )}
-      {unmeasured > 0 && <ReachChip tone="neutral" label={`${unmeasured} to measure`} />}
-      {nearest !== undefined && (
-        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ ml: 0.5 }}>
-          <Box sx={{ color: nearest <= 30 ? "warning.main" : "text.disabled", display: "flex" }}>
-            <CalendarClock size={13} />
-          </Box>
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        spacing={{ xs: 2.5, md: 4 }}
+        alignItems={{ xs: "flex-start", md: "center" }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
-            variant="caption"
-            sx={{ color: nearest <= 30 ? "warning.main" : "text.secondary" }}
+            variant="overline"
+            sx={{ color: alpha(INK, 0.6), letterSpacing: "0.1em", display: "block" }}
           >
-            {nearest === 0
-              ? "Nearest deadline today"
-              : `Nearest deadline in ${nearest} day${nearest === 1 ? "" : "s"}`}
+            {whatIf ? "Your plans, on hypothetical marks" : "Your plans"}
           </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.75, color: INK }}>
+            {ranked.length === 1 ? "Where you're aiming" : "Where you're aiming, closest first"}
+          </Typography>
+          <Typography variant="body2" sx={{ color: alpha(INK, 0.82), maxWidth: 480 }}>
+            {summary} You bring the requirements, we hold the marks, and the gap between them is the
+            part you can act on this week.
+          </Typography>
+
+          {nearest !== undefined && (
+            <Stack
+              direction="row"
+              spacing={0.75}
+              alignItems="center"
+              sx={{
+                mt: 2,
+                px: 1.25,
+                py: 0.75,
+                borderRadius: 1.5,
+                width: "fit-content",
+                bgcolor: nearNow ? alpha("#F5B851", 0.18) : alpha(INK, 0.1),
+              }}
+            >
+              <Box sx={{ display: "flex", color: nearNow ? "#F5CE85" : alpha(INK, 0.8) }}>
+                <CalendarClock size={14} />
+              </Box>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 600, color: nearNow ? "#F5CE85" : alpha(INK, 0.85) }}
+              >
+                {nearest === 0
+                  ? "Nearest deadline is today"
+                  : `Nearest deadline in ${nearest} day${nearest === 1 ? "" : "s"}`}
+              </Typography>
+            </Stack>
+          )}
+        </Box>
+
+        <Stack
+          direction="row"
+          spacing={{ xs: 2.5, sm: 3.5 }}
+          sx={{ flexShrink: 0, width: { xs: "100%", md: "auto" } }}
+          justifyContent={{ xs: "space-between", md: "flex-end" }}
+        >
+          <HeroStat value={ranked.length} label={ranked.length === 1 ? "plan" : "plans"} />
+          <HeroStat
+            value={onTrack}
+            label="on track"
+            tint={onTrack > 0 ? (theme) => theme.palette.secondary.main : undefined}
+          />
+          <HeroStat
+            value={needsWork}
+            label="need work"
+            tint={needsWork > 0 ? (theme) => theme.palette.warning.main : undefined}
+          />
         </Stack>
-      )}
-    </Stack>
+      </Stack>
+    </Paper>
   );
 }
 
-function PlanRow({ reach }: { reach: TargetReach }) {
+function HeroStat({
+  value,
+  label,
+  tint,
+}: {
+  value: number;
+  label: string;
+  tint?: (t: Theme) => string;
+}) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography
+        sx={{
+          fontWeight: 800,
+          fontSize: "1.9rem",
+          lineHeight: 1,
+          fontVariantNumeric: "tabular-nums",
+          color: tint ?? INK,
+        }}
+      >
+        {value}
+      </Typography>
+      <Typography variant="caption" sx={{ color: alpha(INK, 0.7), whiteSpace: "nowrap" }}>
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
+// A thin stacked bar of a plan's requirement composition: clear, short, blocked,
+// unmarked, each segment sized to its count. It turns the "3 clear, 1 short"
+// caption into something the eye reads before the words, and encodes reach in
+// form rather than only in the chip's text.
+function ReachBar({ reach }: { reach: TargetReach }) {
+  const segs = (
+    [
+      { n: reach.clearCount, tone: "success" },
+      { n: reach.short.length, tone: "warning" },
+      { n: reach.blocked.length, tone: "error" },
+      { n: reach.unknownCount, tone: "neutral" },
+    ] satisfies { n: number; tone: Tone }[]
+  ).filter((s) => s.n > 0);
+  const total = segs.reduce((sum, s) => sum + s.n, 0);
+  if (total === 0) return null;
+
+  return (
+    <Box sx={{ display: "flex", gap: 0.5, height: 6, mt: 1.5 }} aria-hidden>
+      {segs.map((s, i) => (
+        <Box
+          key={i}
+          sx={{
+            flexGrow: s.n,
+            flexBasis: 0,
+            borderRadius: 999,
+            bgcolor: (t) =>
+              s.tone === "neutral" ? alpha(t.palette.text.primary, 0.14) : toneHex(t, s.tone),
+          }}
+        />
+      ))}
+    </Box>
+  );
+}
+
+function PlanRow({ reach, index }: { reach: TargetReach; index: number }) {
   const theme = useTheme();
   const tone = targetTone(reach.status);
   const hex = toneHex(theme, tone);
@@ -437,28 +563,39 @@ function PlanRow({ reach }: { reach: TargetReach }) {
   if (reach.blocked.length) parts.push(`${reach.blocked.length} missing`);
   if (reach.unknownCount) parts.push(`${reach.unknownCount} unmarked`);
 
-  const daysLeft = target.deadline
-    ? Math.ceil((Number(new Date(target.deadline)) - Date.now()) / 86_400_000)
-    : null;
+  const daysLeft = target.deadline ? daysUntil(target.deadline) : null;
+  const urgent = daysLeft !== null && daysLeft >= 0 && daysLeft <= 14;
 
   return (
-    <Card variant="outlined">
+    <Card
+      variant="outlined"
+      sx={{
+        borderRadius: 2,
+        transition: "border-color .2s ease, box-shadow .2s ease",
+        "&:hover": {
+          borderColor: alpha(hex, 0.45),
+          boxShadow: `0 1px 3px ${alpha(theme.palette.common.black, 0.06)}`,
+        },
+        ...riseSx(index),
+      }}
+    >
       <CardActionArea component={Link} href={`/dashboard/career/targets/${target.id}`}>
         <Box sx={{ p: 2 }}>
           <Stack direction="row" spacing={1.5} alignItems="flex-start">
             <Box
               aria-hidden
               sx={{
-                width: 8,
-                height: 8,
+                width: 9,
+                height: 9,
                 borderRadius: "50%",
                 bgcolor: hex,
+                boxShadow: (t) => `0 0 0 3px ${alpha(hex === t.palette.text.disabled ? t.palette.text.primary : hex, 0.12)}`,
                 flexShrink: 0,
                 mt: 0.75,
               }}
             />
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }} noWrap>
                 {target.programme}
               </Typography>
               <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
@@ -472,27 +609,54 @@ function PlanRow({ reach }: { reach: TargetReach }) {
             </Box>
           </Stack>
 
-          {parts.length > 0 && (
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
-              {parts.join(" · ")}
-            </Typography>
-          )}
+          <ReachBar reach={reach} />
 
-          {daysLeft !== null && (
-            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mt: 1 }}>
-              <Box sx={{ color: daysLeft <= 30 ? "warning.main" : "text.disabled", display: "flex" }}>
-                <CalendarClock size={13} />
-              </Box>
-              <Typography
-                variant="caption"
-                sx={{ color: daysLeft <= 30 ? "warning.main" : "text.secondary" }}
-              >
-                {daysLeft < 0
-                  ? `Closed ${formatDate(target.deadline!)}`
-                  : daysLeft === 0
-                    ? "Closes today"
-                    : `${daysLeft} day${daysLeft === 1 ? "" : "s"} to apply · ${formatDate(target.deadline!)}`}
-              </Typography>
+          {(parts.length > 0 || daysLeft !== null) && (
+            <Stack
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+              flexWrap="wrap"
+              useFlexGap
+              sx={{ mt: 1.25 }}
+            >
+              {parts.length > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  {parts.join(" · ")}
+                </Typography>
+              )}
+              {daysLeft !== null && (
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  alignItems="center"
+                  sx={{
+                    ...(urgent && {
+                      px: 0.75,
+                      py: 0.25,
+                      borderRadius: 1,
+                      bgcolor: (t) => alpha(t.palette.warning.main, 0.14),
+                    }),
+                  }}
+                >
+                  <Box sx={{ color: daysLeft <= 30 ? "warning.main" : "text.disabled", display: "flex" }}>
+                    <CalendarClock size={13} />
+                  </Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: daysLeft <= 30 ? "warning.main" : "text.secondary",
+                      fontWeight: urgent ? 700 : 400,
+                    }}
+                  >
+                    {daysLeft < 0
+                      ? `Closed ${formatDate(target.deadline!)}`
+                      : daysLeft === 0
+                        ? "Closes today"
+                        : `${daysLeft} day${daysLeft === 1 ? "" : "s"} to apply · ${formatDate(target.deadline!)}`}
+                  </Typography>
+                </Stack>
+              )}
             </Stack>
           )}
         </Box>
@@ -521,12 +685,31 @@ function EvidenceCard({
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: 3 }}>
-        <Typography variant="overline" color="text.secondary">
-          Your record
-        </Typography>
-        <Typography variant="h6" sx={{ mb: 0.5 }}>
-          Where you stand, {unitNoun} by {unitNoun}
-        </Typography>
+        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1.5}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="overline" color="text.secondary">
+              Your record
+            </Typography>
+            <Typography variant="h6" sx={{ mb: 0.5 }}>
+              Where you stand, {unitNoun} by {unitNoun}
+            </Typography>
+          </Box>
+          {hasUnits && withEvidence > 0 && (
+            <Box sx={{ textAlign: "right", flexShrink: 0, pt: 0.5 }}>
+              <Typography
+                sx={{ fontWeight: 800, fontSize: "1.35rem", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}
+              >
+                {withEvidence}
+                <Box component="span" sx={{ color: "text.disabled", fontWeight: 700 }}>
+                  /{ranked.length}
+                </Box>
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                measured
+              </Typography>
+            </Box>
+          )}
+        </Stack>
 
         {!hasUnits ? (
           // The one case where asking for units is honest: there are none.
@@ -565,8 +748,8 @@ function EvidenceCard({
               This is what every plan is measured against.
             </Typography>
             <Stack spacing={2}>
-              {ranked.map((r) => (
-                <UnitRow key={r.unit.id} r={r} />
+              {ranked.map((r, i) => (
+                <UnitRow key={r.unit.id} r={r} index={i} />
               ))}
             </Stack>
           </>
@@ -576,13 +759,13 @@ function EvidenceCard({
   );
 }
 
-function UnitRow({ r }: { r: RankedUnit }) {
+function UnitRow({ r, index }: { r: RankedUnit; index: number }) {
   const theme = useTheme();
   const { unit, currentMark, mastery, score } = r;
   const hex = score !== null ? bandHex(theme, score) : theme.palette.text.disabled;
 
   return (
-    <Box>
+    <Box sx={riseSx(index)}>
       <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.75 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography
@@ -630,8 +813,13 @@ function UnitRow({ r }: { r: RankedUnit }) {
       <LinearProgress
         variant="determinate"
         value={score ?? 0}
-        color={score !== null ? band(score).color : "inherit"}
-        sx={{ opacity: score !== null ? 1 : 0.35 }}
+        sx={{
+          height: 6,
+          borderRadius: 3,
+          bgcolor: (t) => alpha(t.palette.text.primary, 0.08),
+          opacity: score !== null ? 1 : 0.5,
+          "& .MuiLinearProgress-bar": { bgcolor: hex, borderRadius: 3 },
+        }}
       />
     </Box>
   );
