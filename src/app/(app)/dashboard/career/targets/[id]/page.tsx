@@ -197,9 +197,11 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
           </Alert>
         )}
 
-        <SummaryCard reach={reach} />
+        <SummaryCard reach={reach} unitNoun={academic.unitNoun} />
 
-        {reach.blocked.length > 0 && <BlockedCard blocked={reach.blocked} />}
+        {reach.blocked.length > 0 && (
+          <BlockedCard blocked={reach.blocked} isTertiary={isTertiary} unitNoun={academic.unitNoun} />
+        )}
 
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, lg: 8 }}>
@@ -297,7 +299,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
 
 // ── summary ───────────────────────────────────────────────────────────
 
-function SummaryCard({ reach }: { reach: TargetReach }) {
+function SummaryCard({ reach, unitNoun }: { reach: TargetReach; unitNoun: string }) {
   const theme = useTheme();
   const tone = targetTone(reach.status);
   const hex = toneHex(theme, tone);
@@ -325,7 +327,7 @@ function SummaryCard({ reach }: { reach: TargetReach }) {
               )}
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: "68ch" }}>
-              {summaryLine(reach)}
+              {summaryLine(reach, unitNoun)}
             </Typography>
           </Box>
 
@@ -362,7 +364,7 @@ function SummaryCard({ reach }: { reach: TargetReach }) {
   );
 }
 
-function summaryLine(reach: TargetReach): string {
+function summaryLine(reach: TargetReach, unitNoun: string): string {
   switch (reach.status) {
     case "clear":
       return reach.unknownCount > 0
@@ -371,10 +373,10 @@ function summaryLine(reach: TargetReach): string {
     case "short":
       return `Your biggest gap is ${reach.worstGap}. That's the number that decides this application, so it's the one to close first.`;
     case "blocked":
-      return "This plan needs a subject you aren't taking. Marks can't fix that, so read the warning below before you plan around this one.";
+      return `This plan needs a ${unitNoun} you aren't taking. Marks can't fix that, so read the warning below before you plan around this one.`;
     case "unknown":
       return reach.requirements.length === 0
-        ? "Nothing to measure yet. Add the mark each subject needs and this plan starts tracking itself."
+        ? `Nothing to measure yet. Add the mark each ${unitNoun} needs and this plan starts tracking itself.`
         : "No marks or practice on these yet. Log a graded mark or take a practice test and the gaps appear.";
     case "empty":
       return "Nothing entered yet. Add what this programme requires and we'll track it.";
@@ -383,7 +385,15 @@ function summaryLine(reach: TargetReach): string {
 
 // ── blocked ───────────────────────────────────────────────────────────
 
-function BlockedCard({ blocked }: { blocked: RequirementView[] }) {
+function BlockedCard({
+  blocked,
+  isTertiary,
+  unitNoun,
+}: {
+  blocked: RequirementView[];
+  isTertiary: boolean;
+  unitNoun: string;
+}) {
   return (
     <Card sx={{ borderLeft: 3, borderColor: "error.main", bgcolor: (t) => alpha(t.palette.error.main, 0.04) }}>
       <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
@@ -393,7 +403,9 @@ function BlockedCard({ blocked }: { blocked: RequirementView[] }) {
           </Box>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.75 }}>
-              {blocked.length === 1 ? "A subject is missing" : `${blocked.length} subjects are missing`}
+              {blocked.length === 1
+                ? `A ${unitNoun} is missing`
+                : `${blocked.length} ${unitNoun}s are missing`}
             </Typography>
             <Stack spacing={1} sx={{ mb: 1.5 }}>
               {blocked.map((b) => (
@@ -403,14 +415,16 @@ function BlockedCard({ blocked }: { blocked: RequirementView[] }) {
                   </Box>
                   {b.status === "substituted"
                     ? ` is required, and you're taking ${b.substituteName} instead. Those are different subjects, and most institutions won't accept one for the other.`
-                    : " is required, and it isn't on your subject list."}
+                    : ` is required, and it isn't on your ${unitNoun} list.`}
                 </Typography>
               ))}
             </Stack>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", maxWidth: "68ch" }}>
               We&apos;re not guessing at this: your plan asks for it and your enrolment doesn&apos;t
-              list it. If one of those is out of date, fix it. If both are right, this is worth a
-              conversation at school now rather than in your final year.
+              list it.{" "}
+              {isTertiary
+                ? "If your enrolment has changed, update whichever half is out of date."
+                : "If one of those is out of date, fix it. If both are right, this is worth a conversation at school now rather than in your final year."}
             </Typography>
           </Box>
         </Stack>

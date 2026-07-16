@@ -174,7 +174,9 @@ export default function CareerPage() {
         </Card>
       ) : (
         <Stack spacing={3}>
-          {blocked.length > 0 && <SubjectChoiceAlert blocked={blocked} />}
+          {blocked.length > 0 && (
+            <SubjectChoiceAlert blocked={blocked} unitNoun={academic.unitNoun} />
+          )}
 
           {whatIfActive && (
             <Alert severity="info" icon={<FlaskConical size={18} />}>
@@ -188,6 +190,7 @@ export default function CareerPage() {
                 <PlansCard
                   ranked={ranked}
                   hasAny={targets.length > 0}
+                  isTertiary={isTertiary}
                   onAdd={() => setDialogOpen(true)}
                 />
                 {whatIfUnits.length > 0 && (
@@ -245,7 +248,7 @@ function CareerSkeleton() {
 // we are not consulting a table of which degrees need which subjects. We are
 // pointing out that two things the student told us contradict each other: their
 // plan names a subject their enrolment does not.
-function SubjectChoiceAlert({ blocked }: { blocked: TargetReach[] }) {
+function SubjectChoiceAlert({ blocked, unitNoun }: { blocked: TargetReach[]; unitNoun: string }) {
   const substituted = blocked.flatMap((r) => r.blocked.filter((b) => b.status === "substituted"));
 
   return (
@@ -265,11 +268,11 @@ function SubjectChoiceAlert({ blocked }: { blocked: TargetReach[] }) {
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.75 }}>
               {substituted.length > 0
                 ? "A subject choice is blocking a plan"
-                : "A plan needs a subject you're not taking"}
+                : `A plan needs a ${unitNoun} you're not taking`}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2, maxWidth: "68ch" }}>
-              Worth knowing now rather than in your final year. This isn&apos;t a prediction: it&apos;s
-              your own plan asking for a subject your own enrolment doesn&apos;t list.
+              Worth knowing now rather than later. This isn&apos;t a prediction: it&apos;s your own
+              plan asking for a {unitNoun} your own enrolment doesn&apos;t list.
             </Typography>
 
             <Stack spacing={1.25}>
@@ -312,10 +315,12 @@ function SubjectChoiceAlert({ blocked }: { blocked: TargetReach[] }) {
 function PlansCard({
   ranked,
   hasAny,
+  isTertiary,
   onAdd,
 }: {
   ranked: TargetReach[];
   hasAny: boolean;
+  isTertiary: boolean;
   onAdd: () => void;
 }) {
   return (
@@ -336,7 +341,9 @@ function PlansCard({
               description={
                 hasAny
                   ? "Your plans are all archived. Add a new one, or reopen an archived plan to start tracking it again."
-                  : "Look up what your institution asks for, then enter it here: the APS or average, and the mark each subject needs. We'll track it against your real marks and show you exactly where the gap is."
+                  : isTertiary
+                    ? "Look up what the programme asks for, then enter it here: the average it wants, and the mark each course needs. We'll track it against your real marks and show you exactly where the gap is."
+                    : "Look up what your institution asks for, then enter it here: the APS or average, and the mark each subject needs. We'll track it against your real marks and show you exactly where the gap is."
               }
               action={
                 <Button variant="contained" color="secondary" startIcon={<Plus size={16} />} onClick={onAdd}>
@@ -347,6 +354,7 @@ function PlansCard({
           </Box>
         ) : (
           <>
+            <PlansOverview ranked={ranked} />
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, maxWidth: "60ch" }}>
               Closest first. The number is your biggest single gap, because an application is
               judged on the requirement you missed, not the average of the ones you met.
@@ -360,6 +368,60 @@ function PlansCard({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+// A one-glance rollup across every active plan. It exists for the exact student
+// this feature is for: the one carrying five applications at once. Every count
+// here is read straight off the same triage the list below is built from, so the
+// summary and the list can never disagree. Shown only from two plans up, because
+// with one plan the row below already says everything this would.
+function PlansOverview({ ranked }: { ranked: TargetReach[] }) {
+  if (ranked.length < 2) return null;
+
+  const onTrack = ranked.filter((r) => r.status === "clear").length;
+  const shortCount = ranked.filter((r) => r.status === "short").length;
+  const blockedCount = ranked.filter((r) => r.status === "blocked").length;
+  const unmeasured = ranked.filter((r) => r.status === "unknown" || r.status === "empty").length;
+
+  const nearest = ranked
+    .map((r) => r.target.deadline)
+    .filter((d): d is string => !!d)
+    .map((d) => Math.ceil((Number(new Date(d)) - Date.now()) / 86_400_000))
+    .filter((days) => days >= 0)
+    .sort((a, b) => a - b)[0];
+
+  return (
+    <Stack
+      direction="row"
+      spacing={1}
+      flexWrap="wrap"
+      useFlexGap
+      alignItems="center"
+      sx={{ mt: 1.5, mb: 2.5 }}
+    >
+      {onTrack > 0 && <ReachChip tone="success" label={`${onTrack} on track`} />}
+      {shortCount > 0 && <ReachChip tone="warning" label={`${shortCount} short`} />}
+      {blockedCount > 0 && (
+        <ReachChip tone="error" label={blockedCount === 1 ? "1 blocked" : `${blockedCount} blocked`} />
+      )}
+      {unmeasured > 0 && <ReachChip tone="neutral" label={`${unmeasured} to measure`} />}
+      {nearest !== undefined && (
+        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ ml: 0.5 }}>
+          <Box sx={{ color: nearest <= 30 ? "warning.main" : "text.disabled", display: "flex" }}>
+            <CalendarClock size={13} />
+          </Box>
+          <Typography
+            variant="caption"
+            sx={{ color: nearest <= 30 ? "warning.main" : "text.secondary" }}
+          >
+            {nearest === 0
+              ? "Nearest deadline today"
+              : `Nearest deadline in ${nearest} day${nearest === 1 ? "" : "s"}`}
+          </Typography>
+        </Stack>
+      )}
+    </Stack>
   );
 }
 
