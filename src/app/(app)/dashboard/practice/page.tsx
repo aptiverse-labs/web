@@ -149,6 +149,7 @@ const FORMAT_HELP: Record<PracticeFormat, string> = {
   reading: "A passage with questions that test your understanding of it.",
   flashcards: "Flip cards and rate yourself. Not scored, retake anytime.",
   essay: "A prompt with marking criteria. Write it and the tutor gives feedback.",
+  exam: "A full paper under exam conditions: sections, marks per question, and written answers marked by an examiner with part marks.",
 };
 
 const FORMAT_LABELS: Record<PracticeFormat, string> = {
@@ -157,9 +158,20 @@ const FORMAT_LABELS: Record<PracticeFormat, string> = {
   reading: "Reading",
   flashcards: "Flashcards",
   essay: "Essay",
+  exam: "Exam paper",
 };
 
-const SCORED_FORMATS: PracticeFormat[] = ["multiple_choice", "short_answer", "reading"];
+const SCORED_FORMATS: PracticeFormat[] = ["multiple_choice", "short_answer", "reading", "exam"];
+
+// What a paper can be out of, and what that costs in time at roughly a minute
+// a mark. The numbers are the ones a South African student recognises from a
+// real timetable rather than arbitrary round figures.
+const PAPER_SIZES: { marks: number; label: string }[] = [
+  { marks: 30, label: "30 marks, about half an hour" },
+  { marks: 50, label: "50 marks, about an hour" },
+  { marks: 100, label: "100 marks, about two hours" },
+  { marks: 150, label: "150 marks, a full three-hour paper" },
+];
 
 function GenerateTestDialog({
   open,
@@ -182,10 +194,12 @@ function GenerateTestDialog({
   const [format, setFormat] = useState<PracticeFormat>("multiple_choice");
   const [difficulty, setDifficulty] = useState<"foundation" | "core" | "challenge">("core");
   const [count, setCount] = useState(8);
+  const [totalMarks, setTotalMarks] = useState(50);
   const [targetWeak, setTargetWeak] = useState(true);
 
   const isEssay = format === "essay";
   const isFlashcards = format === "flashcards";
+  const isExam = format === "exam";
   const countLabel = isFlashcards ? "Cards" : "Questions";
 
   // Only fetch mastery once a subject is chosen and we're targeting weak topics.
@@ -214,6 +228,7 @@ function GenerateTestDialog({
         format,
         difficulty,
         questionCount: count,
+        totalMarks: isExam ? totalMarks : undefined,
         topics: weakTopics.length > 0 ? weakTopics : undefined,
       },
       {
@@ -244,7 +259,9 @@ function GenerateTestDialog({
           <Stack alignItems="center" spacing={2} sx={{ py: 5 }}>
             <CubeSpinner color="secondary" sx={{ fontSize: 44 }} />
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
-              Writing and checking your questions. This takes a few seconds.
+              {isExam
+                ? "Setting your paper: sections, questions, and a marking memo. A full paper takes a minute or so."
+                : "Writing and checking your questions. This takes a few seconds."}
             </Typography>
           </Stack>
         ) : (
@@ -277,7 +294,25 @@ function GenerateTestDialog({
               <MenuItem value="reading">Reading comprehension</MenuItem>
               <MenuItem value="flashcards">Flashcards</MenuItem>
               <MenuItem value="essay">Essay + criteria</MenuItem>
+              <MenuItem value="exam">Exam paper</MenuItem>
             </TextField>
+
+            {isExam && (
+              <TextField
+                select
+                label="Paper length"
+                value={totalMarks}
+                onChange={(e) => setTotalMarks(Number(e.target.value))}
+                fullWidth
+                helperText="You get one attempt, timed at a minute a mark."
+              >
+                {PAPER_SIZES.map((s) => (
+                  <MenuItem key={s.marks} value={s.marks}>
+                    {s.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
 
             {!isEssay && (
               <TextField
@@ -293,7 +328,7 @@ function GenerateTestDialog({
               </TextField>
             )}
 
-            {!isEssay && (
+            {!isEssay && !isExam && (
               <TextField
                 select
                 label={countLabel}
@@ -449,7 +484,15 @@ function PracticeCard({ test: p, unitName }: { test: PracticeTest; unitName?: st
   const scored = SCORED_FORMATS.includes(format);
   const isCards = format === "flashcards";
   const isEssay = format === "essay";
-  const startLabel = isEssay ? "Write" : isCards ? "Study" : completed ? "View result" : "Start";
+  const startLabel = isEssay
+    ? "Write"
+    : isCards
+      ? "Study"
+      : completed
+        ? "View result"
+        : format === "exam"
+          ? "Sit the paper"
+          : "Start";
   return (
     <Card sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <CardContent sx={{ p: 3, flex: 1, display: "flex", flexDirection: "column" }}>
