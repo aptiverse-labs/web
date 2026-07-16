@@ -15,13 +15,28 @@ import TimerIcon from "@mui/icons-material/TimerOutlined";
 import LockIcon from "@mui/icons-material/LockOutlined";
 import VerifiedIcon from "@mui/icons-material/VerifiedOutlined";
 import StarIcon from "@mui/icons-material/Star";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import TipsIcon from "@mui/icons-material/TipsAndUpdatesOutlined";
 import { Frown, Annoyed, Meh, Smile, Laugh, Heart, TrendingDown } from "lucide-react";
 import { MockAppFrame } from "./FeatureShowcase";
 import { AptiverseLineChart } from "@/components/common/AptiverseLineChart";
 
 // ============================================================
-// 1. Curriculum-aware AI Tutor — chat-UI mock
+// 1. AI Tutor — chat-UI mock
 // ============================================================
+// The two chips under the reply used to read "Stewart, Calculus, §3.4" and
+// "Tutorial 4, Q9", i.e. the tutor citing a named textbook page and a specific
+// tutorial question. It cannot do that and never could: there is no retrieval,
+// no document index and no citation path anywhere in api/Modules/AI. Those
+// chips were the whole visual argument for "cites your material", and a mock
+// that shows a capability is making the claim just as loudly as the headline
+// above it.
+//
+// What the tutor really does have is the student's profile, injected by
+// BuildTutorPrompt (AiController.cs:232): level, subjects, marks, mastery,
+// upcoming assessments. So the chips now show that, which is both true and a
+// better sell. The trailing caption also said "generating adaptive practice";
+// the practice it generates is real, the adaptivity is not.
 export function TutorChatDemo() {
   return (
     <MockAppFrame title="aptiverse.co.za/dashboard/chatbot" badge="Calculus">
@@ -40,12 +55,12 @@ export function TutorChatDemo() {
           <Stack direction="row" spacing={0.75} sx={{ mt: 1.5 }}>
             <Chip
               icon={<MenuBookIcon sx={{ fontSize: 14 }} />}
-              label="Stewart, Calculus, §3.4"
+              label="Knows you take Mathematics"
               size="small"
               variant="outlined"
               sx={{ height: 22, fontSize: "0.72rem" }}
             />
-            <Chip label="Tutorial 4, Q9" size="small" variant="outlined" sx={{ height: 22, fontSize: "0.72rem" }} />
+            <Chip label="Pitched at Grade 11" size="small" variant="outlined" sx={{ height: 22, fontSize: "0.72rem" }} />
           </Stack>
         </AiBubble>
 
@@ -66,7 +81,7 @@ export function TutorChatDemo() {
             }}
           />
           <Typography variant="caption" color="text.secondary">
-            AI is generating adaptive practice…
+            Writing original questions with worked solutions…
           </Typography>
         </Stack>
       </Stack>
@@ -231,8 +246,16 @@ function FeedbackRow({ tone, tag, text }: { tone: "warn" | "info" | "good"; tag:
 // ============================================================
 // 3. Mastery Predictions — line chart with confidence band
 // ============================================================
+// MasteryController.cs:76 is real, but it returns PredictedNextTerm plus one
+// Confidence scalar (:130), which the app renders as "72% confidence"
+// (analytics/page.tsx:465). It does not produce an interval. This mock showed
+// "Confidence interval 67% to 83%" over a shaded upper/lower band, which is a
+// different and more sophisticated statistical claim than the one the code
+// makes. The band is kept as a visual hint of uncertainty but is no longer
+// labelled as an interval with numbers we do not compute, and the headline is
+// the next term, not the final mark.
 export function MasteryChartDemo() {
-  // Predicted matric mark over the year with a confidence band.
+  // Projected term mark over the year.
   const months = ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
   const actual = [54, 58, 61, 62, 65, 68, null, null, null];
   const predicted = [null, null, null, null, null, 68, 71, 73, 75];
@@ -240,26 +263,26 @@ export function MasteryChartDemo() {
   const lowerBand = [null, null, null, null, null, 68, 67, 67, 67];
 
   return (
-    <MockAppFrame title="aptiverse.co.za/dashboard/mastery" badge="Maths · forecast 75%">
+    <MockAppFrame title="aptiverse.co.za/dashboard/analytics" badge="Maths · next term 75%">
       <Stack spacing={1.5}>
         <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
           <Box>
             <Typography variant="overline" color="text.secondary">
-              Predicted final mark
+              Projected next term
             </Typography>
             <Stack direction="row" spacing={1} alignItems="baseline">
               <Typography variant="h3" sx={{ fontWeight: 700, color: "primary.main" }}>
                 75%
               </Typography>
-              <Chip label="Distinction track" size="small" color="success" sx={{ height: 22 }} />
+              <Chip label="Trending up" size="small" color="success" sx={{ height: 22 }} />
             </Stack>
           </Box>
           <Stack alignItems="flex-end" spacing={0.25}>
             <Typography variant="caption" color="text.secondary">
-              Confidence interval
+              Confidence
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              67% to 83%
+              71%
             </Typography>
           </Stack>
         </Stack>
@@ -305,9 +328,9 @@ export function MasteryChartDemo() {
         </Box>
 
         <Stack direction="row" spacing={2} sx={{ pt: 0.5 }}>
-          <LegendDot color="#0F6963" label="Actual marks" />
-          <LegendDot color="#3F9D95" label="Forecast" />
-          <LegendDot color="rgba(63,157,149,0.4)" label="Confidence band" />
+          <LegendDot color="#0F6963" label="Marks you logged" />
+          <LegendDot color="#3F9D95" label="Projection" />
+          <LegendDot color="rgba(63,157,149,0.4)" label="Uncertainty" />
         </Stack>
       </Stack>
     </MockAppFrame>
@@ -326,116 +349,103 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 }
 
 // ============================================================
-// 4. Past-paper walk-through — question + worked solution
+// 4. Past papers — the DBE archive link-out
 // ============================================================
+// This mock used to render a worked solution: four numbered steps, a mark
+// beside each, and a chip reading "Markscheme reference: 2023 P2 Memo, pg.
+// 14". Aptiverse has never had a single worked solution, a memo mapping, or a
+// hosted paper. /dashboard/past-papers is a set of links into the DBE's public
+// archive with a study tip per subject, and its own source comment explains
+// that this is deliberate: the DBE is authoritative, and re-hosting risks
+// copyright and staleness.
+//
+// So the mock now shows the page that exists. It is a less impressive picture
+// and a better product decision, and the honest version of it is still worth
+// something: we send you to the real thing.
 export function PastPaperDemo() {
   return (
-    <MockAppFrame title="aptiverse.co.za/dashboard/past-papers" badge="NSC 2023 Paper 2 · Q4.2">
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-          gap: 2,
-        }}
-      >
-        <Stack
-          spacing={1.25}
-          sx={{
-            p: 2,
-            borderRadius: 1.5,
-            bgcolor: "action.hover",
-            border: 1,
-            borderColor: "divider",
-          }}
-        >
-          <Stack direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="overline" color="text.secondary">
-              Question
-            </Typography>
-            <Chip label="4 marks" size="small" sx={{ height: 20 }} />
-          </Stack>
-          <Typography variant="body2">
-            A car of mass <strong>1 200 kg</strong> travelling at{" "}
-            <strong>20 m·s⁻¹</strong> brakes to a stop over a distance of 25 m.
-          </Typography>
-          <Typography variant="body2" sx={{ fontStyle: "italic" }}>
-            Calculate the magnitude of the average braking force, ignoring air resistance.
-          </Typography>
-        </Stack>
+    <MockAppFrame title="aptiverse.co.za/dashboard/past-papers" badge="Official DBE archive">
+      <Stack spacing={1.5}>
+        <Typography variant="caption" color="text.secondary">
+          We do not re-host papers. These open the Department of Basic Education&apos;s own NSC archive.
+        </Typography>
 
-        <Stack spacing={1.5}>
-          <Typography variant="overline" color="primary.main">
-            Worked solution
-          </Typography>
-          <Step n={1} marks={1} text="Use Work-energy theorem: W_net = ΔK_E" />
-          <Step n={2} marks={1} text="ΔK_E = ½ m v_f² − ½ m v_i² = 0 − ½ (1 200)(20)² = −240 000 J" />
-          <Step n={3} marks={1} text="W_net = F·d·cos(180°) = −F·d → −F·(25) = −240 000" />
-          <Step n={4} marks={1} text="∴ F = 9 600 N" />
-          <Chip
-            icon={<CheckIcon sx={{ fontSize: 14 }} />}
-            label="Markscheme reference: 2023 P2 Memo, pg. 14"
-            size="small"
-            variant="outlined"
-            sx={{ height: 22, fontSize: "0.7rem", alignSelf: "flex-start" }}
-          />
-        </Stack>
-      </Box>
+        <PaperRow
+          subject="Mathematics"
+          papers="P1 (Algebra, Calculus, Functions) · P2 (Trig, Geometry, Stats)"
+          tip="Work P1 timed at 3hr, no calculator the first 30 min. Mark with the official memo."
+        />
+        <PaperRow
+          subject="Physical Sciences"
+          papers="P1 (Physics) · P2 (Chemistry)"
+          tip="Read the equation sheet first. Spend 5 minutes mapping each question to a formula."
+        />
+        <PaperRow
+          subject="Life Sciences"
+          papers="P1 (Genetics, Diversity) · P2 (Life Processes)"
+          tip="Diagrams must be labelled, not described. The memo expects exact terminology."
+        />
+      </Stack>
     </MockAppFrame>
   );
 }
 
-function Step({ n, marks, text }: { n: number; marks: number; text: string }) {
+function PaperRow({ subject, papers, tip }: { subject: string; papers: string; tip: string }) {
   return (
-    <Stack direction="row" spacing={1.25} alignItems="flex-start">
-      <Box
-        sx={{
-          width: 22,
-          height: 22,
-          borderRadius: "50%",
-          bgcolor: "primary.main",
-          color: "primary.contrastText",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "0.72rem",
-          fontWeight: 700,
-          flexShrink: 0,
-        }}
-      >
-        {n}
-      </Box>
-      <Box sx={{ flex: 1 }}>
-        <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: "0.8rem" }}>
-          {text}
+    <Box sx={{ p: 1.5, borderRadius: 1.5, border: 1, borderColor: "divider" }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 0.5 }}>
+        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+          {subject}
         </Typography>
-      </Box>
-      <Chip
-        label={`+${marks}`}
-        size="small"
-        color="success"
-        variant="outlined"
-        sx={{ height: 18, fontSize: "0.65rem", flexShrink: 0 }}
-      />
-    </Stack>
+        <Chip
+          icon={<OpenInNewIcon sx={{ fontSize: 13 }} />}
+          label="DBE"
+          size="small"
+          variant="outlined"
+          sx={{ height: 20, fontSize: "0.65rem" }}
+        />
+      </Stack>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+        {papers}
+      </Typography>
+      <Stack direction="row" spacing={0.75} alignItems="flex-start">
+        <Box sx={{ color: "primary.main", display: "flex", pt: 0.15 }}>
+          <TipsIcon sx={{ fontSize: 14 }} />
+        </Box>
+        <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
+          {tip}
+        </Typography>
+      </Stack>
+    </Box>
   );
 }
 
 // ============================================================
-// 5. Adaptive practice — difficulty escalation
+// 5. Practice — a generated, marked set
 // ============================================================
+// The name stays for its importers; the claim does not. This mock showed a
+// per-question difficulty ramp ("Coming next, difficulty 0.9") under the line
+// "Difficulty is auto-scaling as you get questions right". Nothing in
+// PracticeController does that. You pick one difficulty for the whole set and
+// the generator receives it verbatim; there is no mid-set adaptation and no
+// per-question difficulty score to display. The progress bars were rendering a
+// number the system has never computed.
+//
+// What it shows now is the set as it actually comes back: your chosen
+// difficulty, your topic, and per-question marking feeding topic mastery.
 export function AdaptivePracticeDemo() {
   const rows = [
-    { topic: "Factorise: x² + 5x + 6", diff: 0.2, status: "correct" as const },
-    { topic: "Factorise: 2x² − 5x − 3", diff: 0.4, status: "correct" as const },
-    { topic: "Factorise by grouping: x³ − x² + x − 1", diff: 0.6, status: "correct" as const },
-    { topic: "Solve x² − 4x + 5 = 0 (over ℂ)", diff: 0.85, status: "current" as const },
-    { topic: "Coming next, difficulty 0.9", diff: 0.9, status: "next" as const },
+    { topic: "Factorise: 2x² − 5x − 3", diff: 0.55, status: "correct" as const },
+    { topic: "Factorise by grouping: x³ − x² + x − 1", diff: 0.55, status: "correct" as const },
+    { topic: "Solve x² − 4x + 5 = 0 (over ℂ)", diff: 0.55, status: "current" as const },
+    { topic: "Simplify (x² − 9) / (x + 3)", diff: 0.55, status: "next" as const },
+    { topic: "Solve 3x² + 7x − 6 = 0", diff: 0.55, status: "next" as const },
   ];
   return (
-    <MockAppFrame title="aptiverse.co.za/dashboard/practice" badge="Adaptive · Grade 11">
+    <MockAppFrame title="aptiverse.co.za/dashboard/practice" badge="Core · Algebra">
       <Stack spacing={1.25}>
         <Typography variant="caption" color="text.secondary">
-          Difficulty is auto-scaling as you get questions right.
+          Written fresh for the topic you asked for, at the difficulty you chose.
         </Typography>
         {rows.map((r, i) => (
           <Box
@@ -467,21 +477,20 @@ export function AdaptivePracticeDemo() {
               >
                 {r.topic}
               </Typography>
-              <Box sx={{ width: 90 }}>
-                <LinearProgress
-                  variant="determinate"
-                  value={r.diff * 100}
-                  sx={{
-                    height: 6,
-                    borderRadius: 3,
-                    bgcolor: "action.hover",
-                    "& .MuiLinearProgress-bar": { borderRadius: 3 },
-                  }}
-                />
-              </Box>
+              {/* Was a per-question difficulty bar. There is no such number. */}
+              <Chip
+                label={r.status === "correct" ? "Marked" : r.status === "current" ? "Now" : "To do"}
+                size="small"
+                variant="outlined"
+                color={r.status === "correct" ? "success" : "default"}
+                sx={{ height: 20, fontSize: "0.65rem", flexShrink: 0 }}
+              />
             </Stack>
           </Box>
         ))}
+        <Typography variant="caption" color="text.secondary" sx={{ pt: 0.5 }}>
+          Every answer feeds your Algebra mastery.
+        </Typography>
       </Stack>
     </MockAppFrame>
   );
@@ -597,26 +606,34 @@ export function MoodCheckInDemo() {
           ))}
         </Stack>
 
+        {/* This panel said "Stress trending up this week" and offered a
+            3-minute break and a counsellor, "both one tap away". Three claims,
+            none real. Nothing computes a stress trend (mood-trend returns a
+            series and stops there); the break tool links to a query param the
+            diary never reads; and the counsellor list is a hardcoded empty
+            array. The check-in and the chart underneath are real, so the panel
+            now shows the one thing the check-in genuinely gives back: the
+            streak, which FrontendWellbeingService.cs:136 really computes. */}
         <Box
           sx={{
             p: 1.75,
             borderRadius: 1.5,
             bgcolor: (t) =>
-              t.palette.mode === "dark" ? "rgba(255,167,38,0.10)" : "rgba(255,167,38,0.08)",
+              t.palette.mode === "dark" ? "rgba(63,157,149,0.10)" : "rgba(15,105,99,0.06)",
             border: 1,
-            borderColor: "warning.light",
+            borderColor: "primary.light",
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="flex-start">
-            <Box sx={{ color: "warning.main", display: "flex", pt: 0.25 }}>
+            <Box sx={{ color: "primary.main", display: "flex", pt: 0.25 }}>
               <Heart size={20} fill="currentColor" />
             </Box>
             <Box>
               <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.25 }}>
-                Stress trending up this week.
+                Six days checked in, back to back.
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Try a 3-minute Take A Break, or talk to a counsellor. Both are one tap away.
+                Your week is on the chart below. A run of dips looks nothing like one bad day.
               </Typography>
             </Box>
           </Stack>
@@ -708,6 +725,12 @@ export function DiaryEncryptedDemo() {
           </Typography>
         </Box>
 
+        {/* The badge above this block was fixed, but this panel still said
+            "ENCRYPTED ON YOUR DEVICE / the key never leaves your phone" in the
+            product's own voice, which is the strongest version of the claim on
+            any page and is false. DiaryEntry.Content is a plain column. The
+            guarantee we can actually make is the access boundary: no parent
+            endpoint returns entries, and none exists to be turned on. */}
         <Box
           sx={{
             p: 1.5,
@@ -724,18 +747,20 @@ export function DiaryEncryptedDemo() {
             <LockIcon sx={{ color: "primary.main", fontSize: 18, mt: 0.25, flexShrink: 0 }} />
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main", letterSpacing: 0.5 }}>
-                ENCRYPTED ON YOUR DEVICE
+                NOT VISIBLE TO YOUR FAMILY
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Even Aptiverse staff cannot read this entry. The key never leaves your phone.
+                There is no parent screen that shows entries. They see your mood trend, never the words.
               </Typography>
             </Box>
           </Stack>
         </Box>
 
+        {/* Was "TONIGHT'S PROMPT". The prompts are four static chips, not a
+            nightly one. */}
         <Box>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-            TONIGHT&apos;S PROMPT
+            NEED A STARTER?
           </Typography>
           <Typography variant="body2" sx={{ mt: 0.5 }}>
             What&apos;s one thing you&apos;re proud of today, even a small one?

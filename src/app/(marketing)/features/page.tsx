@@ -19,10 +19,12 @@ import {
   CalendarCheck,
   LayoutDashboard,
   TrendingUp,
-  HeartPulse,
   PartyPopper,
   CalendarClock,
   ShieldCheck,
+  Compass,
+  UsersRound,
+  Presentation,
 } from "lucide-react";
 import { Section } from "@/components/common/Section";
 import { GradientBackdrop } from "@/components/common/GradientBackdrop";
@@ -71,29 +73,44 @@ export default function FeaturesPage() {
           </Typography>
         </Stack>
 
+        {/* Checked against the tutor's system prompt in AiController.cs:205.
+            Two claims here were false. "Cites your material, not random web
+            sources" described retrieval we do not have: there is no RAG, no
+            document index, no citation path anywhere in the AI module. And
+            "stays in scope for your grade or module" was the exact opposite of
+            what the prompt says, which is "Never tell a student that a subject
+            or level is not your focus". What is real is BuildTutorPrompt at
+            :232, which injects the student's level, subjects, marks, mastery
+            and upcoming assessments into every reply. That is worth saying. */}
         <FeatureShowcase
           eyebrow="Study assistant"
-          title="Answers anchored to your work."
-          body="The assistant follows your curriculum, from school subjects to university modules, and points you at the exact material instead of the whole internet."
+          title="It already knows what you are studying."
+          body="Your level, your subjects or courses, your marks, and what is due next all go into every reply. A Grade 11 term test and a second-year module get answered differently, without you setting the scene each time."
           bullets={[
-            "Stays in scope for your grade or module",
-            "Cites your material, not random web sources",
-            "Explains a concept, then sets you a practice question",
-            "Guides you through the work instead of handing over answers",
+            "Pitched at your level, drawing on the subjects you actually take",
+            "Shows the working step by step, then sets you original questions",
+            "Gives structure on essays instead of writing them for you",
+            "Quick answers for small questions, deep help for big ones",
           ]}
           demo={<TutorChatDemo />}
         />
 
+        {/* MasteryController.cs:76-144 is real: it projects a term mark from
+            graded assessments, recent trend and mastery gap. Two details were
+            oversold. It returns a single confidence figure (:130), not an
+            upper/lower band, and the app renders it as "72% confidence"
+            (analytics/page.tsx:465). And "shareable with a parent" was false:
+            StudentOverviewDto (ParentLinksController.cs:324) carries no
+            forecast field, so no parent can see it on any plan. */}
         <FeatureShowcase
           reverse
-          eyebrow="Mastery predictions"
+          eyebrow="Term predictions"
           title="See where your marks are heading."
-          body="A continuous forecast of your result per subject or module, with the topics costing you the most, so you can act while there is still time."
+          body="Log your assessment marks and Aptiverse projects the term ahead per subject or course, weighing your recent trend and the topics you have not locked down yet."
           bullets={[
-            "A forecast with a confidence band, not just today's mark",
+            "A projected mark, with how confident it is",
             "Flags the topics that need work",
-            "Updates every time you finish a task",
-            "Shareable with a parent on Family plans",
+            "Sharpens as you log more marks and do more practice",
           ]}
           demo={<MasteryChartDemo />}
         />
@@ -122,19 +139,28 @@ export default function FeaturesPage() {
             Marks matter. So does how you feel.
           </Typography>
           <Typography variant="body1" color="text.secondary">
-            The platform watches for stress, gives you tools, and connects you to a real person when you need one.
+            Check in daily, write freely, and keep an eye on the trend yourself.
           </Typography>
         </Stack>
 
+        {/* "The platform watches for stress and connects you to a real person"
+            was two promises we do not keep. WellbeingController.cs:67 returns
+            an empty counsellor list unconditionally: there is no counsellor
+            table and no booking. And nothing detects a trend. mood-trend
+            (:45) returns a day-averaged series and draws it; no code computes
+            direction or decline. StressSignal reads only the latest check-in's
+            free text. Telling a struggling teenager the app is watching, when
+            nothing is watching, is the kind of claim that gets someone hurt.
+            The chart is real and a person reading their own chart is real, so
+            that is what this says now. */}
         <FeatureShowcase
           eyebrow="Daily check-in"
-          title="Sixty seconds a day, and it catches the spiral early."
-          body="A quick daily check-in tracks the trend, not the snapshot, and surfaces help before you have to ask for it."
+          title="Sixty seconds a day, and the term stops being a blur."
+          body="Log how you are doing and Aptiverse keeps the run of days. A week of dips looks nothing like one bad Tuesday, and you can see which one you are having."
           bullets={[
-            "Trend detection across days, not single bad days",
-            "Gentle nudges toward a break or a counsellor",
-            "A weekly mood view, never a guilt trip",
-            "Your content stays private, even from us",
+            "A mood chart across days, not a single snapshot",
+            "A check-in streak you can actually keep",
+            "Your family sees the trend, never your entries",
           ]}
           demo={<MoodCheckInDemo />}
         />
@@ -154,6 +180,20 @@ export default function FeaturesPage() {
             product actually does. If we want to make the stronger claim, we
             have to build it first, and building it means giving up the
             sentiment analysis that reads the text. */}
+        {/* Two of the three bullets were still wrong after that encryption
+            fix. "Gentle nightly prompts" are four hardcoded chips that paste
+            text into the box (diary/page.tsx:157); nothing is nightly and
+            nothing is personalised. "Flags a rough patch to you" is wired and
+            dead: FrontendWellbeingService.cs:43 hardcodes NeedsFollowUp =
+            false and defers to a Python service that subscribes to a
+            "diary.entry.created" event the API never publishes. So no entry is
+            ever analysed and nothing is ever flagged.
+
+            Worth recording for whoever picks up the encryption question: right
+            now the AI does not read the diary at all, because that event never
+            fires. So the sentiment analysis we would have to give up to encrypt
+            it is not currently running. The trade-off may be cheaper than the
+            comment above assumes. */}
         <FeatureShowcase
           reverse
           eyebrow="Private diary"
@@ -161,8 +201,8 @@ export default function FeaturesPage() {
           body="Write honestly about how the term is going. Your family sees whether you are checking in and how your mood is tracking, never a word of what you actually wrote."
           bullets={[
             "Families see mood trends, never entries",
-            "Gentle nightly prompts to reflect",
-            "Flags a rough patch to you, so you can decide what to do about it",
+            "Prompts to start you off when the page is blank",
+            "Stored on our servers, not encrypted on your device",
           ]}
           demo={<DiaryEncryptedDemo />}
         />
@@ -182,7 +222,7 @@ export default function FeaturesPage() {
       </Section>
 
       {/* Goals */}
-      <Section eyebrow="Goals" title="Set your own goals, as granular as you like" subtitle="Big ambitions or small daily habits. Break them into steps and let Aptiverse keep you on track.">
+      <Section eyebrow="Goals" title="Goals you cannot fake" subtitle="Set the target yourself. Aptiverse checks it against your real practice scores and topic mastery, and pays out only when you beat your own baseline.">
         <Grid container spacing={3}>
           {GOALS.map((f) => (
             <Grid key={f.title} size={{ xs: 12, sm: 6, md: 3 }}>
@@ -192,8 +232,21 @@ export default function FeaturesPage() {
         </Grid>
       </Section>
 
+      {/* Real, shipped, and previously unmentioned on this page. The career
+          navigator in particular: it is free (features.ts:140), it is fully
+          built (AdmissionTargetsController), and the page never sold it. */}
+      <Section eyebrow="Also included" title="The rest of it, free tier included">
+        <Grid container spacing={3}>
+          {ALSO.map((f) => (
+            <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>
+              <FeatureCard {...f} />
+            </Grid>
+          ))}
+        </Grid>
+      </Section>
+
       {/* For families */}
-      <Section bg="paper" eyebrow="For families" title="A calm view, never an invasive one" subtitle="Families see how each child is doing, academically and emotionally. They never see the private diary.">
+      <Section bg="paper" eyebrow="For families" title="A calm view, never an invasive one" subtitle="Link each child and see what is coming up for them. The privacy boundary is the part we have built hardest.">
         <Grid container spacing={3}>
           {FOR_PARENTS.map((f) => (
             <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -209,7 +262,7 @@ export default function FeaturesPage() {
             See the whole thing.
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 620 }}>
-            The free tier gets you goals, the diary, basic practice, and wellbeing tools, no card needed.
+            The free tier gets you goals, the diary, mood check-ins, practice, past papers, and the career navigator, no card needed.
           </Typography>
           <Stack direction="row" spacing={1.5} sx={{ pt: 1 }} flexWrap="wrap" useFlexGap>
             <Button component={Link} href="/register" variant="contained" color="secondary" size="large">
@@ -225,33 +278,68 @@ export default function FeaturesPage() {
   );
 }
 
+// Four cards, four problems.
+//
+// "Adaptive practice: difficulty scales to your level" was not adaptive. You
+// pick foundation, core or challenge from a dropdown (practice/page.tsx:183)
+// and PracticeController passes your choice straight to the generator (:178).
+// Nothing reads your mastery to set it. The generation is real and good; the
+// word "adaptive" was the lie, so the card now says what it does.
+//
+// "Past papers with worked solutions" contradicted the page it links to:
+// past-papers/page.tsx:24 says outright that we do not host papers and funnel
+// to the DBE archive instead. There are no worked solutions to filter.
+//
+// "Exam practice: sit a timed paper" is being built and is not finished.
+//
+// "Study planner" does not exist in any form. No entity, no endpoint, no
+// route. `study_plan.ai` is a key in features.ts and a row in the seeder, and
+// that is the whole feature.
+//
+// Replaced with four things that are real and were going unsold.
 const LEARN_EXTRAS = [
   {
     icon: <Target size={18} />,
-    title: "Adaptive practice",
-    description: "Difficulty scales to your level, so you are always stretching without drowning.",
-    accent: "primary" as const,
-  },
-  {
-    icon: <FileText size={18} />,
-    title: "Past papers and resources",
-    description: "Real papers with worked solutions for school, course material for university.",
+    title: "Practice on demand",
+    description: "Generate a set on any topic, at the difficulty you pick. Multiple choice, short answer, or flashcards.",
     accent: "primary" as const,
   },
   {
     icon: <ClipboardCheck size={18} />,
-    title: "Exam practice",
-    description: "Sit a timed paper, then get a clear read on where you lost marks.",
+    title: "Marked, with a mastery read",
+    description: "Answers are marked automatically and every question feeds per-topic mastery, so you see the pattern.",
+    accent: "primary" as const,
+  },
+  {
+    icon: <FileText size={18} />,
+    title: "Straight to the DBE archive",
+    description: "Past papers come from the Department of Basic Education's official NSC archive, with a study note per subject.",
     accent: "primary" as const,
   },
   {
     icon: <CalendarDays size={18} />,
-    title: "Study planner",
-    description: "A weekly plan that blends deadlines, practice, and rest.",
+    title: "Assessment tracking",
+    description: "Log what is due and what you scored. That is what the term projection is built from.",
     accent: "primary" as const,
   },
 ];
 
+// "Take a break" has no implementation. The wellbeing page links to
+// /dashboard/diary?tool=breathing (wellbeing/page.tsx:549) and the diary page
+// never reads a `tool` param, so the link opens a plain diary. The only
+// breathing animation in this repo is the marketing mock.
+//
+// "Talk to a counsellor, included on paid plans" is the worst of the set. It
+// was sold as a paid benefit and there is nothing behind it: no Counsellor
+// entity, no table, no booking, and GetCounsellors returns an empty array
+// (WellbeingController.cs:67). The buttons on /dashboard/psychologist have no
+// handlers. A student in trouble who upgrades for this finds an empty page.
+// The one real thing on that page is the SADAG number, so that is what we
+// name, and we name it as what it is: someone else's helpline, not our
+// service.
+//
+// "Reach a goal or a streak" was half true. GoalEvaluator.cs:113 does fire a
+// celebration when a goal verifies. Nothing fires on a streak.
 const WELLBEING_EXTRAS = [
   {
     icon: <Lock size={18} />,
@@ -263,48 +351,109 @@ const WELLBEING_EXTRAS = [
   },
   {
     icon: <Wind size={18} />,
-    title: "Take a break",
-    description: "A minute of breathing or a short reset when you have been at it too long.",
+    title: "Mood over time",
+    description: "Every check-in lands on a chart you can read yourself, across the term.",
     accent: "secondary" as const,
   },
   {
     icon: <HeartHandshake size={18} />,
-    title: "Talk to a counsellor",
-    description: "A registered counsellor, one tap away when you need a real person. Included on paid plans.",
+    title: "Crisis numbers, up front",
+    description: "SADAG's free counselling line is on the wellbeing page. It is their service, staffed by them, not ours.",
     accent: "secondary" as const,
   },
   {
     icon: <PartyPopper size={18} />,
     title: "Celebrate wins",
-    description: "Reach a goal or a streak and Aptiverse marks the moment, gently.",
+    description: "Hit a goal you set and Aptiverse marks the moment, gently.",
     accent: "secondary" as const,
   },
 ];
 
+// "Break it into steps" is the subtle one, and it is the reason to check the
+// UI and not just the API. GoalMilestone is a real entity with full CRUD
+// (GoalsController.cs:534-659), so a grep for milestones looks healthy. But
+// web/src/lib/api/queries.ts exposes only a read hook and a reorder hook, and
+// every write button on goals/[id]/page.tsx renders with no handler: "Add
+// milestone" (:204), the tick box (:215), the delete (:237). A student cannot
+// create a milestone, so we cannot sell breaking a goal into steps. The
+// backend is there; the last mile is not. Worth building, not worth claiming.
+//
+// "Weekly targets" has nothing behind it at all, in the UI or the API.
+//
+// What replaces them is the part that is genuinely unusual: GoalEvaluator
+// verifies goals against real evidence, and GoalKinds.Rewarded (Goal.cs:195)
+// pays points only for practice score and topic mastery, only above your own
+// baseline. Points buy quota grants that UsageMeter really enforces
+// (UsageMeter.cs:15, 58). That whole loop is real and was going unsold.
 const GOALS = [
   {
     icon: <Flag size={18} />,
-    title: "Set any goal",
-    description: "Academic, a habit, or something personal. For the term, or just for today.",
+    title: "Set the target yourself",
+    description: "A practice score, a topic to master, an assessment mark, or a streak to keep. Academic or personal.",
     accent: "primary" as const,
   },
   {
     icon: <ListChecks size={18} />,
-    title: "Break it into steps",
-    description: "Split a big goal into small, granular milestones you can actually finish.",
+    title: "Checked, not self-reported",
+    description: "Aptiverse reads your actual attempts and mastery to decide whether you hit it. You cannot tick it off yourself.",
     accent: "primary" as const,
   },
   {
     icon: <CalendarCheck size={18} />,
-    title: "Weekly targets",
-    description: "Turn milestones into a weekly plan that fits around your real deadlines.",
+    title: "Paid for beating your own best",
+    description: "Points land when you outdo your own baseline, not when you clear a bar someone else set.",
     accent: "info" as const,
   },
   {
     icon: <TrendingUp size={18} />,
-    title: "Track progress",
-    description: "Watch streaks and completion build, and adjust the plan as you go.",
+    title: "Points buy real headroom",
+    description: "Spend them on more AI questions or practice sets. The limits move for real, they are not a badge.",
     accent: "success" as const,
+  },
+];
+
+// This section was six cards and five of them were fiction. The structural
+// fact that decides it: ParentLink is read in exactly one file,
+// ParentLinksController.cs. No other endpoint consults it, so no other
+// endpoint can hand a parent any child's data. Card by card:
+//
+// - "Result forecast per child": StudentOverviewDto (:324) has no forecast
+//   field. `parent.forecast` is a key in features.ts and a seeder row that
+//   bills for "matric mark prediction per child". Nothing computes it.
+// - "Wellbeing summary": /parent/wellbeing calls GET /api/entitlements/children,
+//   an endpoint that does not exist, so the page 404s. The chart it would draw
+//   is Math.random() (parent/wellbeing/page.tsx:63).
+// - "Celebration alerts": a "celebration" notification type is real, but every
+//   emitter targets the actor themselves (GoalEvaluator.cs:115 -> studentId).
+//   No parent-directed celebration exists. /parent/celebrations is a
+//   hardcoded array of invented children.
+// - "Shared calendar": CalendarController.cs:12 returns an empty array to
+//   everyone, unconditionally. There is no per-user calendar to share.
+//
+// What survives is the dashboard (real page, real linked children, real
+// upcoming assessments) and the privacy boundary, which is the one thing here
+// that is enforced rather than described. So we sell those two honestly and
+// say plainly what a parent does not get, rather than inventing a third.
+const ALSO = [
+  {
+    icon: <Compass size={18} />,
+    title: "Career navigator",
+    description:
+      "Enter the admission or progression requirements for what you are aiming at, and track each one against the marks you actually have. Free, on every plan.",
+    accent: "primary" as const,
+  },
+  {
+    icon: <UsersRound size={18} />,
+    title: "Study groups",
+    description: "Start or join a group, and schedule sessions with the people you are studying alongside.",
+    accent: "info" as const,
+  },
+  {
+    icon: <Presentation size={18} />,
+    title: "Find a tutor",
+    description:
+      "Browse tutor profiles with their subjects, qualifications, rates, and reviews. You arrange it with them directly.",
+    accent: "secondary" as const,
   },
 ];
 
@@ -312,37 +461,19 @@ const FOR_PARENTS = [
   {
     icon: <LayoutDashboard size={18} />,
     title: "Parent dashboard",
-    description: "One view across your children: what they are studying, how they are feeling, what is coming up.",
+    description: "Link each child to your account and see them in one place, with the assessments coming up for each of them.",
     accent: "primary" as const,
-  },
-  {
-    icon: <TrendingUp size={18} />,
-    title: "Result forecast",
-    description: "A per-child forecast of their final mark, so you see where they are heading.",
-    accent: "primary" as const,
-  },
-  {
-    icon: <HeartPulse size={18} />,
-    title: "Wellbeing summary",
-    description: "Mood and stress trends per child, with the diary content always kept private.",
-    accent: "secondary" as const,
-  },
-  {
-    icon: <PartyPopper size={18} />,
-    title: "Celebration alerts",
-    description: "Streaks, goals, and good news, not just problems.",
-    accent: "secondary" as const,
   },
   {
     icon: <CalendarClock size={18} />,
-    title: "Shared calendar",
-    description: "Exams, deadlines, and check-ins for the family, in one place.",
+    title: "What is due, per child",
+    description: "The next pieces of work for each child, so you can ask a useful question instead of a vague one.",
     accent: "info" as const,
   },
   {
     icon: <ShieldCheck size={18} />,
     title: "Private by design",
-    description: "You see trends and celebrations. You never see the diary. That boundary is built in.",
+    description: "There is no screen and no endpoint that shows you your child's diary. You cannot read it, and that cannot be switched on.",
     accent: "success" as const,
   },
 ];
