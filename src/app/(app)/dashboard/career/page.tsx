@@ -253,9 +253,9 @@ function SubjectChoiceAlert({ blocked, unitNoun }: { blocked: TargetReach[]; uni
 
   return (
     <Card
+      variant="outlined"
       sx={{
-        borderLeft: 3,
-        borderColor: "error.main",
+        borderColor: (t) => alpha(t.palette.error.main, 0.35),
         bgcolor: (t) => alpha(t.palette.error.main, 0.04),
       }}
     >
@@ -442,10 +442,21 @@ function PlanRow({ reach }: { reach: TargetReach }) {
     : null;
 
   return (
-    <Card variant="outlined" sx={{ borderLeft: 3, borderLeftColor: hex }}>
+    <Card variant="outlined">
       <CardActionArea component={Link} href={`/dashboard/career/targets/${target.id}`}>
         <Box sx={{ p: 2 }}>
           <Stack direction="row" spacing={1.5} alignItems="flex-start">
+            <Box
+              aria-hidden
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: "50%",
+                bgcolor: hex,
+                flexShrink: 0,
+                mt: 0.75,
+              }}
+            />
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
                 {target.programme}

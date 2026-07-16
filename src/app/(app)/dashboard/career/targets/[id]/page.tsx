@@ -310,7 +310,7 @@ function SummaryCard({ reach, unitNoun }: { reach: TargetReach; unitNoun: string
     : null;
 
   return (
-    <Card sx={{ borderLeft: 3, borderLeftColor: hex }}>
+    <Card>
       <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
         <Stack
           direction={{ xs: "column", sm: "row" }}
@@ -319,6 +319,10 @@ function SummaryCard({ reach, unitNoun }: { reach: TargetReach; unitNoun: string
         >
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 0.75 }}>
+              <Box
+                aria-hidden
+                sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: hex, flexShrink: 0 }}
+              />
               <ReachChip tone={tone} label={reachLabel(reach)} />
               {reach.status === "clear" && (
                 <Typography variant="body2" sx={{ fontWeight: 600, color: "success.main" }}>
@@ -395,7 +399,7 @@ function BlockedCard({
   unitNoun: string;
 }) {
   return (
-    <Card sx={{ borderLeft: 3, borderColor: "error.main", bgcolor: (t) => alpha(t.palette.error.main, 0.04) }}>
+    <Card variant="outlined" sx={{ borderColor: (t) => alpha(t.palette.error.main, 0.35), bgcolor: (t) => alpha(t.palette.error.main, 0.04) }}>
       <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
         <Stack direction="row" spacing={2} alignItems="flex-start">
           <Box sx={{ color: "error.main", flexShrink: 0, pt: 0.25 }}>
