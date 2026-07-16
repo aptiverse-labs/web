@@ -39,7 +39,7 @@ export default function ForFamiliesPage() {
           <Stack direction={{ xs: "column", lg: "row" }} spacing={{ xs: 6, lg: 10 }} alignItems="center">
             <Stack spacing={2.5} sx={{ flex: 1 }}>
               <Chip
-                label="For families"
+                label="For parents"
                 size="small"
                 sx={{ alignSelf: "flex-start", bgcolor: "background.paper", border: 1, borderColor: "divider", fontWeight: 600 }}
               />

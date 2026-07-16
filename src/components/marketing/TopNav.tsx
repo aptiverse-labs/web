@@ -21,7 +21,7 @@ import { Logo } from "@/components/common/Logo";
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: "Features", href: "/features" },
   { label: "Students", href: "/for-students" },
-  { label: "Families", href: "/for-families" },
+  { label: "Parents", href: "/for-families" },
   { label: "Tutors", href: "/for-tutors" },
   { label: "Pricing", href: "/pricing" },
 ];

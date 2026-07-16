@@ -31,7 +31,7 @@ const COLUMNS: Column[] = [
     title: "Who it's for",
     links: [
       { label: "Students", href: "/for-students" },
-      { label: "Families", href: "/for-families" },
+      { label: "Parents", href: "/for-families" },
       { label: "Tutors", href: "/for-tutors" },
     ],
   },

@@ -231,7 +231,7 @@ export default function FeaturesPage() {
           title="Yours, and not your parents' reading material."
           body="Write honestly about how the term is going. Your family sees whether you are checking in and how your mood is tracking, never a word of what you actually wrote."
           bullets={[
-            "Families see mood trends, never entries",
+            "Parents see mood trends, never entries",
             "Prompts to start you off when the page is blank",
             "Stored on our servers, not encrypted on your device",
           ]}
@@ -276,8 +276,8 @@ export default function FeaturesPage() {
         </Grid>
       </Section>
 
-      {/* For families */}
-      <Section bg="paper" eyebrow="For families" title="A calm view, never an invasive one" subtitle="Link each child and see what is coming up for them. The privacy boundary is the part we have built hardest.">
+      {/* For parents */}
+      <Section bg="paper" eyebrow="For parents" title="A calm view, never an invasive one" subtitle="Link each child and see what is coming up for them. The privacy boundary is the part we have built hardest.">
         <Grid container spacing={3}>
           {FOR_PARENTS.map((f) => (
             <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>

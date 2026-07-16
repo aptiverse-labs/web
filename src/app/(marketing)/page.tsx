@@ -69,12 +69,12 @@ export default function HomePage() {
         </Stack>
       </Section>
 
-      {/* Three audiences: students, families, tutors. */}
+      {/* Three audiences: students, parents, tutors. */}
       <Section
         bg="paper"
         eyebrow="Built for you"
-        title="Made for students, families, and tutors"
-        subtitle="A focused workspace for the student, a calm read for the family, and a profile that gets tutors found."
+        title="Made for students, parents, and tutors"
+        subtitle="A focused workspace for the student, a calm read for the parent, and a profile that gets tutors found."
       >
         <Grid container spacing={3}>
           {ROLES.map((r) => (
@@ -176,7 +176,7 @@ const ROLES = [
     // emotionally" is two reads a parent cannot get. No endpoint returns a
     // child's marks or mood to a parent; ParentLink is consulted in exactly
     // one file. What they get is the children they linked and what is due.
-    title: "Families",
+    title: "Parents",
     description: "See your children's deadlines in one place, and nothing they would not want you reading.",
     href: "/for-families",
     accent: "secondary" as const,
@@ -221,7 +221,7 @@ const SA_CONTEXT = [
     icon: <ShieldCheck size={18} />,
     title: "Your diary stays yours",
     description:
-      "What you write is private. Families see how you are tracking, never what you wrote.",
+      "What you write is private. Parents see how you are tracking, never what you wrote.",
     accent: "primary" as const,
   },
 ];
