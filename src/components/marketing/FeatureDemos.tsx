@@ -11,18 +11,17 @@ import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import PersonIcon from "@mui/icons-material/PersonOutline";
 import MenuBookIcon from "@mui/icons-material/MenuBookOutlined";
 import CheckIcon from "@mui/icons-material/Check";
-import TimerIcon from "@mui/icons-material/TimerOutlined";
 import LockIcon from "@mui/icons-material/LockOutlined";
 import VerifiedIcon from "@mui/icons-material/VerifiedOutlined";
 import StarIcon from "@mui/icons-material/Star";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import TipsIcon from "@mui/icons-material/TipsAndUpdatesOutlined";
-import { Frown, Annoyed, Meh, Smile, Laugh, Heart, TrendingDown } from "lucide-react";
+import { Frown, Annoyed, Meh, Smile, Laugh, Heart, TrendingDown, Timer } from "lucide-react";
 import { MockAppFrame } from "./FeatureShowcase";
 import { AptiverseLineChart } from "@/components/common/AptiverseLineChart";
 
 // ============================================================
-// 1. AI Tutor — chat-UI mock
+// 1. AI Tutor: chat-UI mock
 // ============================================================
 // The two chips under the reply used to read "Stewart, Calculus, §3.4" and
 // "Tutorial 4, Q9", i.e. the tutor citing a named textbook page and a specific
@@ -349,7 +348,7 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 }
 
 // ============================================================
-// 4. Past papers — the DBE archive link-out
+// 4. Past papers: the DBE archive link-out
 // ============================================================
 // This mock used to render a worked solution: four numbered steps, a mark
 // beside each, and a chip reading "Markscheme reference: 2023 P2 Memo, pg.
@@ -421,7 +420,7 @@ function PaperRow({ subject, papers, tip }: { subject: string; papers: string; t
 }
 
 // ============================================================
-// 5. Practice — a generated, marked set
+// 5. Practice: a generated, marked set
 // ============================================================
 // The name stays for its importers; the claim does not. This mock showed a
 // per-question difficulty ramp ("Coming next, difficulty 0.9") under the line
@@ -1001,15 +1000,32 @@ function CounsellorRow({
 // ============================================================
 // 6. Exam simulator — timer + paper
 // ============================================================
+// This mock was written for the version of the simulator that did not exist
+// yet, and it showed it. The frame pointed at /dashboard/exam-simulator, which
+// is not a route: an exam is a practice format, picked on /dashboard/practice
+// (practice/page.tsx:297). The badge read "Paper 1", implying an official DBE
+// paper, when Claude writes the paper fresh. And the caption promised "detailed
+// feedback in the debrief", i.e. the weekly AI debrief, which was one of the
+// three invented Student Max features that got stripped. It is still invented,
+// so it cannot be the place the feedback lands.
+//
+// What is real, and what this now shows: a timed paper (:371-376), marks
+// against each question, progress counted in marks, and written answers marked
+// against a per-question memo with part marks (PracticeService.cs:106-198).
 export function ExamSimulatorDemo() {
   return (
-    <MockAppFrame title="aptiverse.co.za/dashboard/exam-simulator" badge="LIVE · Paper 1">
+    <MockAppFrame title="aptiverse.co.za/dashboard/practice" badge="LIVE · One attempt">
       <Stack spacing={2}>
         <Box
           sx={{
             display: "flex",
+            // The timer and the progress read sit side by side on a wide card,
+            // but 01:23:45 next to "Q3 of 12 · 18/100 marks" is too much for a
+            // narrow phone, so they stack there instead of shrinking.
+            flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: { xs: "flex-start", sm: "center" },
+            gap: 1.25,
             p: 1.5,
             borderRadius: 1.5,
             bgcolor: (t) =>
@@ -1019,7 +1035,9 @@ export function ExamSimulatorDemo() {
           }}
         >
           <Stack direction="row" spacing={1.5} alignItems="center">
-            <TimerIcon sx={{ color: "error.main" }} />
+            <Box sx={{ color: "error.main", display: "flex" }}>
+              <Timer size={20} />
+            </Box>
             <Box>
               <Typography variant="overline" color="error.main">
                 Time remaining
@@ -1029,7 +1047,7 @@ export function ExamSimulatorDemo() {
               </Typography>
             </Box>
           </Stack>
-          <Stack alignItems="flex-end" spacing={0.25}>
+          <Stack alignItems={{ xs: "flex-start", sm: "flex-end" }} spacing={0.25}>
             <Typography variant="caption" color="text.secondary">
               Progress
             </Typography>
@@ -1075,7 +1093,7 @@ export function ExamSimulatorDemo() {
         </Box>
 
         <Typography variant="caption" color="text.secondary" sx={{ textAlign: "center" }}>
-          Auto-marked at submission. Detailed feedback in the debrief.
+          Marked against the memo at submission, with part marks per question.
         </Typography>
       </Stack>
     </MockAppFrame>

@@ -26,8 +26,9 @@ import {
   Compass,
   GraduationCap,
   BookOpenCheck,
-  Languages,
+  Users,
   Gauge,
+  Timer,
   ChevronDown,
 } from "lucide-react";
 import { GradientBackdrop } from "@/components/common/GradientBackdrop";
@@ -400,7 +401,8 @@ const SA_CONTEXT = [
 
 // Nine cards, five of them wrong. "Adaptive practice" (you pick the
 // difficulty), "Past papers with worked solutions" (a DBE link-out),
-// "Exam practice" (being built, not shipped), "Study planner" (does not exist
+// "Exam practice" (was being built, not shipped; it has since shipped and is
+// back as its own card, described off the code), "Study planner" (does not exist
 // in any form), and "breathing breaks, and a private, encrypted diary" (no
 // breathing tool, no encryption). "Earn milestones" is unbuildable in the UI:
 // the API has full milestone CRUD but the page's write buttons have no
@@ -425,6 +427,13 @@ const FEATURES = [
     icon: <FileText size={18} />,
     title: "Past papers",
     description: "Straight into the official DBE archive, with a study note per subject.",
+    accent: "primary" as const,
+  },
+  {
+    icon: <Timer size={18} />,
+    title: "Exam simulator",
+    description:
+      "A full paper in sections, 30 to 150 marks, timed at about a minute a mark. One attempt, marked with part marks. On Student Max.",
     accent: "primary" as const,
   },
   {

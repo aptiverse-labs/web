@@ -130,8 +130,9 @@ export default function HomePage() {
                   Start free. Grow at your pace.
                 </Typography>
                 <Typography color="text.secondary" sx={{ fontSize: "1rem" }}>
-                  The free tier is genuinely useful: goals, diary, basic practice, and
-                  wellbeing tools. Upgrade only when you are ready.
+                  The free tier is genuinely useful: goals, diary, practice, past papers,
+                  term predictions, and the whole career navigator. Upgrade only when you
+                  are ready.
                 </Typography>
               </Stack>
               <Stack direction="row" spacing={1.25} flexWrap="wrap" useFlexGap>
@@ -162,15 +163,21 @@ const ROLES = [
     icon: <GraduationCap size={18} />,
     // Not "watch your results climb". We cannot promise an outcome, and a
     // student who works and does not climb was told a lie about themselves.
+    // "Plan your term" was reading as the study planner, which does not
+    // exist. Tracking your own assessments is the real thing.
     title: "Students",
-    description: "Plan your term, practise what you are weakest at, and keep track of how you are doing.",
+    description: "Track your term, practise what you are weakest at, and keep an honest read on how you are doing.",
     href: "/for-students",
     accent: "primary" as const,
   },
   {
     icon: <Users size={18} />,
+    // "An honest read on how each child is doing, academically and
+    // emotionally" is two reads a parent cannot get. No endpoint returns a
+    // child's marks or mood to a parent; ParentLink is consulted in exactly
+    // one file. What they get is the children they linked and what is due.
     title: "Families",
-    description: "A calm, honest read on how each child is doing, academically and emotionally. Never invasive.",
+    description: "See your children's deadlines in one place, and nothing they would not want you reading.",
     href: "/for-families",
     accent: "secondary" as const,
   },

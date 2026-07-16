@@ -30,7 +30,13 @@ import { Section } from "@/components/common/Section";
 import { GradientBackdrop } from "@/components/common/GradientBackdrop";
 import { FeatureCard } from "@/components/common/FeatureCard";
 import { FeatureShowcase } from "@/components/marketing/FeatureShowcase";
-import { TutorChatDemo, MasteryChartDemo, MoodCheckInDemo, DiaryEncryptedDemo } from "@/components/marketing/FeatureDemos";
+import {
+  TutorChatDemo,
+  MasteryChartDemo,
+  MoodCheckInDemo,
+  DiaryEncryptedDemo,
+  ExamSimulatorDemo,
+} from "@/components/marketing/FeatureDemos";
 
 export default function FeaturesPage() {
   return (
@@ -113,6 +119,31 @@ export default function FeaturesPage() {
             "Sharpens as you log more marks and do more practice",
           ]}
           demo={<MasteryChartDemo />}
+        />
+
+        {/* Added back after the truth pass removed it, because it has now
+            shipped. The earlier version of this card sold a timed paper while
+            the feature was still being built; this one is written off the code
+            that exists. Sizes: PAPER_SIZES (practice/page.tsx:169). Structure
+            and 1/2-4/6-12 mark bands: the generator prompt
+            (PracticeController.cs:509-512). A minute a mark: :371-376. Part
+            marks against a per-question memo: MarkWrittenAnswersAsync
+            (PracticeService.cs:106-198). Marks and percent: :606-622.
+
+            Deliberately not claimed: that it is adaptive (you pick the length
+            and difficulty), that it is an official NSC paper (Claude writes it,
+            it is not a DBE paper), or that it predicts your result. */}
+        <FeatureShowcase
+          eyebrow="Exam simulator · Student Max"
+          title="A full paper, timed, one attempt."
+          body="Pick a length, 30 up to 150 marks, and Aptiverse sets a paper structured like a real one: Section A multiple choice, Section B short written answers, Section C extended questions. The marks add up to exactly what you asked for."
+          bullets={[
+            "Every question shows what it is out of, so you can budget your time",
+            "Roughly a minute a mark, and you get one attempt, like the real thing",
+            "Written answers marked against a memo, with part marks and where they went",
+            "Scored out of marks as well as a percent, with maths in proper notation",
+          ]}
+          demo={<ExamSimulatorDemo />}
         />
 
         <Box sx={{ pt: 4 }}>
@@ -290,7 +321,9 @@ export default function FeaturesPage() {
 // past-papers/page.tsx:24 says outright that we do not host papers and funnel
 // to the DBE archive instead. There are no worked solutions to filter.
 //
-// "Exam practice: sit a timed paper" is being built and is not finished.
+// "Exam practice: sit a timed paper" was being built and unfinished when this
+// card was cut. It has since shipped and now has its own showcase above, on
+// Student Max.
 //
 // "Study planner" does not exist in any form. No entity, no endpoint, no
 // route. `study_plan.ai` is a key in features.ts and a row in the seeder, and

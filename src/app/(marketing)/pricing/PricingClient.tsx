@@ -53,16 +53,27 @@ const PLAN_COPY: Record<string, PlanCopy> = {
     cta: { label: "Create free account", href: "/register" },
     features: [
       "Track up to {subjectCap} subjects or modules",
-      "Granular goals you set yourself",
-      "A study planner and reminders",
-      "Daily diary and mood check-in, encrypted",
-      "Basic practice questions",
+      "Goals checked against your real practice and mastery",
+      // "A study planner and reminders" sold a planner that does not exist in
+      // any form: no entity, no endpoint, no route.
+      "The career navigator, in full",
+      // "Daily diary and mood check-in, encrypted" is the claim this whole
+      // pass exists to kill. DiaryEntry.Content is a plain column.
+      "Daily diary and mood check-in, private from your family",
+      "Practice questions, marked automatically",
       "Around {aiQuick} AI study questions a month",
     ],
+    // "Mastery predictions" and "Past papers with worked solutions" were both
+    // listed as things Free does NOT get. Both are wrong, and wrong in the
+    // direction that costs us trust and money: past_papers.read is in the free
+    // baseline, and term predictions are not gated anywhere, so a free user
+    // already has both. We were talking a free user out of a feature they had.
+    // There are no worked solutions on any plan; past papers are a DBE
+    // link-out.
     notIncluded: [
       "Full AI study assistant",
-      "Mastery predictions",
-      "Past papers with worked solutions",
+      "Unlimited subjects or modules",
+      "Study groups and the workspace",
     ],
   },
   "student.pro": {
@@ -71,28 +82,49 @@ const PLAN_COPY: Record<string, PlanCopy> = {
     tagline: "The full study toolkit.",
     highlight: true,
     cta: { label: "Choose Pro", href: "/register?plan=student.pro" },
+    // Three of these were not Pro features at all. "Adaptive practice that
+    // scales to you" is not adaptive on any plan; you pick the difficulty.
+    // "Past papers with worked solutions" do not exist and the papers we do
+    // link are free. "Mastery predictions per subject" are free too, and were
+    // being double-sold here and denied on the Free card above.
     features: [
       "Everything in Free",
       "Unlimited subjects or modules",
-      "Curriculum-aware AI study assistant",
-      "Adaptive practice that scales to you",
-      "Past papers and resources with worked solutions",
-      "Mastery predictions per subject",
+      "The AI study assistant, on your subjects and marks",
+      "Study groups, the workspace, and tutor connect",
+      "Rewards you can spend on higher AI limits",
       "Around {aiQuick} quick and {aiDeep} deep AI sessions a month",
       "Priority email support",
     ],
   },
+  // This card was stripped to "Pro with a bigger AI allowance" because all
+  // three differentiators were fiction. The right fix was to ship one rather
+  // than describe it early, and the exam simulator has now shipped, so it goes
+  // back on the card. Every line below traces to code:
+  //
+  // - Format, sizes: PAPER_SIZES in practice/page.tsx:169 offers 30/50/100/150.
+  // - Structure: the generator prompt (PracticeController.cs:509-512) sets
+  //   Section A multiple choice at 1 mark, Section B at 2-4, Section C at 6-12.
+  // - Timing: DurationMinutes at :371-376, roughly a minute a mark.
+  // - Part marks: MarkWrittenAnswersAsync (PracticeService.cs:106-198) marks
+  //   against MarkingMemo per question and clamps to 0..q.Marks.
+  // - Marks + percent: SubmitAttemptAsync :606-622 scores an exam from marks.
+  //
+  // The other two Student Max keys (audio.explanations, study_plan.ai) are
+  // still seeder rows with no implementation on either side. They stay off the
+  // card until they are real, on the same rule that got them removed.
   "student.max": {
     audience: "students",
     audienceLabel: "For one student",
-    tagline: "For exam season.",
+    tagline: "Sit the paper before you sit the paper.",
     cta: { label: "Choose Max", href: "/register?plan=student.max" },
     features: [
       "Everything in Pro",
-      "Exam practice with timed papers",
-      "Higher AI limits, around {aiQuick} quick and {aiDeep} deep a month",
-      "Audio explanations for tricky topics",
-      "A cross-subject study plan",
+      "The exam simulator: a full paper, timed, one attempt only",
+      "Choose 30, 50, 100 or 150 marks, in sections like a real paper",
+      "Written answers marked against a memo, with part marks and what you missed",
+      "Scored out of marks, not just a percent",
+      "The highest AI limits we offer, around {aiQuick} quick and {aiDeep} deep a month",
     ],
   },
   parent: {
@@ -102,9 +134,8 @@ const PLAN_COPY: Record<string, PlanCopy> = {
     cta: { label: "Choose 1 child", href: "/register?plan=parent" },
     features: [
       "One child on Student Pro",
-      "Parent dashboard, calm and honest",
-      "Private wellbeing summary and mark forecast",
-      "Celebration alerts and shared family calendar",
+      "Parent dashboard: your children and what is due for each",
+      "No way to read their diary, on any plan",
       "Around {aiQuick} quick and {aiDeep} deep AI sessions a month",
     ],
   },
@@ -116,9 +147,8 @@ const PLAN_COPY: Record<string, PlanCopy> = {
     cta: { label: "Choose 2 children", href: "/register?plan=parent.2" },
     features: [
       "Two children, each on Student Pro",
-      "Parent dashboard, calm and honest",
-      "Private wellbeing summary and mark forecast",
-      "Celebration alerts and shared family calendar",
+      "Parent dashboard: your children and what is due for each",
+      "No way to read their diary, on any plan",
       "Shared AI pool, around {aiQuick} quick and {aiDeep} deep a month",
     ],
   },
@@ -129,9 +159,8 @@ const PLAN_COPY: Record<string, PlanCopy> = {
     cta: { label: "Choose 3 children", href: "/register?plan=parent.3" },
     features: [
       "Three children, each on Student Pro",
-      "Parent dashboard, calm and honest",
-      "Private wellbeing summary and mark forecast",
-      "Celebration alerts and shared family calendar",
+      "Parent dashboard: your children and what is due for each",
+      "No way to read their diary, on any plan",
       "Shared AI pool, around {aiQuick} quick and {aiDeep} deep a month",
     ],
   },
@@ -142,9 +171,8 @@ const PLAN_COPY: Record<string, PlanCopy> = {
     cta: { label: "Choose 4 children", href: "/register?plan=parent.4" },
     features: [
       "Four children, each on Student Pro",
-      "Parent dashboard, calm and honest",
-      "Private wellbeing summary and mark forecast",
-      "Celebration alerts and shared family calendar",
+      "Parent dashboard: your children and what is due for each",
+      "No way to read their diary, on any plan",
       "Shared AI pool, around {aiQuick} quick and {aiDeep} deep a month",
     ],
   },
@@ -208,7 +236,11 @@ const FAQ = [
   },
   {
     q: "Does this work for university, not just school?",
-    a: "Yes. Aptiverse works from Grade 10 to university. The tools adapt to your stage, so a university student sees courses and coursework, and a school student sees subjects and past papers.",
+    // "A school student sees subjects and past papers" implied past papers are
+    // a school-tier benefit. They are a free link-out to the DBE archive, and
+    // a tertiary student gets nothing from them, so it was a poor thing to
+    // name here anyway.
+    a: "Yes. Aptiverse works from Grade 10 to university. The tools adapt to your stage, so a university student sees the courses they added and their coursework, and a school student sees CAPS subjects and their assessments.",
   },
   {
     q: "Why is there an AI limit?",
@@ -220,7 +252,13 @@ const FAQ = [
   },
   {
     q: "Is my data safe?",
-    a: "We follow POPIA and host data in South Africa. Your diary is end-to-end encrypted by default, so even we cannot read it. We never sell your data.",
+    // "Your diary is end-to-end encrypted by default, so even we cannot read
+    // it" was false, and putting it under a heading that says "is my data
+    // safe" makes it the worst instance of the claim on the site: it is the
+    // exact question a cautious parent or student asks before trusting us, and
+    // the answer was invented. DiaryEntry.Content is a plain column. What is
+    // real is the access boundary and POPIA.
+    a: "We follow POPIA and host data in South Africa, and we never sell your data. On the diary specifically, be clear on what we do and do not promise: no parent, teacher, or other student can read it, and there is no endpoint that would let them. It is not end-to-end encrypted, though. Entries are stored as ordinary text on our servers, so staff access is governed by policy and access control rather than by cryptography.",
   },
 ];
 
