@@ -31,6 +31,7 @@ import {
   type AcademicProfile,
   type Institution,
   type EnrolledCourse,
+  type CourseLevel,
 } from "@/lib/mockData";
 
 export type Counsellor = {
@@ -430,6 +431,8 @@ export type AddCourseInput = {
   name: string;
   code?: string;
   lecturer?: string;
+  // Study level, so AI practice is pitched at the right year.
+  level?: CourseLevel;
   // How many semesters the course runs. Optional: omitted reads as ongoing.
   durationSemesters?: number;
 };

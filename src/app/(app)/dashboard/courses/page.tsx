@@ -41,7 +41,7 @@ import {
   useDeleteCourse,
   useSetCourseFinished,
 } from "@/lib/api/queries";
-import type { Institution, EnrolledCourse } from "@/lib/mockData";
+import { COURSE_LEVELS, type Institution, type EnrolledCourse, type CourseLevel } from "@/lib/mockData";
 
 const INSTITUTION_TYPE_LABELS: Record<string, string> = {
   university: "Universities",
@@ -259,6 +259,9 @@ function AddCourseDialog({
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [lecturer, setLecturer] = useState("");
+  // Study level, so generated practice is pitched at the right year rather than
+  // defaulting to a school register.
+  const [level, setLevel] = useState<CourseLevel>("first_year");
   // Full year is the common case, so it leads. This is what lets a finished
   // course drop out of the active list on its own later.
   const [durationSemesters, setDurationSemesters] = useState(2);
@@ -278,6 +281,7 @@ function AddCourseDialog({
     setName("");
     setCode("");
     setLecturer("");
+    setLevel("first_year");
     setDurationSemesters(2);
     add.reset();
   };
@@ -293,6 +297,7 @@ function AddCourseDialog({
         name: trimmedName,
         code: trimmedCode || undefined,
         lecturer: lecturer.trim() || undefined,
+        level,
         durationSemesters,
       },
       {
@@ -326,6 +331,20 @@ function AddCourseDialog({
             onChange={(e) => setCode(e.target.value)}
             fullWidth
           />
+          <TextField
+            select
+            label="What level are you at?"
+            value={level}
+            onChange={(e) => setLevel(e.target.value as CourseLevel)}
+            fullWidth
+            helperText="We pitch your generated practice at this level."
+          >
+            {COURSE_LEVELS.map((l) => (
+              <MenuItem key={l.value} value={l.value}>
+                {l.label}
+              </MenuItem>
+            ))}
+          </TextField>
           <TextField
             select
             label="How long is it?"

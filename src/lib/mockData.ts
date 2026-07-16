@@ -71,6 +71,27 @@ export type Institution = {
 // A tertiary student's enrolled course. `practiceKey` is the id practice
 // generation + mastery key on (institution-scoped). Named EnrolledCourse to
 // avoid clashing with the legacy marketplace `Course` type below.
+// A tertiary study level, in ascending order. Feeds AI question difficulty.
+export type CourseLevel =
+  | "first_year"
+  | "second_year"
+  | "third_year"
+  | "fourth_year"
+  | "honours"
+  | "masters"
+  | "phd";
+
+// Display labels for each level, and the order to offer them in.
+export const COURSE_LEVELS: { value: CourseLevel; label: string }[] = [
+  { value: "first_year", label: "First year" },
+  { value: "second_year", label: "Second year" },
+  { value: "third_year", label: "Third year" },
+  { value: "fourth_year", label: "Fourth year" },
+  { value: "honours", label: "Honours" },
+  { value: "masters", label: "Master's" },
+  { value: "phd", label: "PhD" },
+];
+
 export type EnrolledCourse = {
   id: string; // student_course id
   courseId: number;
@@ -80,6 +101,9 @@ export type EnrolledCourse = {
   code: string | null;
   lecturer: string | null;
   createdAt: string;
+  // Study level (first_year..fourth_year, honours, masters, phd). Set at
+  // enrolment; pitches AI practice generation. Null on older courses.
+  level?: CourseLevel | null;
   // How many semesters the course runs (null = ongoing / set before durations
   // existed). finishesOn is the computed end; isFinished is the flag the
   // analytics past-vs-active split reads.
