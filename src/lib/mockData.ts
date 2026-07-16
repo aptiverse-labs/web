@@ -539,17 +539,28 @@ export type ClassRecord = {
   strugglingTopics: string[];
 };
 
+// A child a parent covers, or could cover. Shape returned by
+// GET /api/entitlements/children. planCode is the child's current coverage
+// tier ("student.pro" | "student.max") or "none" when not yet covered.
+export type ChildCoveragePlan = "student.pro" | "student.max" | "none";
+
 export type Child = {
   id: string;
+  studentUserId: string;
   name: string;
-  grade: 11 | 12;
-  school: string;
-  weeklyMinutes: number;
-  predictedAverage: number;
-  trend: number;
-  isStudyingNow: boolean;
+  email: string;
+  planCode: ChildCoveragePlan;
+  covered: boolean;
+  // Wellbeing / analytics fields are not wired to real data yet, so they are
+  // optional and absent on the live coverage endpoint.
+  grade?: 11 | 12;
+  school?: string;
+  weeklyMinutes?: number;
+  predictedAverage?: number;
+  trend?: number;
+  isStudyingNow?: boolean;
   currentActivity?: string;
-  moodAvg: number;
+  moodAvg?: number;
 };
 
 export type ChatMessage = {

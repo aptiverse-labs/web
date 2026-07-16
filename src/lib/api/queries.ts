@@ -1624,6 +1624,21 @@ export const useChildren = () =>
     queryFn: () => apiClient.get<Child[]>("/api/entitlements/children"),
   });
 
+// Parent sets a linked child's coverage plan (student.pro | student.max).
+// A 409 surfaces the capacity message ("Your plan covers N students...").
+export const useSetChildPlan = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    void,
+    ApiError,
+    { studentUserId: string; planCode: "student.pro" | "student.max" }
+  >({
+    mutationFn: ({ studentUserId, planCode }) =>
+      apiClient.put<void>(`/api/entitlements/children/${studentUserId}/plan`, { planCode }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: queryKeys.children() }),
+  });
+};
+
 // --- Parent <-> student links -------------------------------------------
 // A parent invites a student by email; the student accepts from their
 // Connections hub. Additive link model (identity.parent_links), no change to
