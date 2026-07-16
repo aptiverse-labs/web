@@ -96,7 +96,7 @@ export default function AnalyticsPage() {
     <AtmosphericBackdrop>
       <PageHeader
         title="Analytics"
-        description="Your term, course by course: where each one stands, what is moving, and how you are holding up."
+        description={`Your ${academic.unitNounPlural}, one by one: where each one stands, what is moving, and how you are holding up.`}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Analytics" }]}
         actions={
           <Button
@@ -277,7 +277,7 @@ function AnalyticsView({
             value={graded.length}
             icon={<FactCheckIcon />}
             color="primary"
-            hint="Graded this term"
+            hint={unitNoun === "course" ? "Graded this semester" : "Graded this term"}
           />
         </Grid>
         <Grid size={{ xs: 6, md: 3 }}>

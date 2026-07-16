@@ -16,7 +16,8 @@ import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import { useSnackbar } from "notistack";
 import { useAcademicUnits } from "@/lib/api/queries";
 import {
-  ASSESSMENT_TYPES,
+  CAPS_ASSESSMENT_TYPES,
+  TERTIARY_ASSESSMENT_TYPES,
   ASSESSMENT_TYPE_LABELS,
   ASSESSMENT_STATUS_LABELS,
   type AssessmentType,
@@ -59,6 +60,11 @@ export function AssessmentForm({
   const noun = academic.unitNoun; // "subject" | "course"
   const Noun = noun.charAt(0).toUpperCase() + noun.slice(1);
   const noUnits = academic.isReady && units.length === 0;
+
+  // Tertiary students run coursework, tutorials and midterms; high-school
+  // students stay on the CAPS list. The label map covers both, so rendering
+  // anywhere else keeps working whichever set was chosen.
+  const offeredTypes = academic.isTertiary ? TERTIARY_ASSESSMENT_TYPES : CAPS_ASSESSMENT_TYPES;
 
   const defaultDue = useMemo(() => {
     const d = new Date();
@@ -194,7 +200,7 @@ export function AssessmentForm({
                 onChange={(e) => setType(e.target.value as AssessmentType)}
                 fullWidth
               >
-                {ASSESSMENT_TYPES.map((t) => (
+                {offeredTypes.map((t) => (
                   <MenuItem key={t} value={t}>
                     {ASSESSMENT_TYPE_LABELS[t]}
                   </MenuItem>
@@ -212,7 +218,7 @@ export function AssessmentForm({
                   },
                   htmlInput: { min: 0, max: 100, step: 1 },
                 }}
-                helperText="Portion of the term mark this assessment contributes."
+                helperText={`Portion of the ${academic.isTertiary ? "semester" : "term"} mark this assessment contributes.`}
               />
             </Stack>
 

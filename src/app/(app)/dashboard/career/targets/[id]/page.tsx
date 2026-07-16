@@ -619,6 +619,8 @@ function GenerateResult({ result, onDismiss }: { result: GenerateGoalsResult; on
 
 function OverallCard({ reach }: { reach: TargetReach }) {
   const theme = useTheme();
+  const { isTertiary, unitNoun, unitNounPlural } = useAcademicUnits();
+  const UnitNounPlural = unitNounPlural.charAt(0).toUpperCase() + unitNounPlural.slice(1);
   const o = reach.overall;
 
   if (!o) {
@@ -706,10 +708,10 @@ function OverallCard({ reach }: { reach: TargetReach }) {
               }}
             />
             <Typography variant="caption" color="text.secondary">
-              Your average across the {o.countedUnits} subject{o.countedUnits === 1 ? "" : "s"} with
-              graded marks. Subjects you&apos;ve only practised aren&apos;t counted: practice and a
-              term mark aren&apos;t the same thing, and averaging them would give you a number that
-              is neither.
+              Your average across the {o.countedUnits} {unitNoun}{o.countedUnits === 1 ? "" : "s"} with
+              graded marks. {UnitNounPlural} you&apos;ve only practised aren&apos;t counted: practice and a
+              {" "}{isTertiary ? "semester" : "term"} mark aren&apos;t the same thing, and averaging them
+              would give you a number that is neither.
             </Typography>
           </>
         )}

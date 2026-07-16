@@ -10,7 +10,7 @@ import InputAdornment from "@mui/material/InputAdornment";
 import Collapse from "@mui/material/Collapse";
 import { alpha } from "@mui/material/styles";
 import { Check, PenLine, Send, RotateCcw } from "lucide-react";
-import { useUpdateAssessment } from "@/lib/api/queries";
+import { useUpdateAssessment, useAcademicUnits } from "@/lib/api/queries";
 import {
   ASSESSMENT_STATUS_LABELS,
   type Assessment,
@@ -151,6 +151,7 @@ export function nextActions(status: AssessmentStatus): {
 // do next, and the mark entry that closes it out.
 export function LifecyclePanel({ assessment: a }: { assessment: Assessment }) {
   const update = useUpdateAssessment();
+  const { isTertiary } = useAcademicUnits();
   const [loggingMark, setLoggingMark] = useState(false);
   const [markDraft, setMarkDraft] = useState<string>(
     a.actualMark != null ? String(a.actualMark) : "",
@@ -253,7 +254,7 @@ export function LifecyclePanel({ assessment: a }: { assessment: Assessment }) {
         </Stack>
         <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
           Saving a mark files this assessment as graded and updates your{" "}
-          term mark.
+          {isTertiary ? "semester" : "term"} mark.
         </Typography>
       </Collapse>
     </Box>

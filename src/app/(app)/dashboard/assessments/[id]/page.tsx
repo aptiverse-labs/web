@@ -65,7 +65,7 @@ export default function AssessmentDetail({ params }: { params: Promise<{ id: str
         title={a?.title ?? "Assessment"}
         description={
           a
-            ? `${unitName} · ${ASSESSMENT_TYPE_LABELS[a.type] ?? a.type} · worth ${a.weight}% of the term mark`
+            ? `${unitName} · ${ASSESSMENT_TYPE_LABELS[a.type] ?? a.type} · worth ${a.weight}% of the ${academic.isTertiary ? "semester" : "term"} mark`
             : undefined
         }
         breadcrumbs={[
@@ -198,7 +198,7 @@ function AssessmentBody({
         <Facet
           label={settled ? "Your mark" : "Weight"}
           value={settled ? `${a.actualMark}%` : `${a.weight}%`}
-          hint={settled ? `on a ${a.weight}% weighting` : "of the term mark"}
+          hint={settled ? `on a ${a.weight}% weighting` : `of the ${unitNoun === "course" ? "semester" : "term"} mark`}
         />
         <Facet
           label={settled ? "Marked" : isOverdue ? "Overdue by" : "Due in"}

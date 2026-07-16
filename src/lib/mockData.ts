@@ -113,13 +113,21 @@ export type EnrolledCourse = {
 };
 
 export type AssessmentType =
+  // CAPS / high-school flavoured
   | "test"
   | "essay"
   | "investigation"
   | "practical"
   | "exam"
   | "project"
-  | "oral";
+  | "oral"
+  // University flavoured
+  | "assignment"
+  | "tutorial"
+  | "lab_report"
+  | "class_test"
+  | "midterm"
+  | "presentation";
 
 export type AssessmentStatus = "scheduled" | "in_progress" | "submitted" | "graded";
 
@@ -143,7 +151,9 @@ export type Assessment = {
   tasks?: AssessmentTask[];
 };
 
-export const ASSESSMENT_TYPES: AssessmentType[] = [
+// The CAPS set high-school students choose from. `ASSESSMENT_TYPES` stays an
+// alias of this so any existing consumer keeps its current behaviour.
+export const CAPS_ASSESSMENT_TYPES: AssessmentType[] = [
   "test",
   "essay",
   "investigation",
@@ -153,6 +163,25 @@ export const ASSESSMENT_TYPES: AssessmentType[] = [
   "oral",
 ];
 
+// The university set tertiary students choose from. Deliberately drops the
+// CAPS-specific "investigation" and "oral", and leads with the coursework a
+// semester actually runs on.
+export const TERTIARY_ASSESSMENT_TYPES: AssessmentType[] = [
+  "assignment",
+  "class_test",
+  "test",
+  "tutorial",
+  "lab_report",
+  "practical",
+  "midterm",
+  "exam",
+  "essay",
+  "project",
+  "presentation",
+];
+
+export const ASSESSMENT_TYPES: AssessmentType[] = CAPS_ASSESSMENT_TYPES;
+
 export const ASSESSMENT_TYPE_LABELS: Record<AssessmentType, string> = {
   test: "Test",
   essay: "Essay",
@@ -161,6 +190,12 @@ export const ASSESSMENT_TYPE_LABELS: Record<AssessmentType, string> = {
   exam: "Exam",
   project: "Project",
   oral: "Oral",
+  assignment: "Assignment",
+  tutorial: "Tutorial",
+  lab_report: "Lab report",
+  class_test: "Class test",
+  midterm: "Midterm",
+  presentation: "Presentation",
 };
 
 export const ASSESSMENT_STATUS_LABELS: Record<AssessmentStatus, string> = {

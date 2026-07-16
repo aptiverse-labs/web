@@ -92,7 +92,7 @@ export default function AssessmentsPage() {
           icon: <ClipboardList />,
           title: "No assessments yet",
           description: isTertiary
-            ? "Log an assessment, test, or project and this page tracks the run-up: what is due, what you have handed in, and what it does to your term mark."
+            ? "Log an assessment, test, or project and this page tracks the run-up: what is due, what you have handed in, and what it does to your semester mark."
             : "Log an SBA, test, or project and this page tracks the run-up: what is due, what you have handed in, and what it does to your term mark.",
           action: (
             <Button
@@ -189,7 +189,7 @@ function AssessmentsView({
       </Grid>
 
       {attention.length > 0 && (
-        <AttentionRail items={attention} unitName={unitName} />
+        <AttentionRail items={attention} unitName={unitName} isTertiary={unitNoun === "course"} />
       )}
 
       <Box>
@@ -406,9 +406,11 @@ function Overview({
 function AttentionRail({
   items,
   unitName,
+  isTertiary,
 }: {
   items: Assessment[];
   unitName: (id: string) => string;
+  isTertiary: boolean;
 }) {
   return (
     <Box>
@@ -453,7 +455,7 @@ function AttentionRail({
                     {a.title}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
-                    {unitName(a.subjectId)} · {a.weight}% of term mark
+                    {unitName(a.subjectId)} · {a.weight}% of {isTertiary ? "semester" : "term"} mark
                   </Typography>
                 </Box>
               </Box>

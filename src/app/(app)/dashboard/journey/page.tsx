@@ -901,6 +901,7 @@ function Stat({
 // ─── Where each unit is heading ──────────────────────────────────────
 
 function UnitProgress({ rows, unitNoun }: { rows: UnitRow[]; unitNoun: string }) {
+  const { isTertiary } = useAcademicUnits();
   // A unit with nothing logged and nothing predicted has no journey to show.
   // Listing it anyway just pads the page with dashes.
   const active = rows
@@ -925,7 +926,7 @@ function UnitProgress({ rows, unitNoun }: { rows: UnitRow[]; unitNoun: string })
                 Where each {unitNoun} is heading
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Now, and next term
+                Now, and next {isTertiary ? "semester" : "term"}
               </Typography>
             </Box>
             <Button
@@ -952,6 +953,7 @@ function UnitProgress({ rows, unitNoun }: { rows: UnitRow[]; unitNoun: string })
 }
 
 function UnitRowCard({ row }: { row: UnitRow }) {
+  const { isTertiary } = useAcademicUnits();
   const { unit, total, graded, upcoming, currentMark, predictedMark, confidence, mastery, nextUp } =
     row;
   const hasMark = currentMark != null;
@@ -999,7 +1001,7 @@ function UnitRowCard({ row }: { row: UnitRow }) {
               {hasMark ? `${currentMark}%` : "No mark"}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {hasMark ? "Term average" : "Nothing graded"}
+              {hasMark ? (isTertiary ? "Semester average" : "Term average") : "Nothing graded"}
             </Typography>
           </Box>
           {drift != null && (
@@ -1013,7 +1015,7 @@ function UnitRowCard({ row }: { row: UnitRow }) {
                   {predictedMark}%
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Next term
+                  Next {isTertiary ? "semester" : "term"}
                 </Typography>
               </Box>
             </Stack>
@@ -1280,8 +1282,8 @@ function NoUnitsYet({
             Your journey starts with a {unitNoun}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: "auto", mb: 3 }}>
-            Add your {unitNounPlural} so we can track each assessment as a landmark on your way
-            through the year.
+            Add your {unitNounPlural} so we can track each assessment as a landmark along the
+            way.
           </Typography>
           <Button component={Link} href={addHref} variant="contained" endIcon={<ArrowRight size={16} />}>
             Add {unitNounPlural}

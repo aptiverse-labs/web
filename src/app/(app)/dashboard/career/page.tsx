@@ -550,7 +550,7 @@ function EvidenceCard({
         ) : (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-              Your current term mark, or practice mastery where you haven&apos;t been graded yet.
+              Your current {unitNoun === "course" ? "semester" : "term"} mark, or practice mastery where you haven&apos;t been graded yet.
               This is what every plan is measured against.
             </Typography>
             <Stack spacing={2}>
