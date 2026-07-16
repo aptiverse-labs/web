@@ -139,6 +139,14 @@ export const PARENT_NAV: NavSection[] = [
     ],
   },
   {
+    heading: "Insights",
+    items: [
+      { label: "Wellbeing", href: "/parent/wellbeing", icon: FavoriteIcon },
+      { label: "Celebrations", href: "/parent/celebrations", icon: CelebrationIcon },
+      { label: "How can I help?", href: "/parent/help", icon: LightbulbIcon },
+    ],
+  },
+  {
     heading: "Account",
     items: [
       { label: "Billing", href: "/parent/billing", icon: PaymentsIcon },
