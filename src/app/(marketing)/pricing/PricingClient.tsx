@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -280,9 +281,20 @@ function isFree(plan: PlanDto): boolean {
   return plan.kind === "free" || !plan.monthlyPriceZar;
 }
 
+// Which pricing tab a marketing link asked for. "families" is the marketing
+// word for the parents plans, so it maps onto the parents audience.
+function audienceFromParam(value: string | null): Audience {
+  if (value === "tutors") return "tutors";
+  if (value === "parents" || value === "families") return "parents";
+  return "students";
+}
+
 export default function PricingClient({ plans: allPlans }: { plans: PlanDto[] }) {
+  const searchParams = useSearchParams();
   const [billing, setBilling] = useState<Billing>("monthly");
-  const [audience, setAudience] = useState<Audience>("students");
+  const [audience, setAudience] = useState<Audience>(() =>
+    audienceFromParam(searchParams.get("for")),
+  );
 
   // Keep the catalog in its intended order, filtered to the tab. Only plans
   // that exist in BOTH the catalog and our copy map render.

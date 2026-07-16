@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { type PlanDto } from "@/lib/api/queries";
 import PricingClient from "./PricingClient";
 
@@ -27,5 +28,11 @@ async function getPlans(): Promise<PlanDto[]> {
 
 export default async function PricingPage() {
   const plans = await getPlans();
-  return <PricingClient plans={plans} />;
+  // PricingClient reads the `?for=` query param via useSearchParams, which must
+  // sit under a Suspense boundary during static generation.
+  return (
+    <Suspense fallback={null}>
+      <PricingClient plans={plans} />
+    </Suspense>
+  );
 }

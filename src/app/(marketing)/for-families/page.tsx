@@ -62,7 +62,7 @@ export default function ForFamiliesPage() {
                 <Button component={Link} href="/register" variant="contained" color="secondary" size="large">
                   Start free
                 </Button>
-                <Button component={Link} href="/pricing" variant="outlined" size="large">
+                <Button component={Link} href="/pricing?for=families" variant="outlined" size="large">
                   See Parent plans
                 </Button>
               </Stack>
@@ -213,7 +213,7 @@ export default function ForFamiliesPage() {
             <Button component={Link} href="/register" variant="contained" color="secondary" size="large">
               Start free
             </Button>
-            <Button component={Link} href="/pricing" variant="outlined" size="large">
+            <Button component={Link} href="/pricing?for=families" variant="outlined" size="large">
               See Parent plans
             </Button>
           </Stack>
