@@ -5,6 +5,38 @@ body {
   height: 100%;
 }
 
+/* First-paint colour scheme, OS-driven, before any JS runs.
+ *
+ * MUI paints one fixed theme into the SSR styles (light), and the React
+ * theme only corrects to the OS preference after hydration. That left a
+ * full-viewport white flash on reload for dark-OS users. These unlayered
+ * rules paint the base surface correctly at first paint from the CSS media
+ * query alone. Because MUI's CssBaseline lives in a lower CSS @layer
+ * (enableCssLayer), unlayered declarations win, so the body background and
+ * text are right immediately and stay right once the theme resolves.
+ *
+ * Values mirror palette.ts: light background.default / text.primary, then
+ * dark background.default (#050506) / text.primary (#E9EAE6). color-scheme
+ * lets native controls, the overscroll canvas, and default UI follow the OS
+ * too. OS-driven only by design: there is no persisted manual choice here. */
+:root {
+  color-scheme: light dark;
+}
+
+html,
+body {
+  background-color: #f6f7f5;
+  color: #1b1d22;
+}
+
+@media (prefers-color-scheme: dark) {
+  html,
+  body {
+    background-color: #050506;
+    color: #e9eae6;
+  }
+}
+
 #__next,
 main {
   height: 100%;
