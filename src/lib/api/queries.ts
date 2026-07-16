@@ -989,13 +989,41 @@ export const useTutorReviewsById = (id: string) =>
 // The reshaped tutor track: Aptiverse does not facilitate paid sessions or take
 // commission. A tutor showcases a profile, connects with students/parents, and
 // collects reviews; the tutoring arrangement happens directly, off-platform.
+export type ConnectionStatus = "pending" | "active" | "paused" | "declined";
+
 export type TutorConnection = {
   id: string;
   studentId: string;
   student: string;
   subject: string;
-  status: "active" | "paused";
+  status: ConnectionStatus;
   connectedAt: string;
+};
+
+// A read-only snapshot of a linked student's academics, shown to the tutor on
+// an active connection so they can prepare. Server-scoped to that connection.
+export type TutorStudentContext = {
+  studentId: string;
+  studentName: string;
+  subject: string;
+  units: { name: string; detail: string }[];
+  assessments: {
+    title: string;
+    type: string;
+    subject: string;
+    weight: number;
+    dueDate: string;
+    status: string;
+    predictedMark: number | null;
+  }[];
+  goals: {
+    title: string;
+    target: string;
+    progress: number;
+    status: string;
+    category: string;
+    dueDate: string;
+  }[];
 };
 
 export type TutorReview = {
@@ -1016,6 +1044,30 @@ export const useTutorReviews = () =>
   useQuery<TutorReview[]>({
     queryKey: queryKeys.tutorReviews(),
     queryFn: () => apiClient.get<TutorReview[]>("/api/marketplace/tutor/reviews"),
+  });
+
+// Tutor moves a connection through its lifecycle: accept/decline a request, or
+// pause/resume a student.
+export const useUpdateTutorConnection = () => {
+  const qc = useQueryClient();
+  return useMutation<TutorConnection, ApiError, { id: string; status: ConnectionStatus }>({
+    mutationFn: ({ id, status }) =>
+      apiClient.patch<TutorConnection>(`/api/booking/connections/${id}`, { status }),
+    onSuccess: (_d, { id }) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.tutorConnections() });
+      void qc.invalidateQueries({ queryKey: ["tutor", "student-context", id] });
+    },
+  });
+};
+
+// The linked student's academic context, for the tutor's student detail page.
+// Only resolves on an active connection (the server forbids otherwise).
+export const useTutorStudentContext = (connectionId: string, enabled = true) =>
+  useQuery<TutorStudentContext>({
+    queryKey: ["tutor", "student-context", connectionId],
+    queryFn: () =>
+      apiClient.get<TutorStudentContext>(`/api/booking/connections/${connectionId}/student-context`),
+    enabled: enabled && !!connectionId,
   });
 
 // Student/parent actions on a tutor. Both notify the tutor server-side (in-app

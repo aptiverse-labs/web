@@ -15,6 +15,7 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonthOutlined";
 import NotificationsIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import SettingsIcon from "@mui/icons-material/SettingsOutlined";
 import SchoolIcon from "@mui/icons-material/SchoolOutlined";
+import BadgeIcon from "@mui/icons-material/BadgeOutlined";
 import PsychologyIcon from "@mui/icons-material/PsychologyOutlined";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivismOutlined";
 import SsidChartIcon from "@mui/icons-material/SsidChartOutlined";
@@ -181,8 +182,7 @@ export const TUTOR_NAV: NavSection[] = [
   {
     heading: "Teaching",
     items: [
-      { label: "Sessions", href: "/tutor/sessions", icon: CalendarMonthIcon },
-      { label: "Students", href: "/tutor/students", icon: SchoolIcon },
+      { label: "My students", href: "/tutor/connections", icon: SchoolIcon },
       { label: "Study groups", href: "/dashboard/study-groups", icon: ForumIcon },
       { label: "Reviews", href: "/tutor/reviews", icon: EmojiEventsIcon },
     ],
@@ -190,6 +190,7 @@ export const TUTOR_NAV: NavSection[] = [
   {
     heading: "Account",
     items: [
+      { label: "Public profile", href: "/tutor/profile", icon: BadgeIcon },
       { label: "Billing", href: "/tutor/billing", icon: PaymentsIcon },
       { label: "Settings", href: "/tutor/settings", icon: SettingsIcon },
     ],
