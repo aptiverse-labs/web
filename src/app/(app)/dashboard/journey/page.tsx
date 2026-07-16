@@ -32,9 +32,44 @@ import {
 import { ASSESSMENT_TYPE_LABELS, type Assessment, type Goal } from "@/lib/mockData";
 import { prettifyUnitId } from "@/lib/format";
 import { enter, enterStagger } from "@/lib/motion";
-import { ArrowRight, Route, Flag, CircleCheck, CalendarClock } from "lucide-react";
+import {
+  ArrowRight,
+  Route,
+  Flag,
+  CircleCheck,
+  CalendarClock,
+  Target,
+} from "lucide-react";
 
 const PASS_MARK = 50;
+
+// Whole days from the start of today to a due date. Negative once it has passed.
+function daysUntil(iso: string): number {
+  return dayjs(iso).startOf("day").diff(dayjs().startOf("day"), "day");
+}
+
+// An honest countdown for a due date. A due date is a day, not a moment, so this
+// counts in days rather than inventing a precision like "in 3 hours". Only ever
+// rendered client-side (the view waits on loaded queries), so today's date is
+// the student's own, not the server's.
+function dueLabel(iso: string): string {
+  const d = daysUntil(iso);
+  if (d < 0) return `${Math.abs(d)} day${d === -1 ? "" : "s"} overdue`;
+  if (d === 0) return "Due today";
+  if (d === 1) return "Due tomorrow";
+  if (d <= 14) return `Due in ${d} days`;
+  return `Due ${dayjs(iso).format("DD MMM")}`;
+}
+
+// The soonest work runs warm, the passed-its-date work runs on the warning
+// colour, and everything further out stays quiet. Colour is a nudge here, never
+// the only signal: the label always says the same thing in words.
+function dueTone(iso: string): "warning.main" | "primary.main" | "text.secondary" {
+  const d = daysUntil(iso);
+  if (d <= 0) return "warning.main";
+  if (d <= 3) return "primary.main";
+  return "text.secondary";
+}
 
 export default function JourneyPage() {
   // Reads academic units, not subjects. On useSubjects this whole page was a
@@ -256,14 +291,30 @@ function JourneyView({
       )
     : null;
 
-  const nextUp = upcoming[0];
-  const nextUpName = nextUp ? nameFor(nextUp.subjectId) : undefined;
+  // The forward half of the journey: goals the student is still working toward.
+  // A reached goal is already a landmark behind them; an unreached one is a
+  // milestone ahead, with a real progress figure the server derived from their
+  // own work. At-risk first, then soonest due, so the goal that needs a push
+  // sits at the top rather than buried by due date alone.
+  const goalsInFlight = useMemo(
+    () =>
+      goals
+        .filter((g) => (g.status === "active" || g.status === "at_risk") && g.achievedAt == null)
+        .sort((a, b) => {
+          const risk = (a.status === "at_risk" ? 0 : 1) - (b.status === "at_risk" ? 0 : 1);
+          if (risk !== 0) return risk;
+          return +new Date(a.dueDate) - +new Date(b.dueDate);
+        }),
+    [goals],
+  );
 
   if (units.length === 0) {
     return <NoUnitsYet unitNoun={unitNoun} unitNounPlural={unitNounPlural} addHref={addHref} />;
   }
 
-  if (landmarks.length === 0 && upcoming.length === 0) {
+  // Nothing behind, nothing ahead, and no goal in flight: there is no journey to
+  // draw yet, so send them to log the first thing that would start one.
+  if (landmarks.length === 0 && upcoming.length === 0 && goalsInFlight.length === 0) {
     return <NoAssessmentsYet unitCount={units.length} unitNoun={unitNoun} />;
   }
 
@@ -277,14 +328,375 @@ function JourneyView({
         topicsPracticed={mastery.length}
         predictionGap={predictionGap}
         calledCount={called.length}
-        nextUp={nextUp}
-        nextUpName={nextUpName}
+      />
+
+      <RoadAhead
+        upcoming={upcoming}
+        goals={goalsInFlight}
+        nameFor={nameFor}
+        unitNoun={unitNoun}
       />
 
       <UnitProgress rows={rows} unitNoun={unitNoun} />
 
       <Landmarks landmarks={landmarks} />
     </Stack>
+  );
+}
+
+// ─── The road ahead: what is still to come ───────────────────────────
+//
+// The backward-looking half of this page (Landmarks) had no counterpart: the
+// only forward signal was a single "next up" tucked into the hero. This is the
+// balance. Two real, dated things a student is walking toward: the assessments
+// they have logged but not sat, and the goals they set but have not reached.
+// Both degrade on their own, so a student with upcoming work but no goals, or
+// goals but a clear assessment runway, still gets a full-height panel.
+
+function RoadAhead({
+  upcoming,
+  goals,
+  nameFor,
+  unitNoun,
+}: {
+  upcoming: Assessment[];
+  goals: Goal[];
+  nameFor: (id: string) => string;
+  unitNoun: string;
+}) {
+  // The gate upstream lets this render whenever any one of landmarks, upcoming,
+  // or goals exists; when the something is landmarks alone, there is nothing
+  // ahead to show, so this steps aside rather than drawing an empty pair.
+  if (upcoming.length === 0 && goals.length === 0) return null;
+
+  const spotlight = upcoming[0];
+  const rest = upcoming.slice(1, 5);
+  const moreCount = Math.max(0, upcoming.length - 1 - rest.length);
+
+  return (
+    <motion.div {...enter}>
+      <Card>
+        <CardContent sx={{ p: { xs: 2.5, sm: 3 } }}>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="flex-end"
+            spacing={2}
+            sx={{ mb: 2.5 }}
+          >
+            <Box>
+              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+                What is coming
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                The road ahead
+              </Typography>
+            </Box>
+            <Button
+              component={Link}
+              href="/dashboard/calendar"
+              endIcon={<ArrowRight size={16} />}
+              size="small"
+            >
+              Calendar
+            </Button>
+          </Stack>
+
+          <Grid container spacing={{ xs: 3, md: 4 }}>
+            <Grid size={{ xs: 12, md: 7 }}>
+              <SubHead icon={<CalendarClock size={14} />} label="Assessments ahead" />
+              {upcoming.length === 0 ? (
+                <EmptyLine text="Nothing due. Everything you have logged is graded." />
+              ) : (
+                <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+                  <SpotlightAssessment
+                    assessment={spotlight}
+                    unitName={nameFor(spotlight.subjectId)}
+                  />
+                  {rest.map((a) => (
+                    <AssessmentAheadRow
+                      key={a.id}
+                      assessment={a}
+                      unitName={nameFor(a.subjectId)}
+                    />
+                  ))}
+                  {moreCount > 0 && (
+                    <Button
+                      component={Link}
+                      href="/dashboard/assessments"
+                      size="small"
+                      endIcon={<ArrowRight size={14} />}
+                      sx={{ alignSelf: "flex-start" }}
+                    >
+                      {moreCount} more ahead
+                    </Button>
+                  )}
+                </Stack>
+              )}
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 5 }}>
+              <SubHead icon={<Target size={14} />} label="Goals in flight" />
+              {goals.length === 0 ? (
+                <GoalsEmpty unitNoun={unitNoun} />
+              ) : (
+                <Stack spacing={1.5} sx={{ mt: 1.5 }}>
+                  {goals.slice(0, 5).map((g) => (
+                    <GoalFlightRow
+                      key={g.id}
+                      goal={g}
+                      unitName={g.subjectId ? nameFor(g.subjectId) : undefined}
+                    />
+                  ))}
+                  {goals.length > 5 && (
+                    <Button
+                      component={Link}
+                      href="/dashboard/goals"
+                      size="small"
+                      endIcon={<ArrowRight size={14} />}
+                      sx={{ alignSelf: "flex-start" }}
+                    >
+                      All goals
+                    </Button>
+                  )}
+                </Stack>
+              )}
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+function SubHead({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.75} sx={{ color: "text.secondary" }}>
+      <Box sx={{ display: "flex" }}>{icon}</Box>
+      <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+        {label}
+      </Typography>
+    </Stack>
+  );
+}
+
+// The nearest piece of work, given room to breathe: the one thing on this page a
+// student can open and act on right now. Everything on it is real (weight,
+// their own predicted mark, the note they wrote), so nothing here is invented to
+// fill the space.
+function SpotlightAssessment({
+  assessment: a,
+  unitName,
+}: {
+  assessment: Assessment;
+  unitName: string;
+}) {
+  return (
+    <Box
+      sx={{
+        p: 2.5,
+        borderRadius: 2,
+        border: 1,
+        borderColor: "divider",
+        bgcolor: (t) => (t.palette.mode === "dark" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)"),
+      }}
+    >
+      <Typography
+        variant="caption"
+        sx={{ fontWeight: 700, color: dueTone(a.dueDate), fontVariantNumeric: "tabular-nums" }}
+      >
+        {dueLabel(a.dueDate)}
+      </Typography>
+      <Typography variant="h6" sx={{ fontWeight: 600, mt: 0.25, mb: 0.5 }}>
+        {a.title}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+        {unitName} · {ASSESSMENT_TYPE_LABELS[a.type]} · {a.weight}% weight
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+        {dayjs(a.dueDate).format("DD MMM")}
+        {a.predictedMark != null ? ` · you predicted ${a.predictedMark}%` : ""}
+      </Typography>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Button
+          component={Link}
+          href={`/dashboard/assessments/${a.id}`}
+          variant="contained"
+          color="secondary"
+          size="small"
+          endIcon={<ArrowRight size={16} />}
+        >
+          Open
+        </Button>
+        <Button component={Link} href="/dashboard/workspace" variant="text" size="small">
+          Workspace
+        </Button>
+      </Stack>
+      <AssessmentNote assessment={a} />
+    </Box>
+  );
+}
+
+// A compact runway row for the work behind the spotlight. The countdown carries
+// the urgency; the mark, if the student made a call, sits on the right.
+function AssessmentAheadRow({
+  assessment: a,
+  unitName,
+}: {
+  assessment: Assessment;
+  unitName: string;
+}) {
+  return (
+    <Box
+      component={Link}
+      href={`/dashboard/assessments/${a.id}`}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 1.5,
+        p: 1.5,
+        borderRadius: 2,
+        border: 1,
+        borderColor: "divider",
+        color: "inherit",
+        textDecoration: "none",
+        transition: "border-color 150ms ease",
+        "&:hover": { borderColor: "primary.main" },
+      }}
+    >
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+          {a.title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }} noWrap>
+          {unitName} · {ASSESSMENT_TYPE_LABELS[a.type]} · {a.weight}% weight
+        </Typography>
+      </Box>
+      <Box sx={{ textAlign: "right", flexShrink: 0 }}>
+        <Typography
+          variant="caption"
+          sx={{ display: "block", fontWeight: 600, color: dueTone(a.dueDate) }}
+        >
+          {dueLabel(a.dueDate)}
+        </Typography>
+        {a.predictedMark != null && (
+          <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: "tabular-nums" }}>
+            You called {a.predictedMark}%
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+}
+
+// A goal the student is still walking toward. progress is server-derived from
+// their own work (0-100), and target is the server's own label for what done
+// looks like, so nothing on this row is the client's guess. At-risk goals wear
+// the warning colour because that status is the whole reason to look.
+function GoalFlightRow({ goal, unitName }: { goal: Goal; unitName?: string }) {
+  const atRisk = goal.status === "at_risk";
+  const context =
+    unitName ?? `${goal.category.charAt(0).toUpperCase()}${goal.category.slice(1)}`;
+
+  return (
+    <Box
+      component={Link}
+      href={`/dashboard/goals/${goal.id}`}
+      sx={{
+        display: "block",
+        p: 2,
+        borderRadius: 2,
+        border: 1,
+        borderColor: atRisk ? (t) => alpha(t.palette.warning.main, 0.4) : "divider",
+        color: "inherit",
+        textDecoration: "none",
+        transition: "border-color 150ms ease",
+        "&:hover": { borderColor: atRisk ? "warning.main" : "primary.main" },
+      }}
+    >
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+            {goal.title}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block" }} noWrap>
+            {goal.target} · {context}
+          </Typography>
+        </Box>
+        {atRisk && <StatusChip kind="warning" label="At risk" sx={{ flexShrink: 0 }} />}
+      </Stack>
+
+      <Stack direction="row" alignItems="center" spacing={1.25} sx={{ mt: 1.25 }}>
+        <LinearProgress
+          variant="determinate"
+          value={Math.min(Math.max(goal.progress, 0), 100)}
+          color={atRisk ? "warning" : "primary"}
+          sx={{ flex: 1, height: 6, borderRadius: 999 }}
+        />
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ fontVariantNumeric: "tabular-nums", minWidth: 30, textAlign: "right" }}
+        >
+          {goal.progress}%
+        </Typography>
+      </Stack>
+
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+        {dueLabel(goal.dueDate)}
+      </Typography>
+    </Box>
+  );
+}
+
+function EmptyLine({ text }: { text: string }) {
+  return (
+    <Box
+      sx={{
+        mt: 1.5,
+        py: 4,
+        px: 2,
+        textAlign: "center",
+        borderRadius: 2,
+        border: 1,
+        borderStyle: "dashed",
+        borderColor: "divider",
+      }}
+    >
+      <Typography variant="body2" color="text.secondary">
+        {text}
+      </Typography>
+    </Box>
+  );
+}
+
+function GoalsEmpty({ unitNoun }: { unitNoun: string }) {
+  return (
+    <Box
+      sx={{
+        mt: 1.5,
+        py: 4,
+        px: 2.5,
+        textAlign: "center",
+        borderRadius: 2,
+        border: 1,
+        borderStyle: "dashed",
+        borderColor: "divider",
+      }}
+    >
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+        No goals in flight. Set one and it becomes a milestone here, tracked against your own work.
+      </Typography>
+      <Button
+        component={Link}
+        href="/dashboard/goals"
+        variant="outlined"
+        size="small"
+        startIcon={<Flag size={14} />}
+      >
+        Set a {unitNoun} goal
+      </Button>
+    </Box>
   );
 }
 
@@ -298,8 +710,6 @@ function Trajectory({
   topicsPracticed,
   predictionGap,
   calledCount,
-  nextUp,
-  nextUpName,
 }: {
   graded: Assessment[];
   overallAverage: number | null;
@@ -308,8 +718,6 @@ function Trajectory({
   topicsPracticed: number;
   predictionGap: number | null;
   calledCount: number;
-  nextUp?: Assessment;
-  nextUpName?: string;
 }) {
   const theme = useTheme();
 
@@ -377,150 +785,63 @@ function Trajectory({
     <motion.div {...enter}>
       <Card>
         <CardContent sx={{ p: { xs: 2.5, sm: 3.5 } }}>
-          <Grid container spacing={{ xs: 3, md: 4 }}>
-            <Grid size={{ xs: 12, md: 8 }}>
-              <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
-                Predicted against scored
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                Every mark, in order
-              </Typography>
+          <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: "0.08em" }}>
+            Predicted against scored
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
+            Every mark, in order
+          </Typography>
 
-              <Grid container spacing={2.5} sx={{ mb: 3 }}>
-                {stats.map((s) => (
-                  <Grid key={s.label} size={{ xs: 6, sm: 3 }}>
-                    <Stat {...s} />
-                  </Grid>
-                ))}
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            {stats.map((s) => (
+              <Grid key={s.label} size={{ xs: 6, sm: 3 }}>
+                <Stat {...s} />
               </Grid>
-
-              {graded.length >= 2 ? (
-                <>
-                  <AptiverseLineChart
-                    height={260}
-                    xAxis={[{ data: labels, scaleType: "point" }]}
-                    yAxis={[{ min: 0, max: 100 }]}
-                    series={series}
-                    margin={{ top: 8, right: 8, bottom: 24, left: 32 }}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {calledCount > 0
-                      ? "The gap between the two lines is how well you read your own work."
-                      : "Add a predicted mark when you log an assessment and your own call gets plotted against the result."}
-                  </Typography>
-                </>
-              ) : (
-                <Box
-                  sx={{
-                    py: 5,
-                    px: 2,
-                    textAlign: "center",
-                    borderRadius: 2,
-                    border: 1,
-                    borderStyle: "dashed",
-                    borderColor: "divider",
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    {graded.length === 1
-                      ? "One mark logged. The trajectory needs a second before it can draw a line."
-                      : "No graded marks yet. Log one and your trajectory starts here."}
-                  </Typography>
-                </Box>
-              )}
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4 }}>
-              {nextUp ? (
-                <Box
-                  sx={{
-                    p: 2.5,
-                    height: "100%",
-                    borderRadius: 2,
-                    border: 1,
-                    borderColor: "divider",
-                    bgcolor: (t) =>
-                      t.palette.mode === "dark" ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
-                  }}
-                >
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                    <Box sx={{ display: "flex", color: "primary.main" }}>
-                      <CalendarClock size={16} />
-                    </Box>
-                    <Typography
-                      variant="overline"
-                      color="primary.main"
-                      sx={{ letterSpacing: "0.08em" }}
-                    >
-                      Next up
-                    </Typography>
-                  </Stack>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {nextUp.title}
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block", mb: 0.5 }}
-                  >
-                    {nextUpName} · {ASSESSMENT_TYPE_LABELS[nextUp.type]} · {nextUp.weight}% weight
-                  </Typography>
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ display: "block", mb: 2 }}
-                  >
-                    Due {dayjs(nextUp.dueDate).format("DD MMM")}
-                    {nextUp.predictedMark != null
-                      ? ` · you predicted ${nextUp.predictedMark}%`
-                      : ""}
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    <Button
-                      component={Link}
-                      href={`/dashboard/assessments/${nextUp.id}`}
-                      variant="contained"
-                      color="secondary"
-                      size="small"
-                      endIcon={<ArrowRight size={16} />}
-                    >
-                      Open
-                    </Button>
-                    <Button component={Link} href="/dashboard/workspace" variant="text" size="small">
-                      Workspace
-                    </Button>
-                  </Stack>
-                  <AssessmentNote assessment={nextUp} />
-                </Box>
-              ) : (
-                <Box
-                  sx={{
-                    p: 2.5,
-                    height: "100%",
-                    display: "grid",
-                    placeItems: "center",
-                    textAlign: "center",
-                    borderRadius: 2,
-                    border: 1,
-                    borderStyle: "dashed",
-                    borderColor: "divider",
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Nothing due. Everything you have logged is graded.
-                  </Typography>
-                </Box>
-              )}
-            </Grid>
+            ))}
           </Grid>
+
+          {graded.length >= 2 ? (
+            <>
+              <AptiverseLineChart
+                height={280}
+                xAxis={[{ data: labels, scaleType: "point" }]}
+                yAxis={[{ min: 0, max: 100 }]}
+                series={series}
+                margin={{ top: 8, right: 8, bottom: 24, left: 32 }}
+              />
+              <Typography variant="caption" color="text.secondary">
+                {calledCount > 0
+                  ? "The gap between the two lines is how well you read your own work."
+                  : "Add a predicted mark when you log an assessment and your own call gets plotted against the result."}
+              </Typography>
+            </>
+          ) : (
+            <Box
+              sx={{
+                py: 5,
+                px: 2,
+                textAlign: "center",
+                borderRadius: 2,
+                border: 1,
+                borderStyle: "dashed",
+                borderColor: "divider",
+              }}
+            >
+              <Typography variant="body2" color="text.secondary">
+                {graded.length === 1
+                  ? "One mark logged. The trajectory needs a second before it can draw a line."
+                  : "No graded marks yet. Log one and your trajectory starts here."}
+              </Typography>
+            </Box>
+          )}
         </CardContent>
       </Card>
     </motion.div>
   );
 }
 
-// Kept separate so the "Next up" panel stays readable. Renders nothing unless
-// the assessment carries a real note the student wrote themselves.
+// Kept separate so the spotlight stays readable. Renders nothing unless the
+// assessment carries a real note the student wrote themselves.
 function AssessmentNote({ assessment: a }: { assessment: Assessment }) {
   if (!a.notes) return null;
   return (
