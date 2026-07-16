@@ -11,6 +11,8 @@ import Slider from "@mui/material/Slider";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import ToggleButton from "@mui/material/ToggleButton";
 import Divider from "@mui/material/Divider";
+import Switch from "@mui/material/Switch";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import { useSnackbar } from "notistack";
 import { Globe, Lock, Trash2 } from "lucide-react";
 import { useUpdateStudyGroup, useDeleteStudyGroup } from "@/lib/api/queries";
@@ -28,18 +30,32 @@ export function SettingsPanel({ group }: { group: StudyGroup }) {
   const [description, setDescription] = useState(group.description);
   const [privacy, setPrivacy] = useState<"open" | "invite">(group.privacy);
   const [capacity, setCapacity] = useState(group.memberCapacity);
+  const [whoCanAdd, setWhoCanAdd] = useState<"everyone" | "admins">(group.tasksWhoCanAdd);
+  const [notify, setNotify] = useState(group.notifyOnNewTask);
+  const [autoSync, setAutoSync] = useState(group.autoSyncTasks);
 
   const dirty =
     name.trim() !== group.name ||
     description.trim() !== group.description ||
     privacy !== group.privacy ||
-    capacity !== group.memberCapacity;
+    capacity !== group.memberCapacity ||
+    whoCanAdd !== group.tasksWhoCanAdd ||
+    notify !== group.notifyOnNewTask ||
+    autoSync !== group.autoSyncTasks;
   const belowHeadcount = capacity < group.members;
 
   const save = () => {
     if (name.trim().length < 2 || belowHeadcount) return;
     update.mutate(
-      { name: name.trim(), description: description.trim(), privacy, memberCapacity: capacity },
+      {
+        name: name.trim(),
+        description: description.trim(),
+        privacy,
+        memberCapacity: capacity,
+        tasksWhoCanAdd: whoCanAdd,
+        notifyOnNewTask: notify,
+        autoSyncTasks: autoSync,
+      },
       {
         onSuccess: () => enqueueSnackbar("Group updated.", { variant: "success" }),
         onError: (err) =>
@@ -51,7 +67,7 @@ export function SettingsPanel({ group }: { group: StudyGroup }) {
   const disband = async () => {
     const ok = await confirm({
       title: `Delete ${group.name}?`,
-      description: "This removes the group, its chat, and every scheduled session for everyone. It cannot be undone.",
+      description: "This removes the group, its shared tasks, and every scheduled session for everyone. It cannot be undone.",
       confirmLabel: "Delete group",
       tone: "danger",
     });
@@ -128,6 +144,38 @@ export function SettingsPanel({ group }: { group: StudyGroup }) {
             Invite only
           </ToggleButton>
         </ToggleButtonGroup>
+      </Box>
+
+      <Divider />
+
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
+          Task preferences
+        </Typography>
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.75 }}>
+            Who can add a shared task
+          </Typography>
+          <ToggleButtonGroup
+            exclusive
+            size="small"
+            value={whoCanAdd}
+            onChange={(_, v) => v && setWhoCanAdd(v)}
+            fullWidth
+            sx={{ maxWidth: 320 }}
+          >
+            <ToggleButton value="everyone">Any member</ToggleButton>
+            <ToggleButton value="admins">Admins only</ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
+        <FormControlLabel
+          control={<Switch checked={notify} onChange={(e) => setNotify(e.target.checked)} color="secondary" />}
+          label="Notify the group when a task is added"
+        />
+        <FormControlLabel
+          control={<Switch checked={autoSync} onChange={(e) => setAutoSync(e.target.checked)} color="secondary" />}
+          label="Put dated tasks on every member's calendar automatically"
+        />
       </Box>
 
       <Button

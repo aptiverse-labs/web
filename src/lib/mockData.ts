@@ -386,6 +386,8 @@ export type StudyGroup = {
   privacy: "open" | "invite";
   description: string;
   nextSession?: string;
+  // Shared tasks not yet ticked off.
+  openTasks: number;
   // The viewer's standing in the group: "owner" | "admin" | "member" | ""
   // (empty when not a member).
   role: "owner" | "admin" | "member" | "";
@@ -393,8 +395,15 @@ export type StudyGroup = {
   isOwner: boolean;
   // True when the viewer can moderate (owner or admin).
   canManage: boolean;
+  // True when the viewer may add a shared task (subject to the group's
+  // tasksWhoCanAdd preference).
+  canAddTasks: boolean;
   // True when members has reached memberCapacity.
   isFull: boolean;
+  // Group preferences (owner-set).
+  tasksWhoCanAdd: "everyone" | "admins";
+  notifyOnNewTask: boolean;
+  autoSyncTasks: boolean;
 };
 
 // One person on a group's roster, with what the viewer is allowed to do to them.
@@ -408,15 +417,20 @@ export type StudyGroupMember = {
   canPromote: boolean;
 };
 
-// A single chat message in a group's transcript.
-export type StudyGroupMessage = {
+// A shared task on a group's board. Everyone is notified when one is added, and
+// a dated task can be synced into a member's own upcoming list.
+export type StudyGroupTask = {
   id: string;
-  userId: string;
-  authorName: string;
-  body: string;
-  createdAt: string;
+  title: string;
+  notes: string;
+  dueDate: string | null;
+  done: boolean;
+  createdBy: string;
   isMine: boolean;
-  canDelete: boolean;
+  // Whether the viewer has this task on their own calendar.
+  synced: boolean;
+  // Whether the viewer may delete it (author or a moderator).
+  canManage: boolean;
 };
 
 export type University = {

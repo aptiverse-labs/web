@@ -26,7 +26,7 @@ import {
   ChevronRight,
   Lock,
   Globe,
-  MessagesSquare,
+  ListTodo,
 } from "lucide-react";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryStates } from "@/components/common/QueryStates";
@@ -52,7 +52,7 @@ export default function StudyGroupsPage() {
     <>
       <PageHeader
         title="Study groups"
-        description="Small chat rooms where you study with peers: talk through problems, share what you know, and meet up on a schedule."
+        description="Study alongside peers: share tasks so everyone gets a nudge, sync group deadlines to your own calendar, and meet up on your own terms."
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Study groups" }]}
         actions={
           <Button
@@ -69,7 +69,7 @@ export default function StudyGroupsPage() {
       <QueryStates
         query={groupsQuery}
         empty={{
-          icon: <MessagesSquare />,
+          icon: <ListTodo />,
           title: "No study groups yet",
           description: "Start your own and invite peers, or check back as more groups form.",
           action: (
@@ -132,11 +132,11 @@ function HeroBand({ mine, discover }: { mine: number; discover: number }) {
       >
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5 }}>
-            Study out loud
+            Keep each other on track
           </Typography>
           <Typography variant="body2" sx={{ color: alpha("#F6F7F5", 0.82), maxWidth: 460 }}>
-            The people who explain things to each other remember them longest. Your groups keep that
-            conversation going between sessions.
+            Share the readings, past papers and prep as tasks so nobody falls behind, and pull the ones
+            that matter onto your own calendar.
           </Typography>
         </Box>
         <Stack direction="row" spacing={3}>
@@ -259,6 +259,14 @@ function GroupRow({
                 {g.members}/{g.memberCapacity}
               </Typography>
             </Stack>
+            {g.openTasks > 0 && (
+              <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: "text.secondary" }}>
+                <ListTodo size={14} />
+                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                  {g.openTasks} open
+                </Typography>
+              </Stack>
+            )}
             {g.nextSession && (
               <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: "text.secondary" }}>
                 <CalendarClock size={14} />

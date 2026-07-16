@@ -25,7 +25,7 @@ import {
   type Career,
   type StudyGroup,
   type StudyGroupMember,
-  type StudyGroupMessage,
+  type StudyGroupTask,
   type Curriculum,
   type CatalogSubject,
   type AcademicProfile,
@@ -1691,6 +1691,9 @@ export type UpdateStudyGroupInput = {
   description?: string;
   privacy?: "open" | "invite";
   memberCapacity?: number;
+  tasksWhoCanAdd?: "everyone" | "admins";
+  notifyOnNewTask?: boolean;
+  autoSyncTasks?: boolean;
 };
 
 export const useUpdateStudyGroup = (id: string) => {
@@ -1767,43 +1770,58 @@ export const useSetStudyGroupMemberRole = (groupId: string) => {
   });
 };
 
-// ---- Group chat ----
+// ---- Shared tasks ----
 
-// Polls the transcript. A group workspace mounts this with a short interval so
-// new messages land without a socket; the query is disabled when the tab is
-// hidden by TanStack's default refetch behaviour.
-export const useStudyGroupMessages = (groupId: string, enabled = true) =>
-  useQuery<StudyGroupMessage[]>({
-    queryKey: ["study-groups", groupId, "messages"],
-    queryFn: () => apiClient.get<StudyGroupMessage[]>(`/api/study-groups/${groupId}/messages`),
+const invalidateTasks = (qc: ReturnType<typeof useQueryClient>, groupId: string) => {
+  void qc.invalidateQueries({ queryKey: ["study-groups", groupId, "tasks"] });
+  void qc.invalidateQueries({ queryKey: ["study-groups", groupId, "detail"] });
+  void qc.invalidateQueries({ queryKey: queryKeys.studyGroups() });
+};
+
+export const useStudyGroupTasks = (groupId: string, enabled = true) =>
+  useQuery<StudyGroupTask[]>({
+    queryKey: ["study-groups", groupId, "tasks"],
+    queryFn: () => apiClient.get<StudyGroupTask[]>(`/api/study-groups/${groupId}/tasks`),
     enabled: enabled && !!groupId,
-    refetchInterval: 4000,
   });
 
-export const useSendStudyGroupMessage = (groupId: string) => {
+export type AddStudyGroupTaskInput = { title: string; notes?: string; dueDate?: string | null };
+
+export const useAddStudyGroupTask = (groupId: string) => {
   const qc = useQueryClient();
-  return useMutation<StudyGroupMessage, ApiError, string>({
-    mutationFn: (body) =>
-      apiClient.post<StudyGroupMessage>(`/api/study-groups/${groupId}/messages`, { body }),
-    onSuccess: (msg) => {
-      // Splice the sent message in immediately so the composer feels instant;
-      // the next poll reconciles.
-      qc.setQueryData<StudyGroupMessage[]>(["study-groups", groupId, "messages"], (prev) =>
-        prev ? (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]) : [msg],
-      );
-    },
+  return useMutation<StudyGroupTask, ApiError, AddStudyGroupTaskInput>({
+    mutationFn: (body) => apiClient.post<StudyGroupTask>(`/api/study-groups/${groupId}/tasks`, body),
+    onSuccess: () => invalidateTasks(qc, groupId),
   });
 };
 
-export const useDeleteStudyGroupMessage = (groupId: string) => {
+export const useToggleStudyGroupTask = (groupId: string) => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, { taskId: string; done: boolean }>({
+    mutationFn: ({ taskId, done }) =>
+      apiClient.patch<void>(`/api/study-groups/${groupId}/tasks/${taskId}`, { done }),
+    onSuccess: () => invalidateTasks(qc, groupId),
+  });
+};
+
+export const useDeleteStudyGroupTask = (groupId: string) => {
   const qc = useQueryClient();
   return useMutation<void, ApiError, string>({
-    mutationFn: (messageId) =>
-      apiClient.delete<void>(`/api/study-groups/${groupId}/messages/${messageId}`),
-    onSuccess: (_d, messageId) => {
-      qc.setQueryData<StudyGroupMessage[]>(["study-groups", groupId, "messages"], (prev) =>
-        prev ? prev.filter((m) => m.id !== messageId) : prev,
-      );
+    mutationFn: (taskId) => apiClient.delete<void>(`/api/study-groups/${groupId}/tasks/${taskId}`),
+    onSuccess: () => invalidateTasks(qc, groupId),
+  });
+};
+
+// Pull a dated task onto the caller's own calendar, or take it back off.
+export const useSyncStudyGroupTask = (groupId: string) => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, { taskId: string; synced: boolean }>({
+    mutationFn: ({ taskId, synced }) =>
+      synced
+        ? apiClient.delete<void>(`/api/study-groups/${groupId}/tasks/${taskId}/sync`)
+        : apiClient.post<void>(`/api/study-groups/${groupId}/tasks/${taskId}/sync`, {}),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["study-groups", groupId, "tasks"] });
     },
   });
 };

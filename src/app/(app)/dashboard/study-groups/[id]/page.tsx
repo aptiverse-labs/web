@@ -25,7 +25,7 @@ import {
 import { prettifyUnitId } from "@/lib/format";
 import type { StudyGroup } from "@/lib/mockData";
 import { heroGradient, CapacityMeter, RoleBadge, PrivacyBadge } from "../shared";
-import { ChatPanel } from "./ChatPanel";
+import { TasksPanel } from "./TasksPanel";
 import { RosterPanel } from "./RosterPanel";
 import { SessionsPanel } from "./SessionsPanel";
 import { SettingsPanel } from "./SettingsPanel";
@@ -74,7 +74,7 @@ function Workspace({ group, subjectName }: { group: StudyGroup; subjectName: str
   const { confirm, dialog } = useConfirm();
   const join = useJoinStudyGroup();
   const leave = useLeaveStudyGroup();
-  const [tab, setTab] = useState("chat");
+  const [tab, setTab] = useState("tasks");
 
   const doJoin = () =>
     join.mutate(group.id, {
@@ -180,15 +180,15 @@ function Workspace({ group, subjectName }: { group: StudyGroup; subjectName: str
           scrollButtons="auto"
           sx={{ borderBottom: 1, borderColor: "divider", mb: 2.5 }}
         >
-          <Tab value="chat" label="Chat" />
+          <Tab value="tasks" label={group.openTasks > 0 ? `Tasks (${group.openTasks})` : "Tasks"} />
           <Tab value="people" label="People" />
           {group.isMember && <Tab value="sessions" label="Sessions" />}
           {group.isOwner && <Tab value="manage" label="Manage" />}
         </Tabs>
 
-        {tab === "chat" && (
-          <Paper elevation={0} variant="outlined" sx={{ borderRadius: 3, p: { xs: 1.5, sm: 2 } }}>
-            <ChatPanel groupId={group.id} isMember={group.isMember} />
+        {tab === "tasks" && (
+          <Paper elevation={0} variant="outlined" sx={{ borderRadius: 3, p: { xs: 2, sm: 2.5 } }}>
+            <TasksPanel group={group} />
           </Paper>
         )}
         {tab === "people" && (
