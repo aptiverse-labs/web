@@ -103,8 +103,12 @@ function ProfileTab() {
   const [studyingToward, setStudyingToward] = useState("");
   const [matricYear, setMatricYear] = useState("");
 
+  // Depend on the primitive server values, not the query-object reference, so a
+  // background refetch or a setQueryData from any save does not re-run this and
+  // clobber the tutor's unsaved edits.
+  const p = profileQuery.data;
+  const hasProfile = p != null;
   useEffect(() => {
-    const p = profileQuery.data;
     if (!p) return;
     setQualification(p.qualification);
     setSpecialization(p.specialization);
@@ -115,7 +119,19 @@ function ProfileTab() {
     setInstitution(p.institution ?? "");
     setStudyingToward(p.studyingToward ?? "");
     setMatricYear(p.matricYear ? String(p.matricYear) : "");
-  }, [profileQuery.data]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    hasProfile,
+    p?.qualification,
+    p?.specialization,
+    p?.bio,
+    p?.teachingStyle,
+    p?.yearsOfExperience,
+    p?.tutorKind,
+    p?.institution,
+    p?.studyingToward,
+    p?.matricYear,
+  ]);
 
   const save = async () => {
     try {
@@ -274,14 +290,21 @@ function AvailabilityTab() {
   const [earliest, setEarliest] = useState(15);
   const [latest, setLatest] = useState(20);
 
+  // Depend on the primitive server values, not the query-object reference, so a
+  // background refetch or a setQueryData from any save does not re-run this and
+  // clobber the tutor's in-progress day toggles.
+  const hasProfile = profileQuery.data != null;
+  const serverAccepting = profileQuery.data?.acceptingStudents ?? true;
+  const serverAvailableDays = profileQuery.data?.availableDays ?? "";
+  const serverEarliest = profileQuery.data?.earliestHour ?? 15;
+  const serverLatest = profileQuery.data?.latestHour ?? 20;
   useEffect(() => {
-    const p = profileQuery.data;
-    if (!p) return;
-    setAccepting(p.acceptingStudents);
-    setDays(new Set(p.availableDays.split(",").map((d) => d.trim()).filter(Boolean)));
-    setEarliest(p.earliestHour);
-    setLatest(p.latestHour);
-  }, [profileQuery.data]);
+    if (!hasProfile) return;
+    setAccepting(serverAccepting);
+    setDays(new Set(serverAvailableDays.split(",").map((d) => d.trim()).filter(Boolean)));
+    setEarliest(serverEarliest);
+    setLatest(serverLatest);
+  }, [hasProfile, serverAccepting, serverAvailableDays, serverEarliest, serverLatest]);
 
   const toggleDay = (d: string) =>
     setDays((prev) => {
@@ -379,12 +402,18 @@ function SubjectsTab() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [topics, setTopics] = useState("");
 
+  // Initialise from server values, not the query-object reference. A background
+  // refetch (refetchOnMount) or a setQueryData from any save returns a fresh
+  // object even when the values are identical; depending on the object would
+  // re-run this effect and wipe the tutor's in-progress selections.
+  const hasProfile = profileQuery.data != null;
+  const serverSubjects = profileQuery.data?.subjects ?? "";
+  const serverSpecialization = profileQuery.data?.specialization ?? "";
   useEffect(() => {
-    const p = profileQuery.data;
-    if (!p) return;
-    setSelected(new Set(p.subjects.split(",").map((s) => s.trim()).filter(Boolean)));
-    setTopics(p.specialization);
-  }, [profileQuery.data]);
+    if (!hasProfile) return;
+    setSelected(new Set(serverSubjects.split(",").map((s) => s.trim()).filter(Boolean)));
+    setTopics(serverSpecialization);
+  }, [hasProfile, serverSubjects, serverSpecialization]);
 
   const toggle = (s: string) =>
     setSelected((prev) => {
@@ -457,13 +486,19 @@ function NotificationsTab() {
   const [onReview, setOnReview] = useState(true);
   const [weekly, setWeekly] = useState(false);
 
+  // Depend on the primitive server values, not the query-object reference, so a
+  // background refetch or a setQueryData from any save does not re-run this and
+  // clobber the tutor's unsaved toggles.
+  const hasProfile = profileQuery.data != null;
+  const serverOnConnection = profileQuery.data?.notifyOnConnection ?? true;
+  const serverOnReview = profileQuery.data?.notifyOnReview ?? true;
+  const serverWeekly = profileQuery.data?.weeklySummary ?? false;
   useEffect(() => {
-    const p = profileQuery.data;
-    if (!p) return;
-    setOnConnection(p.notifyOnConnection);
-    setOnReview(p.notifyOnReview);
-    setWeekly(p.weeklySummary);
-  }, [profileQuery.data]);
+    if (!hasProfile) return;
+    setOnConnection(serverOnConnection);
+    setOnReview(serverOnReview);
+    setWeekly(serverWeekly);
+  }, [hasProfile, serverOnConnection, serverOnReview, serverWeekly]);
 
   const save = async () => {
     try {
