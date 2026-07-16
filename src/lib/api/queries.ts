@@ -725,7 +725,10 @@ export const usePracticeTest = (id: string) =>
 // (per-topic correctness) server-side, which is exactly what the Mastery
 // engine reads — so a submitted attempt feeds topic-mastery + predictions.
 
-export type PracticeQuestionKind = "mc" | "short" | "flashcard";
+// "long" is an exam paper's extended-response question. Like "short" it is
+// typed rather than picked, but it is marked by the server's examiner against a
+// memo, never by the client.
+export type PracticeQuestionKind = "mc" | "short" | "long" | "flashcard";
 
 export type PracticeQuestion = {
   id: string;
@@ -733,6 +736,10 @@ export type PracticeQuestion = {
   // How the question is taken + marked. Absent/"mc" is multiple choice.
   kind?: PracticeQuestionKind;
   options: string[];
+  // The answer key. Withheld by the API until this student has a submitted
+  // attempt, because the same endpoint renders the test while they are taking
+  // it: answerIdx reads -1 and the rest are null/empty until then. Do not
+  // reintroduce any UI that assumes these are present before submit.
   answerIdx: number;
   // Short-answer key (typed answer marked by normalized match).
   expectedAnswer?: string | null;
@@ -741,6 +748,11 @@ export type PracticeQuestion = {
   back?: string | null;
   explanation?: string | null;
   topic?: string | null;
+  // Exam papers: what the question is out of, and which section it sits in.
+  // 1 and null on every other format. Safe before submit, and shown while
+  // taking, because the marks are how a student budgets the time.
+  marks?: number;
+  section?: string | null;
 };
 
 export type PracticeTopicScore = {
@@ -748,6 +760,19 @@ export type PracticeTopicScore = {
   correct: number;
   total: number;
   percent: number;
+};
+
+// One question as the examiner left it. Exam papers only.
+export type PracticeMarkedAnswer = {
+  questionId: string;
+  // Null when the question could not be marked (the marker was unavailable).
+  // That is not the same as zero, and must not be rendered as zero.
+  marksAwarded?: number | null;
+  marksAvailable?: number | null;
+  // Where the marks went and what was missing. The most useful thing on the
+  // page: it is why a marked paper beats a percentage.
+  feedback?: string | null;
+  givenAnswerText?: string | null;
 };
 
 export type PracticeScoreSummary = {
@@ -758,6 +783,11 @@ export type PracticeScoreSummary = {
   scorePercent: number;
   totalTimeMs: number;
   perTopic: PracticeTopicScore[];
+  // Exam papers only; null elsewhere. "14/32" is what a student recognises
+  // from a real paper; scorePercent is the same number for mastery and goals.
+  marksAwarded?: number | null;
+  marksTotal?: number | null;
+  markedAnswers?: PracticeMarkedAnswer[];
 };
 
 export type PracticeAnswerItem = {
@@ -847,14 +877,24 @@ export type PracticeFormat =
   | "short_answer"
   | "reading"
   | "flashcards"
-  | "essay";
+  | "essay"
+  // A full paper: sections, mark allocations, and written answers marked by an
+  // examiner against a memo. Sized by totalMarks, not questionCount.
+  | "exam";
 
 export type GenerateTestInput = {
-  subjectId: string;
+  // The assessment to practise for. Required: the API reads the subject off the
+  // assessment, so there is no way to generate for something you have not
+  // logged.
+  assessmentId: string;
   topics?: string[];
   difficulty?: "foundation" | "core" | "challenge";
   questionCount?: number;
   format?: PracticeFormat;
+  // Exam papers only: what the paper is out of. Ignored by every other format,
+  // which are sized by question count. The API clamps to 20..150 and times the
+  // paper at roughly a minute a mark.
+  totalMarks?: number;
 };
 
 export const useGenerateTest = () => {

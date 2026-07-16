@@ -103,12 +103,6 @@ export default function WorkspacePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // A standalone practice test opened from the Practice tab (`?test=<id>`).
-  // Practice tests aren't SBAs, so they bypass the assessment workspace
-  // entirely: the runner gates itself (fresh test -> instructions, an
-  // already-taken one -> its results), and Back returns to the catalogue.
-  const directTestId = searchParams.get("test");
-
   // A specific assessment opened from its detail page (`?assessment=<id>`).
   // Without this the workspace always snapped to the soonest-due assessment,
   // so "Open workspace" from an assessment page could land you on a different
@@ -234,22 +228,6 @@ export default function WorkspacePage() {
     if (!splitEligible && viewMode === "split") setViewMode("tabbed");
   }, [splitEligible, viewMode]);
 
-  if (directTestId) {
-    return (
-      <AtmosphericBackdrop>
-        <PageHeader
-          title="Workspace"
-          description="Your timed run and results, in the workspace."
-          breadcrumbs={[
-            { label: "Dashboard", href: "/dashboard" },
-            { label: "Workspace" },
-          ]}
-        />
-        <PracticeRunner testId={directTestId} onExit={() => router.push("/dashboard/practice")} />
-      </AtmosphericBackdrop>
-    );
-  }
-
   if (assessmentsQuery.isLoading || academic.isLoading) {
     return (
       <>
@@ -308,6 +286,7 @@ export default function WorkspacePage() {
           activeId={activeId}
           assessment={activeAssessment}
           unitName={unitName}
+         
         />
       </Box>
       <Box sx={{ p: { xs: 2, sm: 3 } }}>
@@ -317,6 +296,7 @@ export default function WorkspacePage() {
           activeId={activeId}
           assessment={activeAssessment}
           unitName={unitName}
+         
         />
       </Box>
     </Box>

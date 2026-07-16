@@ -286,7 +286,7 @@ export type PracticeTest = {
   subjectId: string;
   title: string;
   // Content format. Absent/"multiple_choice" is the classic MC test.
-  format?: "multiple_choice" | "short_answer" | "reading" | "flashcards" | "essay";
+  format?: "multiple_choice" | "short_answer" | "reading" | "flashcards" | "essay" | "exam";
   topics: string[];
   questionCount: number;
   difficulty: "foundation" | "core" | "challenge";
@@ -297,7 +297,9 @@ export type PracticeTest = {
   criteria?: string[];
   bestScore?: number;
   attempts: number;
-  alignedSBA?: string;
+  // The assessment this test was generated for. Null on seeded/teacher-authored
+  // tests and on anything generated before practice was tied to an assessment.
+  assessmentId?: string | null;
   aiGenerated: boolean;
 };
 
