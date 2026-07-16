@@ -383,6 +383,13 @@ export type Tutor = {
   rating: number;
   reviewCount: number;
   verified: boolean;
+  // Who the tutor is, so a learner can judge fit at a glance.
+  tutorKind?: "university_student" | "graduate" | "completed_matric";
+  institution?: string;
+  studyingToward?: string;
+  matricYear?: number | null;
+  // True when the platform has floated this tutor up the list.
+  featured?: boolean;
 };
 
 export type Course = {

@@ -32,6 +32,9 @@ import WorkspacesIcon from "@mui/icons-material/WorkspacesOutlined";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import SwapHorizIconNav from "@mui/icons-material/SwapHorizOutlined";
 import ForumIconNav from "@mui/icons-material/Forum";
+import ExploreIcon from "@mui/icons-material/ExploreOutlined";
+import DescriptionIcon from "@mui/icons-material/DescriptionOutlined";
+import CampaignIcon from "@mui/icons-material/CampaignOutlined";
 import type { Role } from "@/providers/RoleProvider";
 
 export type NavItem = {
@@ -85,6 +88,7 @@ export const STUDENT_NAV: NavSection[] = [
     heading: "Community",
     items: [
       { label: "Find a tutor", href: "/dashboard/tutors", icon: GroupsIcon },
+      { label: "My tutor requests", href: "/dashboard/tutors/listings", icon: CampaignIcon },
       { label: "Study groups", href: "/dashboard/study-groups", icon: ForumIcon },
       { label: "Rewards", href: "/dashboard/rewards", icon: EmojiEventsIcon },
     ],
@@ -190,6 +194,8 @@ export const TUTOR_NAV: NavSection[] = [
   {
     heading: "Teaching",
     items: [
+      { label: "Opportunities", href: "/tutor/opportunities", icon: ExploreIcon },
+      { label: "Proposals", href: "/tutor/proposals", icon: DescriptionIcon },
       { label: "My students", href: "/tutor/connections", icon: SchoolIcon },
       { label: "Study groups", href: "/dashboard/study-groups", icon: ForumIcon },
       { label: "Reviews", href: "/tutor/reviews", icon: EmojiEventsIcon },

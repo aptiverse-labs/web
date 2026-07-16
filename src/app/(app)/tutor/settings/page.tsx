@@ -81,6 +81,12 @@ function TabLoading() {
   );
 }
 
+const TUTOR_KINDS: { value: "university_student" | "graduate" | "completed_matric"; label: string }[] = [
+  { value: "university_student", label: "University student" },
+  { value: "graduate", label: "Graduate" },
+  { value: "completed_matric", label: "Completed matric" },
+];
+
 function ProfileTab() {
   const profileQuery = useTutorProfile();
   const update = useUpdateTutorProfile();
@@ -91,6 +97,11 @@ function ProfileTab() {
   const [bio, setBio] = useState("");
   const [teachingStyle, setTeachingStyle] = useState("");
   const [yearsOfExperience, setYearsOfExperience] = useState("");
+  const [tutorKind, setTutorKind] =
+    useState<"university_student" | "graduate" | "completed_matric">("university_student");
+  const [institution, setInstitution] = useState("");
+  const [studyingToward, setStudyingToward] = useState("");
+  const [matricYear, setMatricYear] = useState("");
 
   useEffect(() => {
     const p = profileQuery.data;
@@ -100,10 +111,15 @@ function ProfileTab() {
     setBio(p.bio);
     setTeachingStyle(p.teachingStyle);
     setYearsOfExperience(p.yearsOfExperience ? String(p.yearsOfExperience) : "");
+    setTutorKind(p.tutorKind ?? "university_student");
+    setInstitution(p.institution ?? "");
+    setStudyingToward(p.studyingToward ?? "");
+    setMatricYear(p.matricYear ? String(p.matricYear) : "");
   }, [profileQuery.data]);
 
   const save = async () => {
     try {
+      const parsedYear = matricYear.trim() ? parseInt(matricYear, 10) : NaN;
       await update.mutateAsync({
         qualification: qualification.trim(),
         specialization: specialization.trim(),
@@ -112,6 +128,10 @@ function ProfileTab() {
         yearsOfExperience: yearsOfExperience.trim()
           ? Math.max(0, parseInt(yearsOfExperience, 10) || 0)
           : 0,
+        tutorKind,
+        institution: institution.trim(),
+        studyingToward: studyingToward.trim(),
+        matricYear: Number.isFinite(parsedYear) ? parsedYear : null,
       });
       enqueueSnackbar("Profile saved.", { variant: "success" });
     } catch (err) {
@@ -124,8 +144,78 @@ function ProfileTab() {
 
   if (profileQuery.isLoading) return <TabLoading />;
 
+  const connects = profileQuery.data?.connects;
+
   return (
     <Stack spacing={2} sx={{ maxWidth: 640 }}>
+      {connects !== undefined && (
+        <Box
+          sx={(t) => ({
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            p: 2,
+            borderRadius: 2,
+            border: `1px solid ${t.palette.divider}`,
+            bgcolor: "action.hover",
+          })}
+        >
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+              Connects balance
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Connects are spent when you propose on a listing. They top up monthly.
+            </Typography>
+          </Box>
+          <Typography variant="h5" sx={{ fontWeight: 800 }}>
+            {connects}
+          </Typography>
+        </Box>
+      )}
+      <TextField
+        select
+        label="I am a"
+        value={tutorKind}
+        onChange={(e) =>
+          setTutorKind(e.target.value as "university_student" | "graduate" | "completed_matric")
+        }
+        fullWidth
+        helperText="How you present yourself to students and parents."
+      >
+        {TUTOR_KINDS.map((k) => (
+          <MenuItem key={k.value} value={k.value}>
+            {k.label}
+          </MenuItem>
+        ))}
+      </TextField>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+        <TextField
+          label="Institution"
+          value={institution}
+          onChange={(e) => setInstitution(e.target.value)}
+          fullWidth
+          placeholder="e.g. University of Cape Town"
+        />
+        <TextField
+          label="Matric year"
+          type="number"
+          value={matricYear}
+          onChange={(e) => setMatricYear(e.target.value)}
+          sx={{ maxWidth: { sm: 180 } }}
+          placeholder="e.g. 2021"
+          slotProps={{ htmlInput: { min: 1980, max: 2100 } }}
+        />
+      </Stack>
+      <TextField
+        label="Studying toward"
+        value={studyingToward}
+        onChange={(e) => setStudyingToward(e.target.value)}
+        fullWidth
+        placeholder="e.g. BSc Computer Science"
+        helperText="Your degree or programme, if you are studying."
+      />
       <TextField
         label="Qualification"
         value={qualification}

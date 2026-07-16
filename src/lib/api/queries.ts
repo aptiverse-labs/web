@@ -1098,6 +1098,164 @@ export const useCreateTutorReview = () => {
   });
 };
 
+// ---- Tutoring marketplace (listings, proposals, connects) ----------------
+// A student (or a parent for their child) posts a listing describing the help
+// they need; tutors spend connects to propose; the poster picks one. Mirrors
+// /api/tutoring on the backend.
+
+export type ListingMode = "online" | "in_person" | "either";
+export type ListingStatus = "open" | "filled" | "closed";
+
+export type TutorListing = {
+  id: string;
+  learnerId: string;
+  learnerName: string;
+  postedByRole: "student" | "parent";
+  title: string;
+  subject: string;
+  level: string;
+  details: string;
+  mode: ListingMode;
+  status: ListingStatus;
+  proposals: number;
+  isMine: boolean;
+  alreadyProposed: boolean;
+  createdAt: string;
+};
+
+export type ProposalStatus = "submitted" | "accepted" | "declined" | "withdrawn";
+
+// A proposal seen by the poster reviewing bids on their listing.
+export type ListingProposal = {
+  id: string;
+  listingId: string;
+  tutorId: string;
+  tutorName: string;
+  message: string;
+  status: ProposalStatus;
+  createdAt: string;
+  tutorRating: number;
+  tutorReviews: number;
+  tutorVerified: boolean;
+  tutorQualification: string;
+};
+
+// A proposal seen by the tutor who submitted it, with its listing context.
+export type MyProposal = {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  subject: string;
+  learnerName: string;
+  message: string;
+  status: ProposalStatus;
+  connectsSpent: number;
+  createdAt: string;
+};
+
+export type ConnectsBalance = {
+  balance: number;
+  proposalCost: number;
+  monthlyGrant: number;
+};
+
+export type CreateListingInput = {
+  learnerId?: string;
+  title: string;
+  subject: string;
+  level?: string;
+  details?: string;
+  mode?: ListingMode;
+};
+
+// Listings the caller posted or that were posted for them.
+export const useMyListings = () =>
+  useQuery<TutorListing[]>({
+    queryKey: ["tutoring", "listings", "mine"],
+    queryFn: () => apiClient.get<TutorListing[]>("/api/tutoring/listings/mine"),
+  });
+
+// Open listings a tutor can bid on, optionally filtered by a search term.
+export const useOpenListings = (q?: string) =>
+  useQuery<TutorListing[]>({
+    queryKey: ["tutoring", "listings", "open", q ?? ""],
+    queryFn: () =>
+      apiClient.get<TutorListing[]>(
+        `/api/tutoring/listings/open${q ? `?q=${encodeURIComponent(q)}` : ""}`,
+      ),
+  });
+
+// Proposals submitted against one of the caller's listings.
+export const useListingProposals = (listingId: string, enabled = true) =>
+  useQuery<ListingProposal[]>({
+    queryKey: ["tutoring", "listings", listingId, "proposals"],
+    queryFn: () =>
+      apiClient.get<ListingProposal[]>(`/api/tutoring/listings/${listingId}/proposals`),
+    enabled: enabled && !!listingId,
+  });
+
+export const useCreateListing = () => {
+  const qc = useQueryClient();
+  return useMutation<TutorListing, ApiError, CreateListingInput>({
+    mutationFn: (body) => apiClient.post<TutorListing>("/api/tutoring/listings", body),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["tutoring", "listings", "mine"] });
+    },
+  });
+};
+
+export const useAcceptProposal = () => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, { proposalId: string; listingId: string }>({
+    mutationFn: ({ proposalId }) =>
+      apiClient.post<void>(`/api/tutoring/proposals/${proposalId}/accept`, {}),
+    onSuccess: (_data, { listingId }) => {
+      void qc.invalidateQueries({ queryKey: ["tutoring", "listings", "mine"] });
+      void qc.invalidateQueries({ queryKey: ["tutoring", "listings", listingId, "proposals"] });
+      void qc.invalidateQueries({ queryKey: queryKeys.tutorConnections() });
+    },
+  });
+};
+
+export const useCloseListing = () => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, { listingId: string }>({
+    mutationFn: ({ listingId }) =>
+      apiClient.post<void>(`/api/tutoring/listings/${listingId}/close`, {}),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["tutoring", "listings", "mine"] });
+    },
+  });
+};
+
+// Tutor submits a proposal, spending connects.
+export const useProposeOnListing = () => {
+  const qc = useQueryClient();
+  return useMutation<ListingProposal, ApiError, { listingId: string; message: string }>({
+    mutationFn: ({ listingId, message }) =>
+      apiClient.post<ListingProposal>(`/api/tutoring/listings/${listingId}/propose`, { message }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["tutoring", "listings", "open"] });
+      void qc.invalidateQueries({ queryKey: ["tutoring", "proposals", "mine"] });
+      void qc.invalidateQueries({ queryKey: ["tutoring", "connects"] });
+    },
+  });
+};
+
+// The tutor's own proposals.
+export const useMyProposals = () =>
+  useQuery<MyProposal[]>({
+    queryKey: ["tutoring", "proposals", "mine"],
+    queryFn: () => apiClient.get<MyProposal[]>("/api/tutoring/proposals/mine"),
+  });
+
+// The tutor's connect balance (tops up for the month on read).
+export const useConnects = () =>
+  useQuery<ConnectsBalance>({
+    queryKey: ["tutoring", "connects"],
+    queryFn: () => apiClient.get<ConnectsBalance>("/api/tutoring/connects"),
+  });
+
 export type TutorProfile = {
   id: string;
   qualification: string;
@@ -1116,6 +1274,12 @@ export type TutorProfile = {
   notifyOnConnection: boolean;
   notifyOnReview: boolean;
   weeklySummary: boolean;
+  // Identity, so the tutor can present who they are, plus their connect balance.
+  tutorKind: "university_student" | "graduate" | "completed_matric";
+  institution: string;
+  studyingToward: string;
+  matricYear: number | null;
+  connects: number;
 };
 
 // The tutor's own public profile. 404s until they set one up; the profile page
@@ -1147,6 +1311,10 @@ export type UpdateTutorProfileInput = {
   notifyOnConnection?: boolean;
   notifyOnReview?: boolean;
   weeklySummary?: boolean;
+  tutorKind?: "university_student" | "graduate" | "completed_matric";
+  institution?: string;
+  studyingToward?: string;
+  matricYear?: number | null;
 };
 
 // Upsert the tutor's public profile and settings. Rating, review count and
