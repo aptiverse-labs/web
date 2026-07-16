@@ -70,6 +70,12 @@ function RegisterForm() {
   // stray absolute callbackUrl can never become an open redirect.
   const rawCallback = searchParams.get("callbackUrl");
   const callback = rawCallback && rawCallback.startsWith("/") ? rawCallback : null;
+  // A parent invite links here as /register?email=... so a brand-new invitee
+  // registers with the exact address the invite was sent to (the accept
+  // endpoint requires the emails match). Used only as the field's initial
+  // default, so anything the user types still wins.
+  const emailParam = searchParams.get("email");
+  const invitedEmail = emailParam && emailParam.includes("@") ? emailParam : "";
 
   const setRole = useRoleStore((s) => s.setRole);
   const role = useRoleStore((s) => s.role);
@@ -96,7 +102,7 @@ function RegisterForm() {
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerStep2Schema),
     mode: "onTouched",
-    defaultValues: { firstName: "", lastName: "", email: "", password: "" },
+    defaultValues: { firstName: "", lastName: "", email: invitedEmail, password: "" },
   });
 
   const isStudent = role === "student";

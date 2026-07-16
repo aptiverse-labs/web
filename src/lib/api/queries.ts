@@ -1740,6 +1740,61 @@ export const useUnlinkParent = () => {
   });
 };
 
+// --- Tokenised invite accept (public landing page) ----------------------
+// The /invite/{token} page an invitee opens from the email. Resolving the
+// token is anonymous (the page is reachable while logged out), so this GET
+// must not require a bearer token: apiClient omits the Authorization header
+// when there is no session, and the endpoint is [AllowAnonymous], exactly like
+// the public /pricing plans query. Accept / decline stay authenticated; the
+// server still verifies the caller owns the invited email.
+
+export type InviteByToken = {
+  parentName: string;
+  studentEmail: string;
+  status: string;
+};
+
+// Returns null for an unknown token (404) so the page can render the calm
+// "not valid / already used" state; other failures surface as query errors.
+export const useInviteByToken = (token: string) =>
+  useQuery<InviteByToken | null>({
+    queryKey: ["parent-links", "invite-by-token", token],
+    queryFn: async () => {
+      try {
+        return await apiClient.get<InviteByToken>(`/api/parent-links/invites/token/${token}`);
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return null;
+        throw err;
+      }
+    },
+    enabled: !!token,
+    retry: false,
+    staleTime: 30_000,
+  });
+
+export const useAcceptInvite = (token: string) => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, void>({
+    mutationFn: () => apiClient.post<void>(`/api/parent-links/invites/${token}/accept`, {}),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["parent-links", "invite-by-token", token] });
+      void qc.invalidateQueries({ queryKey: ["parent-links", "incoming"] });
+      void qc.invalidateQueries({ queryKey: ["parent-links", "parents"] });
+    },
+  });
+};
+
+export const useDeclineInvite = (token: string) => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, void>({
+    mutationFn: () => apiClient.post<void>(`/api/parent-links/invites/${token}/decline`, {}),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["parent-links", "invite-by-token", token] });
+      void qc.invalidateQueries({ queryKey: ["parent-links", "incoming"] });
+    },
+  });
+};
+
 export const useClasses = () =>
   useQuery<ClassRecord[]>({
     queryKey: queryKeys.classes(),
