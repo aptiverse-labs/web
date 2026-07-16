@@ -64,6 +64,12 @@ function RegisterForm() {
   const billing: "monthly" | "annual" = searchParams.get("billing") === "annual" ? "annual" : "monthly";
   // Only treat it as a paid signup if the plan is one we actually charge for.
   const paidPlan = planParam && PAID_PLANS.has(planParam) ? planParam : null;
+  // Where to land after a free signup, when arriving from an invite (e.g. a
+  // parent invite links to /login?callbackUrl=/dashboard/connections, and the
+  // login page threads that through to here). Same-origin paths only, so a
+  // stray absolute callbackUrl can never become an open redirect.
+  const rawCallback = searchParams.get("callbackUrl");
+  const callback = rawCallback && rawCallback.startsWith("/") ? rawCallback : null;
 
   const setRole = useRoleStore((s) => s.setRole);
   const role = useRoleStore((s) => s.role);
@@ -136,9 +142,12 @@ function RegisterForm() {
     },
     onSuccess: (r) => {
       if (!r.redirecting) {
-        // Students go to the onboarding step to set their academic profile;
-        // everyone else straight to their own role's dashboard.
-        setTimeout(() => router.push(isStudent ? "/onboarding" : homeRouteForRole(role)), 400);
+        // An invitee carries a same-origin callback (e.g. the connections hub):
+        // honour it so they land where the invite meant to send them. Otherwise
+        // students go to onboarding to set their academic profile and everyone
+        // else goes straight to their own role's dashboard.
+        const dest = callback ?? (isStudent ? "/onboarding" : homeRouteForRole(role));
+        setTimeout(() => router.push(dest), 400);
       }
     },
   });
@@ -281,7 +290,7 @@ function RegisterForm() {
                 callbackUrl={
                   paidPlan
                     ? `/welcome?plan=${encodeURIComponent(paidPlan)}&billing=${billing}`
-                    : "/dashboard"
+                    : callback ?? "/dashboard"
                 }
               />
               <Box component="form" noValidate onSubmit={handleSubmit((v) => mutation.mutate(v))}>

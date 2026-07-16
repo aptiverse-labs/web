@@ -83,6 +83,15 @@ function LoginInner() {
   const oauthError = oauthErrorMessage(params.get("error"));
   const { data: session, status } = useSession();
 
+  // Carry an invitee's destination onto the register link too, so a brand new
+  // invitee who has no account lands back where they were headed (e.g. the
+  // connections hub) once they finish signing up. Same-origin paths only, to
+  // avoid turning the register link into an open redirect.
+  const registerHref =
+    rawCallback && rawCallback.startsWith("/")
+      ? `/register?callbackUrl=${encodeURIComponent(rawCallback)}`
+      : "/register";
+
   // Already signed in with a live token? Don't make them sign in again —
   // send them where they were headed, or to their role's dashboard.
   useEffect(() => {
@@ -194,7 +203,7 @@ function LoginInner() {
         New to Aptiverse?{" "}
         <MuiLink
           component={Link}
-          href="/register"
+          href={registerHref}
           color="text.primary"
           underline="hover"
           sx={{ fontWeight: 600 }}
