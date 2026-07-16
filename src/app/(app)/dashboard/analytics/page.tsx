@@ -22,8 +22,8 @@ import { StatCard } from "@/components/common/StatCard";
 import { CardError } from "@/components/common/CardError";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { AptiverseLineChart } from "@/components/common/AptiverseLineChart";
-import { AptiverseDonut } from "@/components/common/AptiverseDonut";
-import { masteryBandRamp, courseColor } from "@/components/common/chartPalette";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { masteryBandRamp, courseColor, type BandRamp } from "@/components/common/chartPalette";
 import {
   useAcademicUnits,
   useTermPredictions,
@@ -129,16 +129,7 @@ type CourseStory = {
   confidence: number;
   topics: TopicMastery[];
   mastery: number | null;
-  bands: { label: string; count: number }[];
 };
-
-function bandsOf(topics: TopicMastery[]) {
-  return [
-    { label: "Needs work", count: topics.filter((t) => t.mastery < 50).length },
-    { label: "Developing", count: topics.filter((t) => t.mastery >= 50 && t.mastery < 80).length },
-    { label: "Strong", count: topics.filter((t) => t.mastery >= 80).length },
-  ];
-}
 
 // Courses are the unit of the story, so they get built from every source
 // rather than whichever one happens to be populated. Weakest first: the
@@ -173,7 +164,6 @@ function buildCourses(
         confidence: p?.confidence ?? 0,
         topics: ts,
         mastery: ts.length ? Math.round(ts.reduce((s, t) => s + t.mastery, 0) / ts.length) : null,
-        bands: bandsOf(ts),
       };
     })
     .sort((a, b) => (a.current ?? 101) - (b.current ?? 101));
@@ -357,9 +347,113 @@ function AnalyticsView({
 
 // ── course card ───────────────────────────────────────────────────────
 
-// A course, whole: its standing, where it is heading, and how its topics are
-// spread. The donut is per course rather than one global pie, because "8
-// topics" pooled across every course is a number nobody can act on.
+// Which band a mastery value falls in: Needs work below 50, Developing to 80,
+// Strong above.
+function bandColor(mastery: number, ramp: BandRamp): string {
+  if (mastery < 50) return ramp.needsWork;
+  if (mastery < 80) return ramp.developing;
+  return ramp.strong;
+}
+
+// The mastery read-out, as a bar rather than a donut. A bar reads a single
+// magnitude honestly and, unlike the old ring, its colour and its length agree:
+// the fill is the mastery value, coloured by the band that value lands in. The
+// two faint ticks are the band boundaries (50, 80), so the student can see not
+// just where they are but how far the next band is.
+function MasteryBar({ mastery, ramp }: { mastery: number; ramp: BandRamp }) {
+  return (
+    <Box>
+      <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.75 }}>
+        <Typography variant="caption" color="text.secondary">
+          Mastery
+        </Typography>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: bandColor(mastery, ramp) }}
+        >
+          {mastery}%
+        </Typography>
+      </Stack>
+      <Box
+        sx={{
+          position: "relative",
+          height: 10,
+          borderRadius: 999,
+          bgcolor: (t) => alpha(t.palette.text.primary, t.palette.mode === "dark" ? 0.1 : 0.07),
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            width: `${mastery}%`,
+            bgcolor: bandColor(mastery, ramp),
+            borderRadius: 999,
+            transition: "width 240ms cubic-bezier(0.22, 1, 0.36, 1)",
+          }}
+        />
+        {[50, 80].map((mark) => (
+          <Box
+            key={mark}
+            sx={{
+              position: "absolute",
+              top: 1.5,
+              bottom: 1.5,
+              left: `${mark}%`,
+              width: "1.5px",
+              // A tick inside the fill is punched out of the coloured bar (a
+              // light gap); a tick still in the track is a faint dark notch. So
+              // both band boundaries read, whichever side of the fill they fall.
+              bgcolor: (t) =>
+                mark <= mastery
+                  ? alpha(t.palette.background.paper, 0.75)
+                  : alpha(t.palette.text.primary, 0.18),
+            }}
+          />
+        ))}
+      </Box>
+    </Box>
+  );
+}
+
+// One weak topic, named, with where it sits and which way it is moving. The
+// trend is the latest attempt minus the first, so an arrow tells the student
+// whether the topic is already recovering or still sliding.
+function WeakTopicRow({ topic, ramp }: { topic: TopicMastery; ramp: BandRamp }) {
+  const rising = topic.trend >= 3;
+  const falling = topic.trend <= -3;
+  const TrendIcon = rising ? TrendingUp : falling ? TrendingDown : Minus;
+  // A lucide icon paints in currentColor, so the colour is set on a wrapper via
+  // sx (which resolves theme tokens) and the icon inherits it. Trend direction
+  // is a status signal (getting better / worse), kept on the semantic status
+  // palette and deliberately separate from the ordinal band ramp on the dot.
+  const trendColor = rising ? "success.main" : falling ? "warning.main" : "text.disabled";
+
+  return (
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <Box
+        sx={{ width: 6, height: 6, borderRadius: "50%", flexShrink: 0, bgcolor: bandColor(topic.mastery, ramp) }}
+      />
+      <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap title={topic.topic}>
+        {topic.topic}
+      </Typography>
+      <Typography
+        variant="body2"
+        sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", color: bandColor(topic.mastery, ramp) }}
+      >
+        {topic.mastery}%
+      </Typography>
+      <Box sx={{ color: trendColor, display: "flex", flexShrink: 0 }}>
+        <TrendIcon size={15} aria-hidden />
+      </Box>
+    </Stack>
+  );
+}
+
+// A course, whole: its standing, where it is heading, and the topics worth
+// working on next. Per course rather than one global list, because "8 topics"
+// pooled across every course is a number nobody can act on.
 function CourseCard({
   course,
   accent,
@@ -370,14 +464,17 @@ function CourseCard({
   mode: "light" | "dark";
 }) {
   const ramp = masteryBandRamp(mode);
-  const colorFor: Record<string, string> = {
-    "Needs work": ramp.needsWork,
-    Developing: ramp.developing,
-    Strong: ramp.strong,
-  };
   const delta =
     course.predicted != null && course.current != null ? course.predicted - course.current : null;
-  const weakest = [...course.topics].sort((a, b) => a.mastery - b.mastery)[0];
+
+  // Weakest first: a topic below Strong (80) is one worth working on. The list
+  // names names, which the old count-donut never did, so the student can act
+  // on it instead of reading "4 need work" and wondering which 4.
+  const toWorkOn = [...course.topics]
+    .filter((t) => t.mastery < 80)
+    .sort((a, b) => a.mastery - b.mastery)
+    .slice(0, 3);
+  const allStrong = course.topics.length > 0 && toWorkOn.length === 0;
 
   return (
     // Column layout so the middle block (donut, or the nothing-yet prompt) can
@@ -432,18 +529,35 @@ function CourseCard({
         </Stack>
 
         {course.topics.length > 0 ? (
-          <AptiverseDonut
-            height={148}
-            innerRadius={38}
-            outerRadius={62}
-            centerValue={course.mastery != null ? `${course.mastery}%` : "—"}
-            centerLabel="mastery"
-            data={course.bands.map((b) => ({
-              label: b.label,
-              value: b.count,
-              color: colorFor[b.label],
-            }))}
-          />
+          <>
+            {course.mastery != null && <MasteryBar mastery={course.mastery} ramp={ramp} />}
+
+            <Box sx={{ mt: 2.5, flex: 1 }}>
+              {allStrong ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: ramp.strong }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Every practised topic is strong. Keep them warm.
+                  </Typography>
+                </Stack>
+              ) : (
+                <>
+                  <Typography
+                    variant="overline"
+                    color="text.secondary"
+                    sx={{ display: "block", mb: 1 }}
+                  >
+                    Work on next
+                  </Typography>
+                  <Stack spacing={1.25}>
+                    {toWorkOn.map((t) => (
+                      <WeakTopicRow key={t.topic} topic={t} ramp={ramp} />
+                    ))}
+                  </Stack>
+                </>
+              )}
+            </Box>
+          </>
         ) : (
           <Stack
             alignItems="center"
@@ -459,15 +573,27 @@ function CourseCard({
           </Stack>
         )}
 
-        <Stack spacing={0.25} sx={{ mt: "auto", pt: 1.5 }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          spacing={1}
+          sx={{ mt: "auto", pt: 1.5 }}
+        >
           <Typography variant="caption" color="text.secondary">
             {course.marks.length} mark{course.marks.length === 1 ? "" : "s"} logged
             {course.confidence > 0 && ` · ${Math.round(course.confidence * 100)}% confidence`}
           </Typography>
-          {weakest && (
-            <Typography variant="caption" color="text.secondary" noWrap>
-              Focus: {weakest.topic} · {weakest.mastery}%
-            </Typography>
+          {toWorkOn.length > 0 && (
+            <Button
+              component={Link}
+              href="/dashboard/practice"
+              size="small"
+              endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />}
+              sx={{ flexShrink: 0 }}
+            >
+              Practise these
+            </Button>
           )}
         </Stack>
       </CardContent>
