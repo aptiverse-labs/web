@@ -1,7 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
 import Grid from "@mui/material/Grid";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -22,7 +26,7 @@ import { StatCard } from "@/components/common/StatCard";
 import { CardError } from "@/components/common/CardError";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { AptiverseLineChart } from "@/components/common/AptiverseLineChart";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, ChevronDown } from "lucide-react";
 import { masteryBandRamp, courseColor, type BandRamp } from "@/components/common/chartPalette";
 import {
   useAcademicUnits,
@@ -31,6 +35,9 @@ import {
   useAssessments,
   useMoodTrend,
   useWellbeingSummary,
+  useCourses,
+  useSubjects,
+  useAcademicProfile,
   type TermPrediction,
   type TopicMastery,
 } from "@/lib/api/queries";
@@ -44,6 +51,24 @@ export default function AnalyticsPage() {
   const assessmentsQuery = useAssessments();
   const moodQuery = useMoodTrend(30);
   const wellbeingQuery = useWellbeingSummary();
+  const coursesQuery = useCourses();
+  const subjectsQuery = useSubjects();
+  const profileQuery = useAcademicProfile();
+
+  // Which units are finished, so the view can pull them out of the active list.
+  // Tertiary courses carry their own isFinished (semesters, or a manual finish).
+  // High-school subjects are year-long and finish by grade: a subject enrolled
+  // at a grade below the student's current one belongs to a year they have left.
+  const currentGrade = profileQuery.data?.grade ?? null;
+  const finishedIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (academic.isTertiary) {
+      for (const c of coursesQuery.data ?? []) if (c.isFinished) ids.add(c.practiceKey);
+    } else if (currentGrade != null) {
+      for (const s of subjectsQuery.data ?? []) if (s.grade < currentGrade) ids.add(s.subjectId);
+    }
+    return ids;
+  }, [academic.isTertiary, currentGrade, coursesQuery.data, subjectsQuery.data]);
 
   const predictions = predictionsQuery.data ?? [];
   const topics = masteryQuery.data ?? [];
@@ -109,6 +134,8 @@ export default function AnalyticsPage() {
           graded={graded}
           mood={mood}
           moodAvg7d={wellbeing?.moodAvg7d ?? 0}
+          finishedIds={finishedIds}
+          unitNoun={academic.isTertiary ? "course" : "subject"}
           nameOf={(id, fallback) => academic.nameFor(id) ?? prettifyUnitId(fallback ?? id)}
         />
       )}
@@ -177,6 +204,8 @@ function AnalyticsView({
   graded,
   mood,
   moodAvg7d,
+  finishedIds,
+  unitNoun,
   nameOf,
 }: {
   predictions: TermPrediction[];
@@ -184,11 +213,20 @@ function AnalyticsView({
   graded: Assessment[];
   mood: MoodPoint[];
   moodAvg7d: number;
+  // Unit ids (practiceKey / subject slug) the student is done with.
+  finishedIds: Set<string>;
+  unitNoun: "course" | "subject";
   nameOf: (id: string, fallback?: string) => string;
 }) {
   const theme = useTheme();
   const mode = theme.palette.mode === "dark" ? "dark" : "light";
   const courses = buildCourses(predictions, topics, graded, nameOf);
+
+  // A finished course still has a story worth keeping, but it does not belong up
+  // top competing for attention with what the student is taking now.
+  const activeCourses = courses.filter((c) => !finishedIds.has(c.id));
+  const pastCourses = courses.filter((c) => finishedIds.has(c.id));
+  const unitPlural = unitNoun === "course" ? "courses" : "subjects";
 
   const predictedAvg =
     predictions.length > 0
@@ -256,25 +294,60 @@ function AnalyticsView({
       {/* Each course gets its own read. Averaging them into one number, or
           pooling their topics into one pie, hides the only thing worth
           knowing: which course needs you, and why. */}
-      {courses.length > 0 && (
+      {activeCourses.length > 0 && (
         <Box sx={{ mb: { xs: 2, md: 3 } }}>
           <Typography variant="overline" color="text.secondary">
-            By course
+            By {unitNoun}
           </Typography>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Where each course actually stands
+            Where each {unitNoun} actually stands
           </Typography>
           {/* Three-up suits the usual five-to-eight courses, but hard-coding it
               stranded a student carrying two: their cards took a third of the
               row each and left the rest of the width empty. */}
           <Grid container spacing={{ xs: 2, md: 3 }}>
-            {courses.map((c, i) => (
-              <Grid key={c.id} size={{ xs: 12, md: 6, lg: courses.length >= 3 ? 4 : 6 }}>
+            {activeCourses.map((c, i) => (
+              <Grid key={c.id} size={{ xs: 12, md: 6, lg: activeCourses.length >= 3 ? 4 : 6 }}>
                 <CourseCard course={c} accent={courseColor(i, mode)} mode={mode} />
               </Grid>
             ))}
           </Grid>
         </Box>
+      )}
+
+      {pastCourses.length > 0 && (
+        <Accordion
+          disableGutters
+          elevation={0}
+          sx={{
+            mb: { xs: 2, md: 3 },
+            bgcolor: "transparent",
+            "&:before": { display: "none" },
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 2,
+          }}
+        >
+          <AccordionSummary expandIcon={<ChevronDown size={18} />} sx={{ px: 2.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="baseline">
+              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                Past {unitPlural}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {pastCourses.length} finished
+              </Typography>
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 2.5, pb: 2.5 }}>
+            <Grid container spacing={{ xs: 2, md: 3 }}>
+              {pastCourses.map((c, i) => (
+                <Grid key={c.id} size={{ xs: 12, md: 6, lg: pastCourses.length >= 3 ? 4 : 6 }}>
+                  <CourseCard course={c} accent={courseColor(i, mode)} mode={mode} isPast />
+                </Grid>
+              ))}
+            </Grid>
+          </AccordionDetails>
+        </Accordion>
       )}
 
       <Grid container spacing={{ xs: 2, md: 3 }}>
@@ -458,10 +531,15 @@ function CourseCard({
   course,
   accent,
   mode,
+  isPast = false,
 }: {
   course: CourseStory;
   accent: string;
   mode: "light" | "dark";
+  // A finished course: show how it ended, but drop the forward-looking parts.
+  // Revising the weak topics of a course you are no longer taking is not a next
+  // step, so the "Work on next" list and the "Practise these" shortcut go.
+  isPast?: boolean;
 }) {
   const ramp = masteryBandRamp(mode);
   const delta =
@@ -470,11 +548,13 @@ function CourseCard({
   // Weakest first: a topic below Strong (80) is one worth working on. The list
   // names names, which the old count-donut never did, so the student can act
   // on it instead of reading "4 need work" and wondering which 4.
-  const toWorkOn = [...course.topics]
-    .filter((t) => t.mastery < 80)
-    .sort((a, b) => a.mastery - b.mastery)
-    .slice(0, 3);
-  const allStrong = course.topics.length > 0 && toWorkOn.length === 0;
+  const toWorkOn = isPast
+    ? []
+    : [...course.topics]
+        .filter((t) => t.mastery < 80)
+        .sort((a, b) => a.mastery - b.mastery)
+        .slice(0, 3);
+  const allStrong = !isPast && course.topics.length > 0 && toWorkOn.length === 0;
 
   return (
     // Column layout so the middle block (donut, or the nothing-yet prompt) can
@@ -493,7 +573,9 @@ function CourseCard({
           <Typography sx={{ fontWeight: 800, fontSize: "1.9rem", lineHeight: 1 }}>
             {course.current != null ? `${course.current}%` : "—"}
           </Typography>
-          {course.predicted != null && delta != null && (
+          {/* A finished course has no "next term" to head towards, so the
+              projection arrow is dropped: the final mark is the whole story. */}
+          {!isPast && course.predicted != null && delta != null && (
             <Stack direction="row" alignItems="center" spacing={0.5}>
               <ArrowForwardIcon sx={{ fontSize: 14, color: "text.disabled" }} />
               <Typography
@@ -533,7 +615,14 @@ function CourseCard({
             {course.mastery != null && <MasteryBar mastery={course.mastery} ramp={ramp} />}
 
             <Box sx={{ mt: 2.5, flex: 1 }}>
-              {allStrong ? (
+              {isPast ? (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: "text.disabled" }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Wrapped up. This is where you finished.
+                  </Typography>
+                </Stack>
+              ) : allStrong ? (
                 <Stack direction="row" spacing={1} alignItems="center">
                   <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: ramp.strong }} />
                   <Typography variant="body2" color="text.secondary">

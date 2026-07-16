@@ -424,12 +424,31 @@ export function useAcademicSignals() {
   };
 }
 
-export type AddCourseInput = { name: string; code?: string; lecturer?: string };
+export type AddCourseInput = {
+  name: string;
+  code?: string;
+  lecturer?: string;
+  // How many semesters the course runs. Optional: omitted reads as ongoing.
+  durationSemesters?: number;
+};
 
 export const useAddCourse = () => {
   const qc = useQueryClient();
   return useMutation<EnrolledCourse, ApiError, AddCourseInput>({
     mutationFn: (input) => apiClient.post<EnrolledCourse>("/api/academic-planning/courses", input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.courses() });
+    },
+  });
+};
+
+// Mark a course finished (or reopen it). Moves it into the analytics Past
+// section immediately, whatever its computed end.
+export const useSetCourseFinished = () => {
+  const qc = useQueryClient();
+  return useMutation<EnrolledCourse, ApiError, { id: string; finished: boolean }>({
+    mutationFn: ({ id, finished }) =>
+      apiClient.patch<EnrolledCourse>(`/api/academic-planning/courses/${id}`, { finished }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: queryKeys.courses() });
     },

@@ -80,6 +80,12 @@ export type EnrolledCourse = {
   code: string | null;
   lecturer: string | null;
   createdAt: string;
+  // How many semesters the course runs (null = ongoing / set before durations
+  // existed). finishesOn is the computed end; isFinished is the flag the
+  // analytics past-vs-active split reads.
+  durationSemesters?: number | null;
+  finishesOn?: string | null;
+  isFinished?: boolean;
 };
 
 export type AssessmentType =
