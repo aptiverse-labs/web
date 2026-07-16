@@ -287,9 +287,9 @@ function GenerateTestDialog({
                 onChange={(e) => setDifficulty(e.target.value as typeof difficulty)}
                 fullWidth
               >
-                <MenuItem value="foundation">Foundation — recall and basics</MenuItem>
-                <MenuItem value="core">Core — standard exam level</MenuItem>
-                <MenuItem value="challenge">Challenge — multi-step analysis</MenuItem>
+                <MenuItem value="foundation">Foundation: recall and basics</MenuItem>
+                <MenuItem value="core">Core: standard exam level</MenuItem>
+                <MenuItem value="challenge">Challenge: multi-step analysis</MenuItem>
               </TextField>
             )}
 

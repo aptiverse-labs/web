@@ -152,7 +152,7 @@ function buildStudentContext(args: {
     .filter((a) => a.status !== "graded" && new Date(a.dueDate).getTime() >= Date.now() - 86_400_000)
     .sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))
     .slice(0, 5)
-    .map((a) => `- ${fmtDate(a.dueDate)}: ${nameFor(a.subjectId) ?? "a subject"} — ${a.title} (${a.type})`);
+    .map((a) => `- ${fmtDate(a.dueDate)}: ${nameFor(a.subjectId) ?? "a subject"}, ${a.title} (${a.type})`);
 
   const sections: string[] = [];
   if (head.length) sections.push(head.join("\n"));
@@ -408,7 +408,7 @@ export default function ChatbotPage() {
         bgcolor: "background.default",
       }}
     >
-      {/* Chat column — first in source order, so the history rail sits on the
+      {/* Chat column: first in source order, so the history rail sits on the
           right for sighted users AND is reached after the conversation by
           screen readers and keyboard tabbing. */}
       <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
@@ -506,7 +506,7 @@ export default function ChatbotPage() {
                   ),
                 )}
                 {/* Streams as rendered markdown, not plain text that reflows
-                    into markdown at the end — headings, bold, lists and math
+                    into markdown at the end. Headings, bold, lists and math
                     resolve as they arrive, so the reply never visibly restyles
                     itself once it settles. */}
                 {streaming !== null && <AssistantMessage content={streaming} caret />}

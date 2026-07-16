@@ -550,8 +550,24 @@ const QUOTA_ROWS: { key: string; label: string }[] = [
 // plan not listed.
 const PLAN_TAGLINE: Record<string, string> = {
   free: "Start here with the core tools, at no cost.",
-  "student.pro": "The full toolkit: curriculum-aware tutor, adaptive practice, career navigator.",
-  "student.max": "Built for matric: exam simulator, weekly AI debrief, WhatsApp tutor.",
+  // Both of these sold things the buyer does not get.
+  //
+  // Pro named the career navigator, which is free to everyone now, so it was
+  // charging for something the reader already had.
+  //
+  // Max is the worse one. It named the exam simulator, the weekly AI debrief and
+  // the WhatsApp tutor. None of the three is built: each appears only in this
+  // tagline, in the features.ts gate, and in the seeder's grant list, and nothing
+  // anywhere reads them. There is no WhatsApp transport in the API at all. Max
+  // also said "Built for matric" to every university student paying for it.
+  //
+  // What Max genuinely delivers over Pro is limits, and UsageMeter really does
+  // enforce those, so that is what it says now. The plan comparison beneath still
+  // advertises a WhatsApp quota against a channel that cannot send a message:
+  // that needs a decision about the product, not a rewrite of a string, so it is
+  // flagged rather than quietly papered over.
+  "student.pro": "Deep AI sessions, plus far more practice and quick questions than Free.",
+  "student.max": "The highest limits: the most practice tests, quick questions and deep sessions.",
   parent: "One child on Student Pro, plus the parent toolkit.",
   "parent.2": "Two children on Student Pro, shared AI pool, combo price.",
   "parent.3": "Three children on Student Pro, shared AI pool, combo price.",

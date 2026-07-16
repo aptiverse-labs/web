@@ -697,7 +697,7 @@ function SubjectPredictionRow({ p, name }: { p: TermPrediction; name: string }) 
           </Typography>
         </Stack>
       </Stack>
-      {/* Confidence — honest signal of how much evidence backs the number. */}
+      {/* Confidence: honest signal of how much evidence backs the number. */}
       <LinearProgress
         variant="determinate"
         value={Math.round(p.confidence * 100)}

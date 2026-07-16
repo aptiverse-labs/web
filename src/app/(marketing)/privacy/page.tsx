@@ -51,9 +51,21 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "Your private diary",
     blocks: [
+      // This claimed the diary was end-to-end encrypted with a key that never
+      // leaves the student's device, and that we therefore cannot read it. None
+      // of that exists. DiaryEntry.Content is stored as plain text, and the same
+      // row holds SentimentAnalysis and SentimentScore, which the server writes
+      // by reading the entry. A privacy policy is the one document that has to be
+      // literally true, and describing encryption that was never built is a
+      // material misstatement, not loose copy. What is actually true is still
+      // worth saying plainly: nobody else on the platform can read it.
       {
         type: "p",
-        text: "Your diary is end-to-end encrypted on your own device. The encryption key never leaves your device, which means we cannot read your diary entries, and neither can a parent or anyone else. This is by design and cannot be switched off by an administrator.",
+        text: "Your diary is private from other people. No parent, teacher, tutor or other student can read your entries, on any plan, and that is not something an administrator can switch on.",
+      },
+      {
+        type: "p",
+        text: "It is not end-to-end encrypted, and we will not tell you otherwise. Entries are stored on our servers, and our AI reads each one to work out the mood trend shown on your wellbeing page. That is the feature you are getting in exchange, and it is the reason encryption we could not read through is not on the table today. Staff access is restricted to the people who keep the service running, and we do not use diary content to train models.",
       },
     ],
   },

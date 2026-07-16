@@ -23,13 +23,13 @@ import { GradientBackdrop } from "@/components/common/GradientBackdrop";
 import { type PlanDto } from "@/lib/api/queries";
 
 // Interactive pricing UI. The plan catalog is fetched at build/ISR time by the
-// server component in page.tsx and passed in as `plans` — this component owns
+// server component in page.tsx and passed in as `plans`. This component owns
 // only the billing toggle, audience tabs, and rendering.
 //
 // SINGLE SOURCE OF TRUTH: every number here (prices, seat caps, AI session
 // quotas) comes from that catalog, seeded from EntitlementsCatalogSeeder.cs.
 // Only marketing prose lives in this file, and any number inside a bullet is a
-// {token} filled from the live plan (see fillTokens) — so the copy can never
+// {token} filled from the live plan (see fillTokens), so the copy can never
 // silently drift from what the catalog actually grants.
 
 type Billing = "monthly" | "annual";

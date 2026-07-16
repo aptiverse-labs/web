@@ -143,7 +143,7 @@ export function SbaCoachDemo() {
     <MockAppFrame title="aptiverse.co.za/dashboard/sba/draft" badge="History · Source-based essay">
       <Stack spacing={2}>
         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-          PARAGRAPH 2 / 5 — coverage: 64% · rubric match: 5/8 marks
+          PARAGRAPH 2 / 5 · coverage: 64% · rubric match: 5/8 marks
         </Typography>
 
         <Typography variant="body2" sx={{ lineHeight: 1.8 }}>
@@ -162,7 +162,7 @@ export function SbaCoachDemo() {
           <FeedbackRow
             tone="warn"
             tag="Specificity"
-            text='"Many students protested" — name the schools, the date, and the trigger (Afrikaans medium policy).'
+            text='"Many students protested": name the schools, the date, and the trigger (Afrikaans medium policy).'
           />
           <FeedbackRow
             tone="info"
@@ -172,7 +172,7 @@ export function SbaCoachDemo() {
           <FeedbackRow
             tone="good"
             tag="What's working"
-            text="Good chronology and use of a named individual (Hector Pieterson) — examiner will reward this."
+            text="Good chronology and use of a named individual (Hector Pieterson). The examiner will reward this."
           />
         </Stack>
       </Stack>
@@ -259,7 +259,7 @@ export function MasteryChartDemo() {
               Confidence interval
             </Typography>
             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              67% – 83%
+              67% to 83%
             </Typography>
           </Stack>
         </Stack>
@@ -367,7 +367,7 @@ export function PastPaperDemo() {
           <Typography variant="overline" color="primary.main">
             Worked solution
           </Typography>
-          <Step n={1} marks={1} text="Use Work–energy theorem: W_net = ΔK_E" />
+          <Step n={1} marks={1} text="Use Work-energy theorem: W_net = ΔK_E" />
           <Step n={2} marks={1} text="ΔK_E = ½ m v_f² − ½ m v_i² = 0 − ½ (1 200)(20)² = −240 000 J" />
           <Step n={3} marks={1} text="W_net = F·d·cos(180°) = −F·d → −F·(25) = −240 000" />
           <Step n={4} marks={1} text="∴ F = 9 600 N" />
@@ -875,7 +875,7 @@ export function CounsellingDemo() {
             credentials="DPsych · HPCSA #PS0091243"
             specialty="Grief · loss · trauma"
             rating={5.0}
-            nextSlot="Booked — Thurs 16:00"
+            nextSlot="Booked: Thurs 16:00"
             booked={true}
           />
         </Stack>

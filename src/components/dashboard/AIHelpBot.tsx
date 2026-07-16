@@ -210,7 +210,7 @@ export function AIHelpBot() {
         {effectiveSnapshot && effectiveSnapshot.limit < 0 && (
           <Box sx={{ px: 2, py: 1, borderBottom: 1, borderColor: "divider", bgcolor: "action.hover" }}>
             <Typography variant="caption" color="text.secondary">
-              Quick AI — unlimited on your plan ({effectiveSnapshot.used.toLocaleString()} used this month)
+              Quick AI: unlimited on your plan ({effectiveSnapshot.used.toLocaleString()} used this month)
             </Typography>
           </Box>
         )}
@@ -284,7 +284,7 @@ export function AIHelpBot() {
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
                 Used {quotaError.Used} of {quotaError.Limit}. Upgrade your plan for a bigger
-                allowance — or wait for next month&apos;s reset.
+                allowance, or wait for next month&apos;s reset.
               </Typography>
               <Stack direction="row" spacing={1}>
                 <Button component={Link} href="/pricing" variant="contained" size="small">

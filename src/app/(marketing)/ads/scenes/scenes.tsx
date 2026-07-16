@@ -15,7 +15,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { motion, AnimatePresence } from "framer-motion";
 import { MockAppFrame } from "@/components/marketing/FeatureShowcase";
 
-// Shared timing helper — `useStaged([400, 800, 1200])` returns `[true, true, false]`
+// Shared timing helper. `useStaged([400, 800, 1200])` returns `[true, true, false]`
 // while each timer fires. Cleans up on unmount so a re-keyed parent
 // starts fresh without orphan timers stacking.
 function useStaged(triggers: number[]): boolean[] {
@@ -31,21 +31,21 @@ function useStaged(triggers: number[]): boolean[] {
       }, delay),
     );
     return () => ids.forEach(clearTimeout);
-    // triggers is a stable literal at call site — fine to depend on length.
+    // triggers is a stable literal at call site, fine to depend on length.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return flags;
 }
 
 // =====================================================================
-// SCENE 1 — Curriculum-aware AI tutor (chat bubbles stage in)
+// SCENE 1: Curriculum-aware AI tutor (chat bubbles stage in)
 // =====================================================================
 export function TutorChatScene() {
-  // 0.4s — user message slides in
-  // 1.4s — AI typing dots appear
-  // 2.8s — AI reply expands, code block lands
-  // 4.0s — citation chip pops in (the moat reveal — hold)
-  // 6.0s — "AI generating adaptive practice" trailing line
+  // 0.4s: user message slides in
+  // 1.4s: AI typing dots appear
+  // 2.8s: AI reply expands, code block lands
+  // 4.0s: citation chip pops in (the moat reveal, hold)
+  // 6.0s: "AI generating adaptive practice" trailing line
   const [userIn, dotsIn, replyIn, citationIn, adaptiveIn] = useStaged([400, 1400, 2800, 4000, 6000]);
 
   return (
@@ -226,7 +226,7 @@ function ThinkingDots() {
 }
 
 // =====================================================================
-// SCENE 2 — Mastery forecast (line draws, distinction chip lands)
+// SCENE 2: Mastery forecast (line draws, distinction chip lands)
 // =====================================================================
 export function MasteryForecastScene() {
   const [headerIn, lineIn, predictIn, chipIn, captionIn] = useStaged([300, 1000, 2200, 3600, 4800]);
@@ -270,7 +270,7 @@ export function MasteryForecastScene() {
             )}
           </AnimatePresence>
 
-          {/* SVG chart — line draws using strokeDashoffset, confidence band fades in */}
+          {/* SVG chart: line draws using strokeDashoffset, confidence band fades in */}
           <Box sx={{ height: 200, width: "100%" }}>
             <svg width="100%" height="200" viewBox="0 0 600 200" preserveAspectRatio="none">
               {/* Gridlines */}
@@ -408,15 +408,15 @@ function LegendDot({ color, label }: { color: string; label: string }) {
 }
 
 // =====================================================================
-// SCENE 3 — SBA Coach (annotations bloom in sequentially)
+// SCENE 3: SBA Coach (annotations bloom in sequentially)
 // =====================================================================
 export function SbaCoachScene() {
   // 0.3s text fades in
-  // 1.3s — warning highlight fans across
-  // 2.5s — info highlight
-  // 3.7s — warn feedback row
-  // 4.7s — info feedback row
-  // 5.7s — good feedback row
+  // 1.3s: warning highlight fans across
+  // 2.5s: info highlight
+  // 3.7s: warn feedback row
+  // 4.7s: info feedback row
+  // 5.7s: good feedback row
   const [textIn, warnIn, infoIn, warnRow, infoRow, goodRow] = useStaged([300, 1300, 2500, 3700, 4700, 5700]);
 
   return (
@@ -424,7 +424,7 @@ export function SbaCoachScene() {
       <MockAppFrame title="aptiverse.co.za/dashboard/sba/draft" badge="History · Source-based essay">
         <Stack spacing={2} sx={{ minHeight: 360 }}>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-            PARAGRAPH 2 / 5 — coverage: 64% · rubric match: 5/8 marks
+            PARAGRAPH 2 / 5 · coverage: 64% · rubric match: 5/8 marks
           </Typography>
 
           <AnimatePresence>
@@ -456,7 +456,7 @@ export function SbaCoachScene() {
                   <FeedbackRow
                     tone="warn"
                     tag="Specificity"
-                    text='"Many students protested" — name the schools, the date, and the trigger (Afrikaans medium policy).'
+                    text='"Many students protested": name the schools, the date, and the trigger (Afrikaans medium policy).'
                   />
                 </motion.div>
               )}
@@ -486,7 +486,7 @@ export function SbaCoachScene() {
                   <FeedbackRow
                     tone="good"
                     tag="What's working"
-                    text="Good chronology and use of a named individual — examiner will reward this."
+                    text="Good chronology and use of a named individual. The examiner will reward this."
                   />
                 </motion.div>
               )}
@@ -550,7 +550,7 @@ function FeedbackRow({ tone, tag, text }: { tone: "warn" | "info" | "good"; tag:
 }
 
 // =====================================================================
-// SCENE 4 — Past-paper walk-through (steps drop in with mark badges)
+// SCENE 4: Past-paper walk-through (steps drop in with mark badges)
 // =====================================================================
 export function PastPaperScene() {
   // 0.3s question card
@@ -599,7 +599,7 @@ export function PastPaperScene() {
               Worked solution
             </Typography>
             {[
-              { show: s1, n: 1, text: "Use Work–energy theorem: W_net = ΔK_E" },
+              { show: s1, n: 1, text: "Use Work-energy theorem: W_net = ΔK_E" },
               { show: s2, n: 2, text: "ΔK_E = ½ m v_f² − ½ m v_i² = 0 − ½ (1 200)(20)² = −240 000 J" },
               { show: s3, n: 3, text: "W_net = F·d·cos(180°) = −F·d → −F·(25) = −240 000" },
               { show: s4, n: 4, text: "∴ F = 9 600 N" },
@@ -664,7 +664,7 @@ function Step({ n, text }: { n: number; text: string }) {
 }
 
 // =====================================================================
-// SCENE 5 — End card (logo + URL + CTA)
+// SCENE 5: End card (logo + URL + CTA)
 // =====================================================================
 export function EndCardScene() {
   const [logoIn, urlIn, ctaIn] = useStaged([200, 800, 1400]);

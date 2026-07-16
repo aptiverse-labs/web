@@ -433,7 +433,7 @@ function FirstCheckIn({ onCheckIn }: { onCheckIn: () => void }) {
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 460 }}>
                 A daily mood log helps you (and the people who care about you) spot rough patches
-                before they pile up. No streaks to chase yet — just one honest answer.
+                before they pile up. No streaks to chase yet, just one honest answer.
               </Typography>
               <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                 <Button

@@ -111,7 +111,7 @@ export function TasksEditor({ assessmentId, tasks: serverTasks, compact = false 
           <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 360, mx: "auto" }}>
             {compact
               ? "No tasks yet."
-              : "Break this down into your own checklist — outline, source material, practice questions, self-review."}
+              : "Break this down into your own checklist: outline, source material, practice questions, self-review."}
           </Typography>
         </Box>
       ) : (

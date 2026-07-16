@@ -1028,7 +1028,7 @@ function ResultsView({
                             </Box>
                           </Typography>
                           <Typography variant="body2" component="div" color="text.secondary">
-                            You wrote: {given.trim() ? <MathText text={given} /> : "— blank —"}
+                            You wrote: {given.trim() ? <MathText text={given} /> : "(blank)"}
                           </Typography>
                         </>
                       ) : (
@@ -1042,7 +1042,7 @@ function ResultsView({
                           {!correct && (
                             <Typography variant="body2" component="div" color="text.secondary">
                               You chose:{" "}
-                              {chosen != null && chosen >= 0 ? <MathText text={q.options[chosen]} /> : "— skipped —"}
+                              {chosen != null && chosen >= 0 ? <MathText text={q.options[chosen]} /> : "(skipped)"}
                             </Typography>
                           )}
                         </>
