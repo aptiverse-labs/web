@@ -112,6 +112,18 @@ export const componentOverrides = (theme: Theme): Components<Theme> => {
               : theme.palette.brandSurface.dark,
             color: theme.palette.brandSurface.contrastText,
           },
+          // Disabled has to be stated here. The backgroundColor and color above
+          // are flat declarations on the variant class, so they beat MUI's own
+          // .Mui-disabled rule on source order and a disabled button kept the
+          // full graphite surface. It looked exactly like a live one, which is
+          // why "Signing in" appeared to leave the button clickable: it was
+          // already disabled, it just had no way to say so.
+          "&.Mui-disabled": {
+            backgroundColor: theme.palette.brandSurface.main,
+            color: theme.palette.brandSurface.contrastText,
+            opacity: 0.45,
+            boxShadow: "none",
+          },
         },
         containedSecondary: {
           backgroundColor: theme.palette.secondary.main,
@@ -122,6 +134,14 @@ export const componentOverrides = (theme: Theme): Components<Theme> => {
             // be dark-on-dark. The hover fill has to stay a citron SURFACE.
             backgroundColor: brand.citron[500],
             color: theme.palette.secondary.contrastText,
+          },
+          // Same reason as containedPrimary: the flat fill above would
+          // otherwise survive into the disabled state.
+          "&.Mui-disabled": {
+            backgroundColor: theme.palette.secondary.main,
+            color: theme.palette.secondary.contrastText,
+            opacity: 0.45,
+            boxShadow: "none",
           },
         },
         outlined: {
