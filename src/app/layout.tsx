@@ -12,7 +12,15 @@ const roboto = Roboto({
   display: "swap",
 });
 
+// Absolute base for every relative metadata URL, including the og:image that
+// app/opengraph-image.tsx generates. Without it Next resolves og:image against
+// localhost in dev and against the deployment host in preview, so a shared
+// production link would advertise a preview URL. Overridable for a custom
+// domain or a staging host.
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://aptiverse.co.za";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Aptiverse: Grow with confidence",
     template: "%s · Aptiverse",
@@ -37,6 +45,17 @@ export const metadata: Metadata = {
     description:
       "Learn well and stay well. Practice, mastery, wellbeing, and goals in one calm place.",
     type: "website",
+    siteName: "Aptiverse",
+    locale: "en_ZA",
+    url: SITE_URL,
+  },
+  // Without this the generated 1200x630 card renders as a small square
+  // thumbnail on X, which wastes the only image a link preview gets.
+  twitter: {
+    card: "summary_large_image",
+    title: "Aptiverse: Grow with confidence",
+    description:
+      "Learn well and stay well. Practice, mastery, wellbeing, and goals in one calm place.",
   },
 };
 

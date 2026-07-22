@@ -1,0 +1,520 @@
+"use client";
+
+import Box from "@mui/material/Box";
+import Stack from "@mui/material/Stack";
+import Typography from "@mui/material/Typography";
+import {
+  Artboard,
+  AdBody,
+  AdCta,
+  AdEyebrow,
+  AdFooter,
+  AdHeadline,
+  CitronBlock,
+  ScaledDepiction,
+  Wordmark,
+  adSurfaces,
+  CITRON,
+  type AdScheme,
+} from "./adkit";
+import {
+  CourseListDepiction,
+  MasteryDepiction,
+  ParentDepiction,
+  PracticeDepiction,
+  TutorChatDepiction,
+  TutorMathsDepiction,
+} from "./depictions";
+
+// =====================================================================
+// The exportable ad units.
+//
+// One entry per creative. Each renders at an exact platform size, commits
+// to one colour scheme (a PNG has no OS scheme to follow), and is written
+// for one audience with one concept. Audiences are ordered by who can
+// actually pay today:
+//
+//   uni     university students, who buy their own study tools and decide
+//           without a parental approval step. Semesters, courses they add
+//           themselves, first-year volume. Never grades, terms or matric.
+//   parent  parents at fee-paying schools. Consent-based visibility only.
+//   tutor   the supply side.
+//
+// Deliberately absent: any institutional or public-school unit. That
+// segment is deferred, and building creative for it now would spend the
+// budget on the buyer with the longest cycle.
+//
+// Scheme choices, per audience rather than per unit, so a campaign reads as
+// one campaign:
+//   - University units are DARK graphite. They compete in a feed that is
+//     mostly dark UI and mostly viewed at night, and graphite with a single
+//     citron block is the most separable thing we can put there.
+//   - Parent units are LIGHT. The proposition is calm and trust-shaped;
+//     a black square with a child's name on it reads as an alarm.
+//   - Tutor units are DARK, because the money line is the whole ad and
+//     citron on graphite is the loudest legal way to say it.
+//   - The Open Graph card is DARK, because link previews are rendered on
+//     white chrome by every platform that shows them.
+// =====================================================================
+
+export type AdUnit = {
+  slug: string;
+  width: number;
+  height: number;
+  scheme: AdScheme;
+  audience: "uni" | "parent" | "tutor" | "brand";
+  concept: "product" | "typographic" | "problem" | "og";
+  /** What a human should understand this unit is doing. */
+  note: string;
+  render: () => React.ReactNode;
+};
+
+// ---------------------------------------------------------------------
+// UNIVERSITY STUDENTS (primary)
+// ---------------------------------------------------------------------
+
+function UniProduct() {
+  const scheme: AdScheme = "dark";
+  return (
+    <Artboard width={1080} height={1350} scheme={scheme}>
+      <AdEyebrow scheme={scheme}>For university students</AdEyebrow>
+      <Box sx={{ height: 34 }} />
+      <AdHeadline scheme={scheme} size={92}>
+        You add the course. It writes the questions.
+      </AdHeadline>
+      <Box sx={{ height: 22 }} />
+      <AdBody scheme={scheme} size={31} maxWidth={860}>
+        Original practice, weighted to your weakest topic, marked the moment you finish.
+      </AdBody>
+      <Box sx={{ height: 34 }} />
+      <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <PracticeDepiction scheme={scheme} />
+      </Box>
+      <Box sx={{ height: 34 }} />
+      <AdFooter scheme={scheme} cta="Start free" />
+    </Artboard>
+  );
+}
+
+function UniTypographic() {
+  const scheme: AdScheme = "dark";
+  return (
+    <Artboard width={1080} height={1080} scheme={scheme}>
+      <AdEyebrow scheme={scheme}>For university students</AdEyebrow>
+      <Box sx={{ flex: 1 }} />
+      <AdHeadline scheme={scheme} size={136}>
+        Study with a plan,
+      </AdHeadline>
+      <Box sx={{ mt: "14px" }}>
+        <CitronBlock size={136} px={26} py={8}>
+          not panic.
+        </CitronBlock>
+      </Box>
+      <Box sx={{ height: 40 }} />
+      <AdBody scheme={scheme} size={36} maxWidth={840}>
+        Practice, mastery and goals for the courses you are actually taking. Free to start.
+      </AdBody>
+      <Box sx={{ flex: 1 }} />
+      <AdFooter scheme={scheme} />
+    </Artboard>
+  );
+}
+
+function UniProblem() {
+  const scheme: AdScheme = "dark";
+  return (
+    <Artboard width={1080} height={1920} scheme={scheme}>
+      <AdEyebrow scheme={scheme} size={26}>
+        Week 9
+      </AdEyebrow>
+      <Box sx={{ height: 40 }} />
+      <AdHeadline scheme={scheme} size={112}>
+        Six courses. A plan for none of them.
+      </AdHeadline>
+      <Box sx={{ height: 30 }} />
+      <AdBody scheme={scheme} size={36} maxWidth={880}>
+        Aptiverse turns what you are taking into what you should practise next.
+      </AdBody>
+      {/* Two weighted spacers rather than one. A story is 1920 tall and the
+          platform covers the top ~250 and bottom ~350 with its own UI, so the
+          product wants to sit just above centre with the CTA clear of the
+          bottom furniture. A single trailing spacer left a dead third. */}
+      <Box sx={{ flex: 0.6, minHeight: 40 }} />
+      <CourseListDepiction scheme={scheme} />
+      <Box sx={{ flex: 1, minHeight: 40 }} />
+      <Box>
+        <CitronBlock size={64} px={22} py={10}>
+          Start with the 44%.
+        </CitronBlock>
+      </Box>
+      <Box sx={{ height: 44 }} />
+      <AdFooter scheme={scheme} cta="Start free" size={34} />
+    </Artboard>
+  );
+}
+
+function UniMastery() {
+  const scheme: AdScheme = "light";
+  return (
+    <Artboard width={1080} height={1350} scheme={scheme}>
+      <AdEyebrow scheme={scheme}>Mastery</AdEyebrow>
+      <Box sx={{ height: 34 }} />
+      <AdHeadline scheme={scheme} size={88}>
+        Know which topic is costing you. Before the exam does.
+      </AdHeadline>
+      <Box sx={{ height: 22 }} />
+      <AdBody scheme={scheme} size={31} maxWidth={880}>
+        Worked out from your own answers, topic by topic, course by course.
+      </AdBody>
+      <Box sx={{ height: 34 }} />
+      <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <MasteryDepiction scheme={scheme} />
+      </Box>
+      <Box sx={{ height: 34 }} />
+      <AdFooter scheme={scheme} cta="Start free" />
+    </Artboard>
+  );
+}
+
+function UniLandscape() {
+  const scheme: AdScheme = "dark";
+  return (
+    <Artboard width={1200} height={628} scheme={scheme} pad={56}>
+      <Stack direction="row" spacing="48px" sx={{ flex: 1, minHeight: 0 }}>
+        <Stack sx={{ width: 560, flexShrink: 0 }}>
+          <AdEyebrow scheme={scheme} size={20}>
+            For university students
+          </AdEyebrow>
+          <Box sx={{ height: 22 }} />
+          <AdHeadline scheme={scheme} size={62}>
+            A tutor that already knows your courses.
+          </AdHeadline>
+          <Box sx={{ height: 18 }} />
+          <AdBody scheme={scheme} size={25}>
+            It is handed your level and what you are studying before you ask a thing.
+          </AdBody>
+          <Box sx={{ flex: 1 }} />
+          <Stack direction="row" spacing="20px" alignItems="center">
+            <AdCta size={24}>Start free</AdCta>
+            <Wordmark scheme={scheme} size={28} />
+          </Stack>
+        </Stack>
+        <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
+          <ScaledDepiction designWidth={1080} width={536}>
+            <TutorChatDepiction scheme={scheme} />
+          </ScaledDepiction>
+        </Box>
+      </Stack>
+    </Artboard>
+  );
+}
+
+// ---------------------------------------------------------------------
+// PARENTS (secondary)
+// ---------------------------------------------------------------------
+
+function ParentPrivacy() {
+  const scheme: AdScheme = "light";
+  return (
+    <Artboard width={1080} height={1080} scheme={scheme}>
+      <AdEyebrow scheme={scheme}>For parents</AdEyebrow>
+      <Box sx={{ flex: 1 }} />
+      <AdHeadline scheme={scheme} size={132}>
+        Support
+        <br />
+        without
+      </AdHeadline>
+      <Box sx={{ mt: "14px" }}>
+        <CitronBlock size={132} px={26} py={8}>
+          surveillance.
+        </CitronBlock>
+      </Box>
+      <Box sx={{ height: 40 }} />
+      <AdBody scheme={scheme} size={34} maxWidth={860}>
+        You see what each child has due. You never see the diary. It is not a setting you can turn
+        on.
+      </AdBody>
+      <Box sx={{ flex: 1 }} />
+      <AdFooter scheme={scheme} cta="See Parent plans" />
+    </Artboard>
+  );
+}
+
+function ParentProduct() {
+  const scheme: AdScheme = "light";
+  const s = adSurfaces(scheme);
+  return (
+    <Artboard width={1080} height={1350} scheme={scheme}>
+      <AdEyebrow scheme={scheme}>For parents</AdEyebrow>
+      <Box sx={{ height: 34 }} />
+      <AdHeadline scheme={scheme} size={86}>
+        Every child, and what each of them has due.
+      </AdHeadline>
+      <Box sx={{ height: 22 }} />
+      <AdBody scheme={scheme} size={31} maxWidth={880}>
+        So the conversation starts from something real instead of a vague question at dinner.
+      </AdBody>
+      <Box sx={{ height: 34 }} />
+      <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <ParentDepiction scheme={scheme} />
+      </Box>
+      <Box sx={{ height: 24 }} />
+      <Typography sx={{ fontSize: 26, color: s.muted }}>
+        Parent plans from R159 a month for one child. Each extra child costs less than the first.
+      </Typography>
+      <Box sx={{ height: 20 }} />
+      <AdFooter scheme={scheme} cta="Start free" />
+    </Artboard>
+  );
+}
+
+function ParentLandscape() {
+  const scheme: AdScheme = "light";
+  return (
+    <Artboard width={1200} height={628} scheme={scheme} pad={56}>
+      <Stack direction="row" spacing="48px" sx={{ flex: 1, minHeight: 0 }}>
+        <Stack sx={{ width: 560, flexShrink: 0 }}>
+          <AdEyebrow scheme={scheme} size={20}>
+            For parents
+          </AdEyebrow>
+          <Box sx={{ height: 22 }} />
+          <AdHeadline scheme={scheme} size={58}>
+            Ask a useful question, not a vague one.
+          </AdHeadline>
+          <Box sx={{ height: 18 }} />
+          <AdBody scheme={scheme} size={25}>
+            Your children in one place, with what is due for each. One bill. No reading over their
+            shoulder.
+          </AdBody>
+          <Box sx={{ flex: 1 }} />
+          <Stack direction="row" spacing="20px" alignItems="center">
+            <AdCta size={24}>Start free</AdCta>
+            <Wordmark scheme={scheme} size={28} />
+          </Stack>
+        </Stack>
+        <Box sx={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center" }}>
+          <ScaledDepiction designWidth={1080} width={536}>
+            <ParentDepiction scheme={scheme} />
+          </ScaledDepiction>
+        </Box>
+      </Stack>
+    </Artboard>
+  );
+}
+
+// ---------------------------------------------------------------------
+// TUTORS (supply side)
+// ---------------------------------------------------------------------
+
+function TutorCommission() {
+  const scheme: AdScheme = "dark";
+  return (
+    <Artboard width={1080} height={1080} scheme={scheme}>
+      <AdEyebrow scheme={scheme}>For tutors</AdEyebrow>
+      <Box sx={{ flex: 1 }} />
+      <AdHeadline scheme={scheme} size={128}>
+        Get found.
+      </AdHeadline>
+      <Box sx={{ mt: "14px" }}>
+        <CitronBlock size={128} px={26} py={8}>
+          Keep every rand.
+        </CitronBlock>
+      </Box>
+      <Box sx={{ height: 40 }} />
+      <AdBody scheme={scheme} size={34} maxWidth={880}>
+        List a public profile free. Families find you, you arrange the lesson, and you are paid
+        directly. Aptiverse never takes a cut.
+      </AdBody>
+      <Box sx={{ flex: 1 }} />
+      <AdFooter scheme={scheme} cta="List your profile free" url="aptiverse.co.za/for-tutors" />
+    </Artboard>
+  );
+}
+
+function TutorStory() {
+  const scheme: AdScheme = "dark";
+  return (
+    <Artboard width={1080} height={1920} scheme={scheme}>
+      <AdEyebrow scheme={scheme} size={26}>
+        For tutors
+      </AdEyebrow>
+      <Box sx={{ height: 40 }} />
+      <AdHeadline scheme={scheme} size={120}>
+        You set R350. You keep R350.
+      </AdHeadline>
+      <Box sx={{ height: 30 }} />
+      <AdBody scheme={scheme} size={36} maxWidth={900}>
+        Not a lower commission. No commission.
+      </AdBody>
+      <Box sx={{ flex: 0.6, minHeight: 52 }} />
+      <TutorMathsDepiction scheme={scheme} />
+      <Box sx={{ flex: 1, minHeight: 40 }} />
+      <Box>
+        <CitronBlock size={64} px={22} py={10}>
+          Listing is free.
+        </CitronBlock>
+      </Box>
+      <Box sx={{ height: 44 }} />
+      <AdFooter scheme={scheme} cta="Get listed" url="aptiverse.co.za/for-tutors" size={34} />
+    </Artboard>
+  );
+}
+
+// ---------------------------------------------------------------------
+// OPEN GRAPH
+// ---------------------------------------------------------------------
+// The site had no og:image at all, so every share, every WhatsApp forward and
+// every Slack unfurl rendered as a bare grey rectangle. This is the capture
+// source for one; app/opengraph-image.tsx serves the live equivalent so the
+// tag is never pointed at a file somebody forgot to upload.
+function OpenGraphCard() {
+  const scheme: AdScheme = "dark";
+  const s = adSurfaces(scheme);
+  return (
+    <Artboard width={1200} height={630} scheme={scheme} pad={64}>
+      <Stack direction="row" alignItems="center" spacing="20px">
+        <Box sx={{ width: 16, height: 44, bgcolor: CITRON, borderRadius: "3px" }} />
+        <Wordmark scheme={scheme} size={44} />
+      </Stack>
+      <Box sx={{ flex: 1 }} />
+      <AdHeadline scheme={scheme} size={82} maxWidth={980}>
+        Study with a plan, not panic.
+      </AdHeadline>
+      <Box sx={{ height: 24 }} />
+      <AdBody scheme={scheme} size={30} maxWidth={900}>
+        Practice, mastery, wellbeing and goals in one calm place. High school and university, in
+        South Africa.
+      </AdBody>
+      <Box sx={{ flex: 1 }} />
+      <Typography sx={{ fontSize: 28, color: s.muted, letterSpacing: "-0.01em" }}>
+        aptiverse.co.za
+      </Typography>
+    </Artboard>
+  );
+}
+
+// ---------------------------------------------------------------------
+
+export const AD_UNITS: AdUnit[] = [
+  {
+    slug: "uni-student-product-1080x1350",
+    width: 1080,
+    height: 1350,
+    scheme: "dark",
+    audience: "uni",
+    concept: "product",
+    note: "Portrait feed. The practice generator, which is the thing a first-year is buying: they add their own course and get questions back.",
+    render: () => <UniProduct />,
+  },
+  {
+    slug: "uni-student-typographic-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "uni",
+    concept: "typographic",
+    note: "Square feed. No product, the words carry it. One citron block does all the emphasis.",
+    render: () => <UniTypographic />,
+  },
+  {
+    slug: "uni-student-problem-1080x1920",
+    width: 1080,
+    height: 1920,
+    scheme: "dark",
+    audience: "uni",
+    concept: "problem",
+    note: "Story and reel. Names the week-9 feeling first, then shows the four courses and points at the weakest one.",
+    render: () => <UniProblem />,
+  },
+  {
+    slug: "uni-student-mastery-1080x1350",
+    width: 1080,
+    height: 1350,
+    scheme: "light",
+    audience: "uni",
+    concept: "product",
+    note: "Portrait feed, second product angle. The mastery read, deliberately light so the two portrait units do not look like the same ad twice.",
+    render: () => <UniMastery />,
+  },
+  {
+    slug: "uni-student-landscape-1200x628",
+    width: 1200,
+    height: 628,
+    scheme: "dark",
+    audience: "uni",
+    concept: "product",
+    note: "Meta link ad, LinkedIn, Google Display. Headline left, tutor chat right.",
+    render: () => <UniLandscape />,
+  },
+  {
+    slug: "parent-privacy-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "light",
+    audience: "parent",
+    concept: "typographic",
+    note: "Square feed. The privacy boundary is the one thing here that is enforced rather than described, so it is the whole ad.",
+    render: () => <ParentPrivacy />,
+  },
+  {
+    slug: "parent-product-1080x1350",
+    width: 1080,
+    height: 1350,
+    scheme: "light",
+    audience: "parent",
+    concept: "product",
+    note: "Portrait feed. The parent dashboard exactly as it is: children, what is due, and the diary they cannot open.",
+    render: () => <ParentProduct />,
+  },
+  {
+    slug: "parent-landscape-1200x628",
+    width: 1200,
+    height: 628,
+    scheme: "light",
+    audience: "parent",
+    concept: "problem",
+    note: "Meta link ad and LinkedIn. Frames the problem as the useless dinner-table question.",
+    render: () => <ParentLandscape />,
+  },
+  {
+    slug: "tutor-commission-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "tutor",
+    concept: "typographic",
+    note: "Square feed. The live for-tutors headline, set large, with the money word on citron.",
+    render: () => <TutorCommission />,
+  },
+  {
+    slug: "tutor-story-1080x1920",
+    width: 1080,
+    height: 1920,
+    scheme: "dark",
+    audience: "tutor",
+    concept: "problem",
+    note: "Story and reel. Does the arithmetic with our own numbers only, and makes no claim about what anyone else charges.",
+    render: () => <TutorStory />,
+  },
+  {
+    slug: "og-default-1200x630",
+    width: 1200,
+    height: 630,
+    scheme: "dark",
+    audience: "brand",
+    concept: "og",
+    note: "Open Graph and Twitter card. Mirrors app/opengraph-image.tsx, which is what actually serves the tag.",
+    render: () => <OpenGraphCard />,
+  },
+];
+
+export const AUDIENCE_LABELS: Record<AdUnit["audience"], string> = {
+  uni: "University students",
+  parent: "Parents",
+  tutor: "Tutors",
+  brand: "Brand",
+};
+
+export function findUnit(slug: string): AdUnit | undefined {
+  return AD_UNITS.find((u) => u.slug === slug);
+}

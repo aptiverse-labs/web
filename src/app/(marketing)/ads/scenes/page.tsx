@@ -12,8 +12,8 @@ import Chip from "@mui/material/Chip";
 import {
   TutorChatScene,
   MasteryForecastScene,
-  SbaCoachScene,
-  PastPaperScene,
+  PracticeScene,
+  GoalsVerifiedScene,
   EndCardScene,
 } from "./scenes";
 
@@ -37,31 +37,31 @@ type Ratio = "16:9" | "1:1" | "9:16";
 const SCENES = [
   {
     slug: "tutor-chat",
-    name: "Curriculum-aware AI tutor",
+    name: "A tutor that knows your courses",
     durationMs: 8000,
     Component: TutorChatScene,
-    description: "User asks, AI replies with textbook citation chip animating in last.",
+    description: "Student asks, tutor answers, then the chips show what it knows about them.",
   },
   {
     slug: "mastery",
-    name: "Mastery forecast: 54 → 75",
+    name: "Mastery, and where each course is heading",
     durationMs: 6000,
     Component: MasteryForecastScene,
-    description: "Confidence band fans out, line draws across, distinction chip lands.",
+    description: "Ring draws to 68%, strongest and focus rows land, projection slopes fan out.",
   },
   {
-    slug: "sba-coach",
-    name: "SBA Coach: inline annotations",
+    slug: "practice",
+    name: "Practice written for your weakest topics",
     durationMs: 7000,
-    Component: SbaCoachScene,
-    description: "Essay paragraph highlights bloom in, feedback rows appear below.",
+    Component: PracticeScene,
+    description: "Generator fields fill, weakest-topics toggle flips, a fresh 12-question test lands.",
   },
   {
-    slug: "past-paper",
-    name: "Past-paper walk-through",
-    durationMs: 7000,
-    Component: PastPaperScene,
-    description: "Physics question card; worked-solution steps + mark badges drop in sequentially.",
+    slug: "goals",
+    name: "Goals that get checked",
+    durationMs: 6000,
+    Component: GoalsVerifiedScene,
+    description: "Goal card fills to 100%, then the auto-checked and points chips pop in.",
   },
   {
     slug: "end-card",
