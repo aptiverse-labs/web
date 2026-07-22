@@ -14,15 +14,10 @@ import {
   Lock,
   Wind,
   HeartHandshake,
-  Flag,
-  ListChecks,
-  CalendarCheck,
   LayoutDashboard,
-  TrendingUp,
   PartyPopper,
   CalendarClock,
   ShieldCheck,
-  Compass,
   UsersRound,
   Presentation,
 } from "lucide-react";
@@ -36,6 +31,9 @@ import {
   MoodCheckInDemo,
   DiaryEncryptedDemo,
   ExamSimulatorDemo,
+  GoalsBoardDemo,
+  RewardsSpendDemo,
+  CareerTargetsDemo,
 } from "@/components/marketing/FeatureDemos";
 
 export default function FeaturesPage() {
@@ -66,7 +64,7 @@ export default function FeaturesPage() {
       </GradientBackdrop>
 
       {/* Learn */}
-      <Section py={2}>
+      <Section id="learn" py={2}>
         <Stack spacing={1.5} sx={{ textAlign: "center", mb: 2, maxWidth: 720, mx: "auto" }}>
           <Typography variant="overline" color="primary.main">
             Learn
@@ -109,6 +107,7 @@ export default function FeaturesPage() {
             StudentOverviewDto (ParentLinksController.cs:324) carries no
             forecast field, so no parent can see it on any plan. */}
         <FeatureShowcase
+          id="predictions"
           reverse
           eyebrow="Term predictions"
           title="See where your marks are heading."
@@ -134,6 +133,7 @@ export default function FeaturesPage() {
             and difficulty), that it is an official NSC paper (Claude writes it,
             it is not a DBE paper), or that it predicts your result. */}
         <FeatureShowcase
+          id="exam-simulator"
           eyebrow="Exam simulator · Student Max"
           title="A full paper, timed, one attempt."
           body="Pick a length, 30 up to 150 marks, and Aptiverse sets a paper structured like a real one: Section A multiple choice, Section B short written answers, Section C extended questions. The marks add up to exactly what you asked for."
@@ -161,7 +161,7 @@ export default function FeaturesPage() {
       </Section>
 
       {/* Wellbeing */}
-      <Section bg="paper" py={2}>
+      <Section id="wellbeing" bg="paper" py={2}>
         <Stack spacing={1.5} sx={{ textAlign: "center", mb: 2, maxWidth: 720, mx: "auto" }}>
           <Typography variant="overline" color="primary.main">
             Wellbeing
@@ -252,24 +252,71 @@ export default function FeaturesPage() {
         </Box>
       </Section>
 
-      {/* Goals */}
-      <Section eyebrow="Goals" title="Goals you cannot fake" subtitle="Set the target yourself. Aptiverse checks it against your real practice scores and topic mastery, and pays out only when you beat your own baseline.">
-        <Grid container spacing={3}>
-          {GOALS.map((f) => (
-            <Grid key={f.title} size={{ xs: 12, sm: 6, md: 3 }}>
-              <FeatureCard {...f} />
-            </Grid>
-          ))}
-        </Grid>
+      {/* Goals
+          This section was four identical icon-heading-paragraph cards, and it
+          was the one the product owner picked out: it told you goals are
+          verified and never once showed you a goal. Nothing about the claims
+          was wrong, but a reader finished it with no picture of the screen.
+
+          It is now the two screens the claims actually live on, drawn from the
+          running app: the goals list with its four tabs and its real card, and
+          the rewards page where the points get spent. Same four claims, shown
+          instead of asserted. */}
+      <Section id="goals" eyebrow="Goals" title="Goals you cannot fake" subtitle="Set the target yourself. Aptiverse checks it against your real practice scores and topic mastery, and pays out only when you beat your own baseline.">
+        <FeatureShowcase
+          eyebrow="Set it, then prove it"
+          title="You pick the target. Your own work decides whether you hit it."
+          body="A practice score, a topic to master, an assessment mark, or a streak to keep. Aptiverse reads your actual attempts and mastery to settle it, so there is no tick box you can press yourself."
+          bullets={[
+            "Academic or personal, with a due date you set",
+            "Measured from your real practice, marks and mastery",
+            "The card shows where you started, so progress is the distance travelled",
+            "Falling behind shows up as At risk while there is still time to act",
+          ]}
+          demo={<GoalsBoardDemo />}
+        />
+
+        <FeatureShowcase
+          reverse
+          eyebrow="Points"
+          title="Beat your own best, and the limits move."
+          body="Two goal kinds pay points, and only above the baseline you were already standing on. Points buy more AI questions, deeper tutor sessions, or more practice sets. The quota really changes."
+          bullets={[
+            "Paid on how far past your own baseline you get, not on the number itself",
+            "Spent on limits the usage meter genuinely enforces",
+            "A reward you cannot afford yet says how far short you are",
+            "Streaks and self-reported marks are tracked honestly, and pay nothing",
+          ]}
+          demo={<RewardsSpendDemo />}
+        />
       </Section>
 
       {/* Real, shipped, and previously unmentioned on this page. The career
           navigator in particular: it is free (features.ts:140), it is fully
-          built (AdmissionTargetsController), and the page never sold it. */}
-      <Section eyebrow="Also included" title="The rest of it, free tier included">
-        <Grid container spacing={3}>
+          built (AdmissionTargetsController), and the page never sold it.
+
+          It has been promoted out of the card grid into a showcase, because a
+          sentence about "tracking requirements against your marks" is exactly
+          the kind of claim nobody can picture. The two that remain are a
+          directory and a group scheduler: real, worth listing, and not worth a
+          full mock each. */}
+      <Section id="included" eyebrow="Also included" title="The rest of it, free tier included">
+        <FeatureShowcase
+          eyebrow="Career navigator · free on every plan"
+          title="Every requirement, against the marks you actually have."
+          body="Enter what a programme asks for and Aptiverse measures it against your record, closest first. The number on each plan is your biggest single gap, because an application is judged on the requirement you missed, not the average of the ones you met."
+          bullets={[
+            "Your plans ranked by how far off you are",
+            "Per-requirement status, so you know which subject is the problem",
+            "Deadlines flagged as they get close",
+            "Requirements are the ones you researched and entered yourself",
+          ]}
+          demo={<CareerTargetsDemo />}
+        />
+
+        <Grid container spacing={3} sx={{ pt: 2 }}>
           {ALSO.map((f) => (
-            <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>
+            <Grid key={f.title} size={{ xs: 12, sm: 6 }}>
               <FeatureCard {...f} />
             </Grid>
           ))}
@@ -277,7 +324,7 @@ export default function FeaturesPage() {
       </Section>
 
       {/* For parents */}
-      <Section bg="paper" eyebrow="For parents" title="A calm view, never an invasive one" subtitle="Link each child and see what is coming up for them. The privacy boundary is the part we have built hardest.">
+      <Section id="for-parents" bg="paper" eyebrow="For parents" title="A calm view, never an invasive one" subtitle="Link each child and see what is coming up for them. The privacy boundary is the part we have built hardest.">
         <Grid container spacing={3}>
           {FOR_PARENTS.map((f) => (
             <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -402,6 +449,10 @@ const WELLBEING_EXTRAS = [
   },
 ];
 
+// The four cards that used to live here are gone, replaced by the two
+// showcases in the Goals section. Keeping the notes, because they are the
+// reason the section says what it says and the mocks draw what they draw.
+//
 // "Break it into steps" is the subtle one, and it is the reason to check the
 // UI and not just the API. GoalMilestone is a real entity with full CRUD
 // (GoalsController.cs:534-659), so a grep for milestones looks healthy. But
@@ -417,33 +468,8 @@ const WELLBEING_EXTRAS = [
 // verifies goals against real evidence, and GoalKinds.Rewarded (Goal.cs:195)
 // pays points only for practice score and topic mastery, only above your own
 // baseline. Points buy quota grants that UsageMeter really enforces
-// (UsageMeter.cs:15, 58). That whole loop is real and was going unsold.
-const GOALS = [
-  {
-    icon: <Flag size={18} />,
-    title: "Set the target yourself",
-    description: "A practice score, a topic to master, an assessment mark, or a streak to keep. Academic or personal.",
-    accent: "primary" as const,
-  },
-  {
-    icon: <ListChecks size={18} />,
-    title: "Checked, not self-reported",
-    description: "Aptiverse reads your actual attempts and mastery to decide whether you hit it. You cannot tick it off yourself.",
-    accent: "primary" as const,
-  },
-  {
-    icon: <CalendarCheck size={18} />,
-    title: "Paid for beating your own best",
-    description: "Points land when you outdo your own baseline, not when you clear a bar someone else set.",
-    accent: "info" as const,
-  },
-  {
-    icon: <TrendingUp size={18} />,
-    title: "Points buy real headroom",
-    description: "Spend them on more AI questions or practice sets. The limits move for real, they are not a badge.",
-    accent: "success" as const,
-  },
-];
+// (UsageMeter.cs:15, 58). That whole loop is real and was going unsold, and it
+// is now shown rather than described.
 
 // This section was six cards and five of them were fiction. The structural
 // fact that decides it: ParentLink is read in exactly one file,
@@ -467,14 +493,9 @@ const GOALS = [
 // upcoming assessments) and the privacy boundary, which is the one thing here
 // that is enforced rather than described. So we sell those two honestly and
 // say plainly what a parent does not get, rather than inventing a third.
+// The career navigator card was promoted to a showcase above, so it is no
+// longer duplicated here.
 const ALSO = [
-  {
-    icon: <Compass size={18} />,
-    title: "Career navigator",
-    description:
-      "Enter the admission or progression requirements for what you are aiming at, and track each one against the marks you actually have. Free, on every plan.",
-    accent: "primary" as const,
-  },
   {
     icon: <UsersRound size={18} />,
     title: "Study groups",

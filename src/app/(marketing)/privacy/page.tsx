@@ -29,6 +29,47 @@ const SECTIONS: LegalSection[] = [
     ],
   },
   {
+    // Written off a runtime audit of what the site actually sets, not off a
+    // template. Public marketing pages set no cookies at all; the only cookies
+    // in the product are NextAuth's session, CSRF and callback-url cookies,
+    // which are strictly necessary under both POPIA and the GDPR/ePrivacy
+    // rules and therefore need disclosure rather than a consent gate. There is
+    // no analytics, advertising or profiling storage anywhere in the app, which
+    // is why there is no cookie banner. If that ever changes, the new category
+    // needs prior opt-in consent and this section needs updating with it.
+    heading: "Cookies and what we store in your browser",
+    blocks: [
+      {
+        type: "p",
+        text: "We do not use advertising, analytics, or tracking cookies. There is no ad pixel, no analytics tag, and no third-party tracker on this site. That is why we do not ask you to accept cookies: everything we store is needed to make the service work, so there is nothing to opt in or out of.",
+      },
+      {
+        type: "p",
+        text: "Browsing our public pages sets no cookies at all. Once you start signing in, three cookies are set:",
+      },
+      {
+        type: "ul",
+        items: [
+          "A session cookie that keeps you signed in. It is created when you log in and cleared when you log out.",
+          "A security token that stops another website submitting forms or requests as you.",
+          "A short-lived cookie that remembers which page to return you to after sign-in.",
+        ],
+      },
+      {
+        type: "p",
+        text: "While you are signed in, we also keep a few small settings in your browser's local storage so the app behaves the way you left it: the role whose dashboard you are viewing, whether the sidebar is collapsed, which workspace tab was open, the state of the study timer for each assessment, and your recent tutor chat so a refresh does not lose the conversation. That data stays on your device.",
+      },
+      {
+        type: "p",
+        text: "You can clear all of it at any time through your browser's site data settings. Doing so signs you out and resets those preferences, and nothing else is affected.",
+      },
+      {
+        type: "p",
+        text: "Two outside parties are involved in normal use. Our page fonts are served from a content delivery network, which sees your IP address in order to send the font file and sets no cookies. Payments happen on our payment provider's own checkout pages, which set their own cookies there under their policy, not ours.",
+      },
+    ],
+  },
+  {
     heading: "How we use your information",
     blocks: [
       { type: "p", text: "We use your information to:" },
