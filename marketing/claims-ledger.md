@@ -28,6 +28,7 @@ pricing API returns. Do not treat a flag as evidence a feature exists.
 | Practice difficulty pitched at the student's actual level, including tertiary year of study | `GenerateTest` sets `levelHint` from the student's `Course` study level; `isTertiary` branch |
 | Monthly practice generation quota, metered | `IUsageMeter.TryConsumeAsync(userId, "practice.generate")`, returns 402 with used/limit |
 | One attempt per practice test, timed, with integrity handling | `POST tests/{id}/attempts`, `GET attempts/latest`, `PATCH attempts/{id}` |
+| A full exam paper: sections, marks per question, long-form written answers, marked against a memo with part marks | Added 2026-07-22. `PracticeTestGenerator` `case "exam"`; `FrontendQuestionDto.Marks` and `.Section`, served before submit so the student can budget the time; `PracticeService.MarkWrittenAnswersAsync` injects `Marking memo: {q.MarkingMemo ?? q.ExpectedAnswer}` and instructs the marker to work "strictly against the memo and award part marks the way a real marker does"; `FrontendScoreSummaryDto.MarksAwarded`/`MarksTotal` and `FrontendMarkedAnswerDto.MarksAwarded`/`MarksAvailable`; selectable as "Exam paper" on `/dashboard/practice`. Say what it does, not that a plan tier unlocks it: see the red-list note on `exam.simulator`. |
 | Topic mastery computed from real practice results and graded work | `MasteryController.ComputeTopicMasteryAsync`, returns empty when there is no evidence |
 | Term or period mark prediction from graded assessments weighted with practice mastery | `MasteryController` term prediction, requires `ActualMark != null` rows |
 | Assessments and SBA tasks logged, weighted, graded, with file uploads | `AcademicPlanningController` assessments block plus `uploads` endpoints |
@@ -70,7 +71,8 @@ plan descriptions the API returns. None may be used.
 | School admin analytics, readiness reports, SSO, success manager | `school` plan flags | No implementation. This is the independent reason the schools motion is not ready, separate from the commercial sequencing decision. |
 | Admin moderation queue | `ModerationController` | Returns `Array.Empty`. |
 | Audit log feed | `AuditController` | Returns `Array.Empty`. |
-| Exam simulator, audio explanations, study-plan AI, weekly AI debrief | `student.max` plan description returned by the pricing API | Seeder flags only. This is a live problem: the pricing page renders a plan description that promises four features that do not exist. See blockers. |
+| Audio explanations, study-plan AI, weekly AI debrief | `student.max` plan description returned by the pricing API | Seeder flags only. This is a live problem: the pricing page renders a plan description that promises features that do not exist. See blockers. |
+| `exam.simulator` as a paid entitlement | `student.max` plan description | The FLAG is still seeder-only: nothing gates on it, so no plan copy may say a tier unlocks an exam simulator. The BEHAVIOUR, however, now ships to everyone who can generate a test, and is on the green list above. Describe the paper; never sell the flag. |
 | Cambridge curriculum support | ad-copy variants 1, 2 and 4, captions | Not in the curriculum catalogue. Do not list Cambridge. |
 | Offline support | audit finding | Nothing implements it. Connectivity is a real user problem, but the honest framing is "light on data", not "works offline". |
 | Bursaries, anything bursary-adjacent | removed from the platform | Never reintroduce, in any material, even as an aside. |

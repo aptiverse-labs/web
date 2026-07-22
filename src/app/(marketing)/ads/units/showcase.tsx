@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import {
   AdBody,
-  AdCta,
   AdEyebrow,
   AdHeadline,
   Artboard,
@@ -1021,7 +1020,6 @@ function ShowcasePortrait() {
           <Wordmark scheme={scheme} size={28} />
           <Typography sx={{ fontSize: 21, color: s.muted }}>{SITE}</Typography>
         </Stack>
-        <AdCta size={22}>Start free</AdCta>
       </Stack>
     </Artboard>
   );
@@ -1042,7 +1040,7 @@ function ShowcaseSquare() {
   return (
     <Artboard width={1080} height={1080} scheme={scheme} pad={48}>
       <AdEyebrow scheme={scheme} size={20}>
-        For university students
+        For students
       </AdEyebrow>
       <Box sx={{ height: 16 }} />
       <AdHeadline scheme={scheme} size={66} maxWidth={sheetWidth(3)}>
@@ -1062,7 +1060,6 @@ function ShowcaseSquare() {
           <Wordmark scheme={scheme} size={28} />
           <Typography sx={{ fontSize: 21, color: s.muted }}>{SITE}</Typography>
         </Stack>
-        <AdCta size={22}>Start free</AdCta>
       </Stack>
     </Artboard>
   );
@@ -1146,7 +1143,6 @@ function ShowcaseLight() {
           <Wordmark scheme={scheme} size={28} />
           <Typography sx={{ fontSize: 21, color: s.muted }}>{SITE}</Typography>
         </Stack>
-        <AdCta size={22}>Start free</AdCta>
       </Stack>
     </Artboard>
   );

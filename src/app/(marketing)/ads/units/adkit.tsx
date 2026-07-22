@@ -44,6 +44,46 @@ export const CITRON = "#C3E84F";
 export const GRAPHITE = "#1B1D22";
 
 /**
+ * The raised surface a product panel is drawn on. Exported because the
+ * depictions draw their own markers on top of it and need the exact colour to
+ * ring them with; reading it off a second hardcoded literal is how the two
+ * quietly drift apart.
+ */
+export function adPanelBg(scheme: AdScheme) {
+  return scheme === "dark" ? "#0F1012" : "#FFFFFF";
+}
+
+// ---------------------------------------------------------------------
+// THE GROUND. Every unit used to sit on one flat fill, which at 1080x1350
+// reads as unfinished rather than restrained: there is a lot of empty
+// graphite around the composition and nothing for the eye to rest on.
+//
+// One idea, executed quietly: a dot lattice. Not a gradient, not a blob
+// field, not glass, and not all three stacked. The lattice is already this
+// product's own language, the 404 sets its status code as a dot matrix, the
+// brand mark is a five-node graph, and the mastery grid is a lattice, so a
+// dot field behind the work looks like Aptiverse rather than like a stock
+// background.
+//
+// Three rules keep it from becoming decoration:
+//   1. It is painted as a background-image on the artboard itself, so it
+//      costs no DOM and cannot shift a single pixel of layout.
+//   2. It is 5% ink. Every product panel is opaque and masks it entirely,
+//      and no text ever loses contrast because type sits on its own solid
+//      run rather than on the dots.
+//   3. It is registered to the padding, so the first dot sits exactly on the
+//      content edge and the field reads as part of the grid the layout is
+//      already on, not as wallpaper behind it.
+// ---------------------------------------------------------------------
+const LATTICE_STEP = 44;
+
+function latticeImage(scheme: AdScheme) {
+  const ink = scheme === "dark" ? "255,255,255" : "27,29,34";
+  const dot = scheme === "dark" ? 0.055 : 0.05;
+  return `radial-gradient(circle at center, rgba(${ink},${dot}) 1.6px, rgba(${ink},0) 1.7px)`;
+}
+
+/**
  * The export canvas. Exactly `width` x `height` CSS pixels, top-left of the
  * viewport, above everything the marketing layout paints, with its own pinned
  * theme. Playwright clips to these coordinates.
@@ -79,6 +119,10 @@ export function Artboard({
           zIndex: 2147483000,
           overflow: "hidden",
           bgcolor: s.bg,
+          backgroundImage: latticeImage(scheme),
+          backgroundSize: `${LATTICE_STEP}px ${LATTICE_STEP}px`,
+          // Registered to the content edge rather than to the artboard edge.
+          backgroundPosition: `${pad}px ${pad}px`,
           color: s.ink,
           display: "flex",
           flexDirection: "column",
@@ -319,20 +363,28 @@ export function AdPanel({
   flex,
   traffic,
   dotSize = 12,
+  urlSize = 21,
 }: {
   scheme: AdScheme;
   url: string;
-  badge?: string;
+  /**
+   * The rail pill. A node rather than a string, because a live-state badge
+   * wants a status dot in front of the words and a plain label cannot carry
+   * one.
+   */
+  badge?: React.ReactNode;
   children: React.ReactNode;
   flex?: number;
   /** Paint the three rail dots in the macOS hues rather than as hairlines. */
   traffic?: boolean;
   dotSize?: number;
+  /** Rail URL size. Drops where a badge shares the rail with a long path. */
+  urlSize?: number;
 }) {
   const s = adSurfaces(scheme);
   // The panel always lifts off the artboard: paper on a light unit, a raised
   // graphite on a dark one, so the product reads as a separate object.
-  const panelBg = scheme === "dark" ? "#0F1012" : "#FFFFFF";
+  const panelBg = adPanelBg(scheme);
   const railBg = scheme === "dark" ? "#181A1E" : "#F1F2EF";
 
   return (
@@ -373,7 +425,7 @@ export function AdPanel({
         </Stack>
         <Typography
           sx={{
-            fontSize: 21,
+            fontSize: urlSize,
             color: s.muted,
             flex: 1,
             minWidth: 0,

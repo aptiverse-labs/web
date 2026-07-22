@@ -83,7 +83,7 @@ function UniProduct() {
   const scheme: AdScheme = "dark";
   return (
     <Artboard width={1080} height={1350} scheme={scheme}>
-      <AdEyebrow scheme={scheme}>For university students</AdEyebrow>
+      <AdEyebrow scheme={scheme}>For students</AdEyebrow>
       <Box sx={{ height: 34 }} />
       <AdHeadline scheme={scheme} size={92}>
         You add the course. It writes the questions.
@@ -106,7 +106,7 @@ function UniTypographic() {
   const scheme: AdScheme = "dark";
   return (
     <Artboard width={1080} height={1080} scheme={scheme}>
-      <AdEyebrow scheme={scheme}>For university students</AdEyebrow>
+      <AdEyebrow scheme={scheme}>For students</AdEyebrow>
       <Box sx={{ flex: 1 }} />
       <AdHeadline scheme={scheme} size={136}>
         Study with a plan,
@@ -189,7 +189,7 @@ function UniLandscape() {
       <Stack direction="row" spacing="48px" sx={{ flex: 1, minHeight: 0 }}>
         <Stack sx={{ width: 560, flexShrink: 0 }}>
           <AdEyebrow scheme={scheme} size={20}>
-            For university students
+            For students
           </AdEyebrow>
           <Box sx={{ height: 22 }} />
           <AdHeadline scheme={scheme} size={62}>
@@ -691,7 +691,7 @@ export const AD_UNITS: AdUnit[] = [
     scheme: "dark",
     audience: "uni",
     concept: "product",
-    note: "THE three-screen unit, portrait feed and the cut the composition is authored at. Alternating copy and screen down the page: the AI tutor, the projection across all six real courses, the timed practice runner. Citron on row one only.",
+    note: "THE three-screen unit, portrait feed and the cut the composition is authored at. Alternating copy and screen down the page: the AI tutor, the projection plotted across all six real courses on a 0-100 axis, and the exam paper mid attempt with its countdown and written answer. Citron on row one only.",
     render: () => <CARD_UNITS.CardsPortrait />,
   },
   {
@@ -701,7 +701,7 @@ export const AD_UNITS: AdUnit[] = [
     scheme: "dark",
     audience: "uni",
     concept: "product",
-    note: "Square cut, and TWO rows rather than three. A square is a whole row shorter; cramming the third in would mean 250px bands with the copy squeezed to a line. The practice runner is what goes, because the swap from tutor to projection is the minimum the rhythm needs.",
+    note: "Square cut, and TWO rows rather than three. A square is a whole row shorter; cramming the third in would mean 250px bands with the copy squeezed to a line. The exam paper is what goes, because the swap from tutor to projection is the minimum the rhythm needs.",
     render: () => <CARD_UNITS.CardsSquare />,
   },
   {
