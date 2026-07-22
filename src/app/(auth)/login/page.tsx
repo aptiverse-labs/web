@@ -19,6 +19,7 @@ import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { loginSchema, type LoginValues } from "@/lib/schemas";
 import { homeRouteForRole } from "@/lib/home-route";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 
 export default function LoginPage() {
   return (
@@ -82,6 +83,7 @@ function LoginInner() {
   const [submitting, setSubmitting] = useState(false);
   const oauthError = oauthErrorMessage(params.get("error"));
   const { data: session, status } = useSession();
+  const hydrated = useHydrated();
 
   // Carry an invitee's destination onto the register link too, so a brand new
   // invitee who has no account lands back where they were headed (e.g. the
@@ -107,7 +109,7 @@ function LoginInner() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     mode: "onTouched",
@@ -122,8 +124,11 @@ function LoginInner() {
       password: values.password,
       redirect: false,
     });
-    setSubmitting(false);
+    // Only clear the submitting flag on failure. On success we stay disabled
+    // until the redirect below unmounts this form, so there is no window in
+    // which a second click fires a second sign-in.
     if (!res || res.error) {
+      setSubmitting(false);
       setError("Invalid email or password");
       return;
     }
@@ -193,7 +198,17 @@ function LoginInner() {
               Forgot password?
             </MuiLink>
           </Stack>
-          <Button type="submit" size="large" variant="contained" disabled={!isValid || submitting}>
+          {/* Disabled only while this button genuinely cannot work: before
+              hydration (a native submit would put the password in the URL)
+              and while a sign-in is in flight. Never gate it on the form's
+              `isValid`. See useHydrated for the full reasoning: gating on
+              `isValid` is what made the first click on Sign in do nothing. */}
+          <Button
+            type="submit"
+            size="large"
+            variant="contained"
+            disabled={!hydrated || submitting}
+          >
             {submitting ? "Signing in…" : "Sign in"}
           </Button>
         </Stack>
