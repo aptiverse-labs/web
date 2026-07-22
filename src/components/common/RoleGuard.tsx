@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
@@ -9,6 +9,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Link from "next/link";
 import LockIcon from "@mui/icons-material/LockOutlined";
 import { EmptyState } from "./EmptyState";
+import { SignedInForbidden } from "./Forbidden";
 import { useRoleStore, type Role } from "@/providers/RoleProvider";
 import { homeRouteForRole } from "@/lib/home-route";
 
@@ -29,12 +30,23 @@ export type RoleGuardProps = {
 // which also lands on "/dashboard". Left alone they hit the "wrong role"
 // screen. So when the SESSION (the authoritative role, not the store) says
 // the signed-in user does not belong in this area, bounce them to their own
-// home instead. Keying the redirect off the session — never the store —
+// home instead. Keying the redirect off the session, never the store,
 // keeps it race-free: it can't fire on the store's persisted/default
 // "student" value, and it leaves the unauthenticated demo switcher alone.
+//
+// That bounce is now scoped to the one route it was written for. /dashboard is
+// the static post-auth landing every provider and the /welcome return hand
+// back, so a parent or teacher arriving there has not chosen to be there and
+// should be moved on quietly. Anywhere else, an authenticated user standing in
+// another role's area is answered honestly with a 403: these areas are named
+// on the marketing site and the nav config ships to every client, so hiding
+// them would protect nothing and only read as the app being broken. Records
+// they do not own are the opposite case and stay 404 at the page level, since
+// confirming a record exists is enough to enumerate.
 export function RoleGuard({ allow, children }: RoleGuardProps) {
   const role = useRoleStore((s) => s.role);
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const allowedRoles = Array.isArray(allow) ? allow : [allow];
   const isAdmin = role === "admin" || role === "super_admin";
@@ -46,7 +58,9 @@ export function RoleGuard({ allow, children }: RoleGuardProps) {
     sessionRole === "admin" ||
     sessionRole === "super_admin" ||
     (allowedRoles as readonly string[]).includes(sessionRole);
-  const shouldRedirect = status === "authenticated" && !!sessionRole && !sessionAllowed;
+  const roleMismatch = status === "authenticated" && !!sessionRole && !sessionAllowed;
+  const isPostAuthLanding = pathname === "/dashboard";
+  const shouldRedirect = roleMismatch && isPostAuthLanding;
 
   useEffect(() => {
     if (shouldRedirect && sessionRole) {
@@ -54,9 +68,9 @@ export function RoleGuard({ allow, children }: RoleGuardProps) {
     }
   }, [shouldRedirect, sessionRole, router]);
 
-  // An authenticated user in the wrong area is on their way out — show a calm
-  // spinner rather than the "wrong role" screen we are about to leave, and
-  // never flash the guarded content at them.
+  // Being moved off the generic landing route is not an error, so show a calm
+  // spinner rather than the screen we are about to leave, and never flash the
+  // guarded content at them.
   if (shouldRedirect) {
     return (
       <Box sx={{ py: 6, display: "grid", placeItems: "center" }}>
@@ -65,8 +79,14 @@ export function RoleGuard({ allow, children }: RoleGuardProps) {
     );
   }
 
+  // Signed in, real role, wrong area: answer with the 403.
+  if (roleMismatch) return <SignedInForbidden allow={allowedRoles} />;
+
   if (allowed) return <>{children}</>;
 
+  // No session role to go on: this is the unauthenticated demo switcher, where
+  // the store role is the only role there is. Keep the switcher affordance
+  // instead of a 403, and leave sign-in to the API fetcher.
   return (
     <Box sx={{ py: 6 }}>
       <EmptyState
