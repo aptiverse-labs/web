@@ -19,6 +19,10 @@ export type RegisterInput = {
   curriculumId?: string;
   grade?: number;
   institutionId?: string;
+  // The user ticked the Terms + Privacy Policy box. The API refuses to
+  // create an account without it, and records the acceptance against the
+  // document versions it has published.
+  acceptedTerms: boolean;
 };
 export type ForgotPasswordInput = { email: string };
 // Shape matches the API's ResetPasswordDto(UserId, ResetToken, NewPassword).

@@ -15,6 +15,9 @@ import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
 import MuiLink from "@mui/material/Link";
+import Checkbox from "@mui/material/Checkbox";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormHelperText from "@mui/material/FormHelperText";
 import { alpha } from "@mui/material/styles";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -25,6 +28,7 @@ import { useRoleStore, type Role } from "@/providers/RoleProvider";
 import { registerStep2Schema, type RegisterValues } from "@/lib/schemas";
 import { homeRouteForRole } from "@/lib/home-route";
 import { api } from "@/lib/api/client";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 
 // Self-signup is intentionally limited to roles a person can claim on
 // their own. School-side roles (Teacher, SchoolAdmin) are provisioned
@@ -98,14 +102,17 @@ function RegisterForm() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerStep2Schema),
     mode: "onTouched",
-    defaultValues: { firstName: "", lastName: "", email: invitedEmail, password: "" },
+    // acceptedTerms starts false on purpose. A pre-ticked box is not
+    // consent, and in most jurisdictions it is not lawful either.
+    defaultValues: { firstName: "", lastName: "", email: invitedEmail, password: "", acceptedTerms: false },
   });
 
   const isStudent = role === "student";
+  const hydrated = useHydrated();
 
   const mutation = useMutation({
     mutationFn: async (v: RegisterValues) => {
@@ -118,6 +125,7 @@ function RegisterForm() {
         firstName: v.firstName,
         lastName: v.lastName,
         role,
+        acceptedTerms: v.acceptedTerms,
       });
       // 2. Sign in so the session carries the Aptiverse JWT, which the API
       //    client needs as a Bearer token for the authenticated checkout.
@@ -322,22 +330,57 @@ function RegisterForm() {
                       practice.
                     </Typography>
                   )}
-                  <Typography variant="caption" color="text.secondary">
-                    By creating an account you agree to our{" "}
-                    <MuiLink component={Link} href="/terms" color="text.primary" underline="hover">
-                      Terms
-                    </MuiLink>{" "}
-                    and{" "}
-                    <MuiLink component={Link} href="/privacy" color="text.primary" underline="hover">
-                      Privacy Policy
-                    </MuiLink>
-                    .
-                  </Typography>
+                  {/* Consent has to be an active tick, never a default. The
+                      links open in a new tab so reading the terms cannot
+                      throw away a half-filled form. */}
+                  <Box>
+                    <FormControlLabel
+                      control={<Checkbox {...register("acceptedTerms")} size="small" sx={{ py: 0.5 }} />}
+                      sx={{ alignItems: "flex-start", ml: 0, mr: 0 }}
+                      label={
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+                          I agree to the{" "}
+                          <MuiLink
+                            component={Link}
+                            href="/terms"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            color="text.primary"
+                            underline="hover"
+                          >
+                            Terms
+                          </MuiLink>{" "}
+                          and the{" "}
+                          <MuiLink
+                            component={Link}
+                            href="/privacy"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            color="text.primary"
+                            underline="hover"
+                          >
+                            Privacy Policy
+                          </MuiLink>
+                          .
+                        </Typography>
+                      }
+                    />
+                    {errors.acceptedTerms && (
+                      <FormHelperText error sx={{ mx: 0 }}>
+                        {errors.acceptedTerms.message}
+                      </FormHelperText>
+                    )}
+                  </Box>
+                  {/* Not gated on `isValid`: a password manager's "suggest
+                      strong password" fill can reach these inputs without
+                      react-hook-form seeing it, and a disabled MUI button
+                      swallows the click. handleSubmit blocks invalid
+                      submits and surfaces the field errors instead. */}
                   <Button
                     type="submit"
                     variant="contained"
                     size="large"
-                    disabled={!isValid || mutation.isPending}
+                    disabled={!hydrated || mutation.isPending}
                     fullWidth
                     startIcon={paidPlan ? <Lock size={16} /> : undefined}
                   >
