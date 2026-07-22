@@ -485,7 +485,13 @@ const FAQ = [
     // loose with the truth. The access boundary is real and enforced in the
     // API; the encryption was invented. Say the part that is true, and say
     // honestly what we can see.
-    a: "No. There is no screen anywhere in the parent view that shows diary entries, and no endpoint that returns them. You see mood trends, streaks and celebrations, never the words. That boundary is deliberate and cannot be turned off. To be straight with you about the limits: entries are stored on our servers, not encrypted on your child's device, and our systems read them to spot a rough patch. So we can see them, and staff access is governed by our privacy policy. What is guaranteed is that you cannot.",
+    // Second correction: "You see mood trends, streaks and celebrations" was
+    // also false, in the direction of more parent visibility rather than less.
+    // StudentOverviewDto (ParentLinksController.cs:409) returns a name, an
+    // education level and the next five assessments. There is no mood, no
+    // streak and no celebration on it, and no other endpoint consults
+    // ParentLink at all.
+    a: "No. There is no screen anywhere in the parent view that shows diary entries, and no endpoint that returns them. What the parent view actually holds is your child's name and the work coming up for them. Not their diary, not their mood, not their marks. That boundary is deliberate and cannot be turned off. To be straight with you about the limits: entries are stored on our servers, not encrypted on your child's device, so we could read them and staff access is governed by our privacy policy. We do not. Nothing analyses your child's diary, and the mood graph is built from the check-ins they tap rather than from anything they write. What is guaranteed is that you cannot see any of it.",
   },
   {
     q: "My children are different ages. Does that work?",

@@ -301,18 +301,33 @@ export function AdFooter({
  * is rebuilt here at native size, with the same anatomy: URL rail, badge,
  * hairline, elevated surface.
  */
+/**
+ * The three macOS window buttons, in the real system hues. They are the only
+ * fixed colours in the kit that are not a brand token, and deliberately so:
+ * they are window furniture, recognised as a shape rather than read as colour,
+ * and repainting them citron would make the window stop looking like a window.
+ * Off by default, because the nine-tile sheet and the existing paid units use
+ * a neutral rail; the three-card unit opts in.
+ */
+const MAC_DOTS = ["#FF5F57", "#FEBC2E", "#28C840"];
+
 export function AdPanel({
   scheme,
   url,
   badge,
   children,
   flex,
+  traffic,
+  dotSize = 12,
 }: {
   scheme: AdScheme;
   url: string;
   badge?: string;
   children: React.ReactNode;
   flex?: number;
+  /** Paint the three rail dots in the macOS hues rather than as hairlines. */
+  traffic?: boolean;
+  dotSize?: number;
 }) {
   const s = adSurfaces(scheme);
   // The panel always lifts off the artboard: paper on a light unit, a raised
@@ -341,9 +356,19 @@ export function AdPanel({
         spacing={2}
         sx={{ px: "26px", py: "18px", bgcolor: railBg, borderBottom: `2px solid ${s.hair}` }}
       >
-        <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+        {/* Spacing stays at the original 8px for the default 12px dot, so the
+            units that already ship are pixel-identical after this change. */}
+        <Stack direction="row" spacing={dotSize === 12 ? 1 : `${dotSize * 0.7}px`} sx={{ flexShrink: 0 }}>
           {[0, 1, 2].map((i) => (
-            <Box key={i} sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: s.hair }} />
+            <Box
+              key={i}
+              sx={{
+                width: dotSize,
+                height: dotSize,
+                borderRadius: "50%",
+                bgcolor: traffic ? MAC_DOTS[i] : s.hair,
+              }}
+            />
           ))}
         </Stack>
         <Typography

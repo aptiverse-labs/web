@@ -133,7 +133,23 @@ const SECTIONS: LegalSection[] = [
       },
       {
         type: "p",
-        text: "It is not end-to-end encrypted, and we will not tell you otherwise. Entries are stored on our servers, and our AI reads each one to work out the mood trend shown on your wellbeing page. That is the feature you are getting in exchange, and it is the reason encryption we could not read through is not on the table today. Staff access is restricted to the people who keep the service running, and we do not use diary content to train models.",
+        // Corrected. This previously said "our AI reads each one to work out
+        // the mood trend shown on your wellbeing page", which was wrong twice
+        // over and had been flagged three separate times.
+        //
+        // Nothing reads a diary entry. The event that would carry one to an
+        // analyser, diary.entry.created, is never published: it appears in the
+        // codebase only as an example in a comment and in a consumer that
+        // therefore never receives anything. And the mood trend is not built
+        // from diary text at all. GetMoodTrendAsync reads the mood check-in
+        // scores and averages them per day; it never touches an entry.
+        //
+        // The error ran in the direction of claiming MORE processing than
+        // happens, so readers were consenting to something we do not do. That
+        // is still an openness defect under POPIA, and in a document whose only
+        // job is to be literally true it is the kind of sentence that costs
+        // trust precisely when someone is checking whether to trust you.
+        text: "It is not end-to-end encrypted, and we will not tell you otherwise: entries are stored on our servers in a form our systems could read. What we do not do is read them. Nothing analyses your diary, and the mood graph on your wellbeing page is built from the check-ins you tap, not from anything you write. Staff access is restricted to the people who keep the service running, and we do not use diary content to train models.",
       },
     ],
   },

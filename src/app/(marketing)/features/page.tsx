@@ -191,7 +191,13 @@ export default function FeaturesPage() {
           bullets={[
             "A mood chart across days, not a single snapshot",
             "A check-in streak you can actually keep",
-            "Your family sees the trend, never your entries",
+            // Was "Your family sees the trend, never your entries". No parent
+            // endpoint returns a mood: StudentOverviewDto
+            // (ParentLinksController.cs:409) carries a name, an education level
+            // and the next five assessments, and nothing else. Promising a
+            // parent-visible trend invented a screen in the wrong direction,
+            // which is the one direction a privacy claim must never move.
+            "Yours to read. No parent screen shows your check-ins at all",
           ]}
           demo={<MoodCheckInDemo />}
         />
@@ -229,9 +235,9 @@ export default function FeaturesPage() {
           reverse
           eyebrow="Private diary"
           title="Yours, and not your parents' reading material."
-          body="Write honestly about how the term is going. Your family sees whether you are checking in and how your mood is tracking, never a word of what you actually wrote."
+          body="Write honestly about how the term is going. There is no parent endpoint that returns a diary entry, a mood or a check-in, so there is nothing for anyone at home to open."
           bullets={[
-            "Parents see mood trends, never entries",
+            "No parent screen shows entries, moods or check-ins",
             "Prompts to start you off when the page is blank",
             "Stored on our servers, not encrypted on your device",
           ]}
@@ -426,7 +432,7 @@ const WELLBEING_EXTRAS = [
     title: "Private diary",
     // Was "End-to-end encrypted on your device. Not us, not your parents."
     // The second half is true and enforced. The first was never built.
-    description: "Your family sees your mood trend, never your entries.",
+    description: "The parent view is a name and what is due. No mood, no entries, no marks.",
     accent: "secondary" as const,
   },
   {

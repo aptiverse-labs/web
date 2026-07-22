@@ -25,6 +25,7 @@ import {
   TutorChatDepiction,
   TutorMathsDepiction,
 } from "./depictions";
+import { CARD_UNITS } from "./cards";
 import { ORGANIC_UNITS } from "./organic";
 import { SHOWCASE_UNITS } from "./showcase";
 
@@ -525,7 +526,11 @@ export const AD_UNITS: AdUnit[] = [
     scheme: "dark",
     audience: "organic",
     concept: "chart",
-    note: "THE chart. Dumbbell of current mark to projected mark across one student's six courses, full 0-100 domain, three rows honestly left unprojected. Status colours validated with the dataviz palette validator (CVD dE 10.2 deutan).",
+    // The note used to say "three rows honestly left unprojected", which was
+    // true of an earlier, wrong version of AERO_COURSES. Every course in the
+    // seeded account projects, and the data was corrected without the note
+    // following it.
+    note: "THE chart. Dumbbell of current mark to projected mark across one student's six courses, full 0-100 domain, five flat or climbing and one falling. Status colours validated with the dataviz palette validator (CVD dE 10.2 deutan).",
     render: () => <ORGANIC_UNITS.ChartPortrait />,
   },
   {
@@ -660,6 +665,54 @@ export const AD_UNITS: AdUnit[] = [
     concept: "product",
     note: "Story and reel. The same nine, with the grid in the middle band clear of the platform furniture top and bottom.",
     render: () => <SHOWCASE_UNITS.ShowcaseStory />,
+  },
+
+  // -------------------------------------------------------------------
+  // THREE-SCREEN UNIT. The answer to "the sheet is too busy, just show 3
+  // pages", and to the second note on top of it: three windows stacked with
+  // a caption each is an inventory, not a layout.
+  //
+  // So this is the features page compressed into one image, using that
+  // page's own rhythm: copy left / screen right, screen left / copy right,
+  // copy left / screen right, with the rows deliberately unequal and one
+  // citron accent on the row that matters. Built in cards.tsx; the header
+  // there records the composition decisions, which screen each row is drawn
+  // from, and what survives at thumbnail size.
+  //
+  // These are the only units in the registry that paint the macOS traffic
+  // lights in their real hues. That is deliberate and scoped: window
+  // furniture, not brand colour, and nothing else on the artboard borrows
+  // them.
+  // -------------------------------------------------------------------
+  {
+    slug: "three-cards-1080x1350",
+    width: 1080,
+    height: 1350,
+    scheme: "dark",
+    audience: "uni",
+    concept: "product",
+    note: "THE three-screen unit, portrait feed and the cut the composition is authored at. Alternating copy and screen down the page: the AI tutor, the projection across all six real courses, the timed practice runner. Citron on row one only.",
+    render: () => <CARD_UNITS.CardsPortrait />,
+  },
+  {
+    slug: "three-cards-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "uni",
+    concept: "product",
+    note: "Square cut, and TWO rows rather than three. A square is a whole row shorter; cramming the third in would mean 250px bands with the copy squeezed to a line. The practice runner is what goes, because the swap from tutor to projection is the minimum the rhythm needs.",
+    render: () => <CARD_UNITS.CardsSquare />,
+  },
+  {
+    slug: "three-cards-1080x1920",
+    width: 1080,
+    height: 1920,
+    scheme: "dark",
+    audience: "uni",
+    concept: "product",
+    note: "Story and reel. All three rows in the middle band, clear of the platform furniture. The extra height goes into air rather than more content.",
+    render: () => <CARD_UNITS.CardsStory />,
   },
   {
     slug: "showcase-sheet-light-1080x1350",

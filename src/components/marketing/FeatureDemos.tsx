@@ -24,6 +24,9 @@ import {
   Laugh,
   Heart,
   TrendingDown,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
   Timer,
   Sparkles,
   ShieldCheck,
@@ -36,10 +39,10 @@ import {
   ChevronRight,
   CalendarClock,
 } from "lucide-react";
-import { alpha } from "@mui/material/styles";
+import { alpha, useTheme } from "@mui/material/styles";
 import { MockAppFrame } from "./FeatureShowcase";
 import { AptiverseLineChart } from "@/components/common/AptiverseLineChart";
-import { useChartSeriesColors } from "@/components/common/chartPalette";
+import { AERO_COURSES } from "@/app/(marketing)/ads/units/charts";
 
 // ============================================================
 // 1. AI Tutor: chat-UI mock
@@ -173,206 +176,150 @@ function AiBubble({ children, model }: { children: React.ReactNode; model: "Quic
 }
 
 // ============================================================
-// 2. SBA Coach — essay with inline annotations
+// 2. REMOVED: the SBA coach mock
 // ============================================================
-export function SbaCoachDemo() {
-  return (
-    <MockAppFrame title="aptiverse.co.za/dashboard/sba/draft" badge="History · Source-based essay">
-      <Stack spacing={2}>
-        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-          PARAGRAPH 2 / 5 · coverage: 64% · rubric match: 5/8 marks
-        </Typography>
-
-        <Typography variant="body2" sx={{ lineHeight: 1.8 }}>
-          The Soweto Uprising of 1976 was a turning point in apartheid South Africa.{" "}
-          <Annotated tone="warn">
-            Many students protested in the streets.
-          </Annotated>{" "}
-          Hector Pieterson, who was 13 years old, became the most famous victim of the day.{" "}
-          <Annotated tone="info">
-            The events showed the world how serious the situation was getting.
-          </Annotated>{" "}
-          This led to international pressure on the apartheid government.
-        </Typography>
-
-        <Stack spacing={1.25} sx={{ pt: 1, borderTop: 1, borderColor: "divider" }}>
-          <FeedbackRow
-            tone="warn"
-            tag="Specificity"
-            text='"Many students protested": name the schools, the date, and the trigger (Afrikaans medium policy).'
-          />
-          <FeedbackRow
-            tone="info"
-            tag="Historical thinking"
-            text="Strong link to international response, but tie it to a specific event (e.g. UN arms embargo 1977)."
-          />
-          <FeedbackRow
-            tone="good"
-            tag="What's working"
-            text="Good chronology and use of a named individual (Hector Pieterson). The examiner will reward this."
-          />
-        </Stack>
-      </Stack>
-    </MockAppFrame>
-  );
-}
-
-function Annotated({ children, tone }: { children: React.ReactNode; tone: "warn" | "info" | "good" }) {
-  const color = tone === "warn" ? "warning.main" : tone === "info" ? "info.main" : "success.main";
-  return (
-    <Box
-      component="span"
-      sx={{
-        bgcolor: (t) =>
-          tone === "warn"
-            ? t.palette.mode === "dark"
-              ? "rgba(255,167,38,0.18)"
-              : "rgba(255,167,38,0.18)"
-            : tone === "info"
-              ? t.palette.mode === "dark"
-                ? "rgba(41,182,246,0.18)"
-                : "rgba(41,182,246,0.18)"
-              : t.palette.mode === "dark"
-                ? "rgba(102,187,106,0.18)"
-                : "rgba(102,187,106,0.18)",
-        borderBottom: 2,
-        borderBottomColor: color,
-        px: 0.5,
-        borderRadius: 0.5,
-      }}
-    >
-      {children}
-    </Box>
-  );
-}
-
-function FeedbackRow({ tone, tag, text }: { tone: "warn" | "info" | "good"; tag: string; text: string }) {
-  const chipColor =
-    tone === "warn" ? "warning" : tone === "info" ? "info" : "success";
-  return (
-    <Stack direction="row" spacing={1.25} alignItems="flex-start">
-      <Chip
-        label={tag}
-        size="small"
-        color={chipColor}
-        variant="outlined"
-        sx={{ height: 22, fontSize: "0.7rem", fontWeight: 600, flexShrink: 0, mt: 0.25 }}
-      />
-      <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.5 }}>
-        {text}
-      </Typography>
-    </Stack>
-  );
-}
+// It drew a History essay with inline rubric annotations, "coverage: 64%",
+// "rubric match: 5/8 marks" and three pieces of examiner-style feedback.
+// `sba.coach` is a string in the entitlements seeder with no controller, no
+// rubric model, no draft analysis endpoint and no feedback generator behind
+// it, and the claims ledger cut it explicitly. No page imported this any more,
+// so it was a false depiction sitting in the drawer waiting to be picked up
+// again. Deleted rather than corrected: there is no true version of it.
 
 // ============================================================
-// 3. Mastery Predictions — line chart with confidence band
+// 3. Mastery projection — the real slope, current to predicted
 // ============================================================
-// MasteryController.cs:76 is real, but it returns PredictedNextTerm plus one
-// Confidence scalar (:130), which the app renders as "72% confidence"
-// (analytics/page.tsx:465). It does not produce an interval. This mock showed
-// "Confidence interval 67% to 83%" over a shaded upper/lower band, which is a
-// different and more sophisticated statistical claim than the one the code
-// makes. The band is kept as a visual hint of uncertainty but is no longer
-// labelled as an interval with numbers we do not compute, and the headline is
-// the next term, not the final mark.
+// This mock used to draw a nine-point monthly curve from Feb to Oct with a
+// shaded "Upper band" / "Lower band" behind it and an "Uncertainty" legend
+// entry. Every part of that was invented. MasteryController.GetPredictions
+// returns one row per study unit with exactly three numbers on it:
+// CurrentTerm, PredictedNextTerm and a scalar Confidence (MasteryController.cs
+// :138-145). There is no time series, so there is nothing to plot month by
+// month, and there is no interval, so there is nothing to shade. A confidence
+// band was already identified as a debunked claim and stripped from the ad
+// scenes and the depictions; it survived here, on the page a buyer actually
+// lands on, which is worse than any of the places it was removed from.
+//
+// What ships is /dashboard/mastery's "Where each course is heading" panel: a
+// two-point slope per study unit, Current on the left and Predicted on the
+// right, on a full 0 to 100 axis, rising lines coloured success and falling
+// ones warning (mastery/page.tsx:469-492). That is what this draws now, with
+// the six real courses from the seeded first-year Aeronautical Engineering
+// account, imported from the ads charts module rather than retyped so the two
+// cannot drift.
+//
+// One deliberate difference from the running page: a flat projection is drawn
+// neutral here rather than green. The page's test is `predicted >= current`,
+// which paints a 65 to 65 line the same colour as a climb. In an ad that reads
+// as improvement, and no improvement was computed. The numbers are unchanged.
 export function MasteryChartDemo() {
-  // Series colours come from the validated categorical ramp so they follow the
-  // colour scheme. They used to be retired Chalk & Pine hexes (#0F6963 /
-  // #3F9D95), fixed in both modes, which left the "Actual" line at roughly
-  // 1.5:1 on the dark chart surface.
-  const seriesColor = useChartSeriesColors();
-  const actualColor = seriesColor(0);
-  const predictedColor = seriesColor(2);
-  // Projected term mark over the year.
-  const months = ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
-  const actual = [54, 58, 61, 62, 65, 68, null, null, null];
-  const predicted = [null, null, null, null, null, 68, 71, 73, 75];
-  const upperBand = [null, null, null, null, null, 68, 75, 79, 83];
-  const lowerBand = [null, null, null, null, null, 68, 67, 67, 67];
+  const theme = useTheme();
+
+  const toneFor = (current: number, predicted: number | null) => {
+    if (predicted === null || predicted === current) return theme.palette.text.secondary;
+    return predicted > current ? theme.palette.success.main : theme.palette.warning.main;
+  };
 
   return (
-    <MockAppFrame title="aptiverse.co.za/dashboard/analytics" badge="Maths · next term 75%">
+    <MockAppFrame title="aptiverse.co.za/dashboard/mastery" badge="From marks you logged">
       <Stack spacing={1.5}>
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
-          <Box>
-            <Typography variant="overline" color="text.secondary">
-              Projected next term
-            </Typography>
-            <Stack direction="row" spacing={1} alignItems="baseline">
-              <Typography variant="h3" sx={{ fontWeight: 700, color: "primary.main" }}>
-                75%
-              </Typography>
-              <Chip label="Trending up" size="small" color="success" sx={{ height: 22 }} />
-            </Stack>
-          </Box>
-          <Stack alignItems="flex-end" spacing={0.25}>
-            <Typography variant="caption" color="text.secondary">
-              Confidence
-            </Typography>
-            <Typography variant="body2" sx={{ fontWeight: 600 }}>
-              71%
-            </Typography>
-          </Stack>
-        </Stack>
+        <Box>
+          <Typography variant="overline" color="text.secondary">
+            Projection
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+            Where each course is heading
+          </Typography>
+        </Box>
 
-        <Box sx={{ height: 200, mx: -1 }}>
+        {/* Six series over two x points. The legend is suppressed because six
+            course names in a 500px column is unreadable; the rows underneath
+            are the key, and they carry the numbers as well as the colour. */}
+        <Box sx={{ height: 250, mx: -1 }}>
           <AptiverseLineChart
-            xAxis={[{ data: months, scaleType: "point" }]}
-            yAxis={[{ min: 40, max: 100 }]}
-            series={[
-              {
-                data: upperBand,
-                label: "Upper band",
-                color: alpha(actualColor, 0.18),
-                area: true,
-                showMark: false,
-                connectNulls: false,
-              },
-              {
-                data: lowerBand,
-                label: "Lower band",
-                color: "rgba(255,255,255,0)",
-                area: true,
-                showMark: false,
-                connectNulls: false,
-              },
-              {
-                data: actual,
-                label: "Actual",
-                color: actualColor,
-                showMark: true,
-                connectNulls: false,
-              },
-              {
-                data: predicted,
-                label: "Predicted",
-                color: predictedColor,
-                showMark: true,
-                connectNulls: false,
-              },
-            ]}
-            margin={{ top: 10, right: 10, bottom: 24, left: 32 }}
+            hideLegend
+            xAxis={[{ data: ["Current", "Predicted"], scaleType: "point" }]}
+            yAxis={[{ min: 0, max: 100, tickNumber: 5 }]}
+            series={AERO_COURSES.map((c) => ({
+              label: c.name,
+              data: [c.current, c.predicted],
+              color: toneFor(c.current, c.predicted),
+              curve: "linear" as const,
+              showMark: true,
+            }))}
+            // The right margin is wide enough for the word "Predicted", which
+            // is centred on the last point and would otherwise be clipped to
+            // "Pre...". The domain stays the app's full 0 to 100: cropping it
+            // to the band the marks sit in would triple every apparent gap.
+            margin={{ top: 10, right: 48, bottom: 24, left: 34 }}
           />
         </Box>
 
-        <Stack direction="row" spacing={2} sx={{ pt: 0.5 }}>
-          <LegendDot color={actualColor} label="Marks you logged" />
-          <LegendDot color={predictedColor} label="Projection" />
-          <LegendDot color={alpha(actualColor, 0.4)} label="Uncertainty" />
-        </Stack>
+        {/* Direction is never left to colour alone: every row carries an arrow
+            glyph and both numbers as well as the hue. */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            columnGap: 2,
+            rowGap: 0.75,
+          }}
+        >
+          {AERO_COURSES.map((c) => (
+            <ProjectionKeyRow
+              key={c.name}
+              name={c.name}
+              current={c.current}
+              predicted={c.predicted}
+              tone={toneFor(c.current, c.predicted)}
+            />
+          ))}
+        </Box>
+
+        <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.5 }}>
+          Each line runs from your current semester mark to the predicted next semester mark. It is
+          arithmetic on the marks you have already logged, weighted by your practice mastery, and
+          there is no projection at all until you log some.
+        </Typography>
       </Stack>
     </MockAppFrame>
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function ProjectionKeyRow({
+  name,
+  current,
+  predicted,
+  tone,
+}: {
+  name: string;
+  current: number;
+  predicted: number | null;
+  tone: string;
+}) {
+  const delta = predicted === null ? 0 : predicted - current;
+  const Glyph = delta > 0 ? ArrowUpRight : delta < 0 ? ArrowDownRight : Minus;
   return (
-    <Stack direction="row" spacing={0.75} alignItems="center">
-      <Box sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: color }} />
-      <Typography variant="caption" color="text.secondary">
-        {label}
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: tone, flexShrink: 0 }} />
+      <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
+        {name}
       </Typography>
+      {predicted === null ? (
+        <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>
+          no projection yet
+        </Typography>
+      ) : (
+        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: tone, flexShrink: 0 }}>
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 700, color: tone, fontVariantNumeric: "tabular-nums" }}
+          >
+            {current} to {predicted}
+          </Typography>
+          <Glyph size={13} />
+        </Stack>
+      )}
     </Stack>
   );
 }
@@ -773,7 +720,8 @@ export function DiaryEncryptedDemo() {
                 NOT VISIBLE TO YOUR FAMILY
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                There is no parent screen that shows entries. They see your mood trend, never the words.
+                No parent endpoint returns a diary entry, a mood or a mark. The parent view is your
+                name and what is due next, and that is the whole of it.
               </Typography>
             </Box>
           </Stack>
@@ -795,227 +743,23 @@ export function DiaryEncryptedDemo() {
 }
 
 // ============================================================
-// Wellbeing 3 — Take A Break (breathing animation)
+// REMOVED: Take A Break
 // ============================================================
-export function TakeABreakDemo() {
-  return (
-    <MockAppFrame title="aptiverse.co.za/dashboard/break" badge="92 min studied">
-      <Stack spacing={2.5}>
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: 1.5,
-            bgcolor: (t) =>
-              t.palette.mode === "dark"
-                ? "rgba(255,167,38,0.10)"
-                : "rgba(255,167,38,0.10)",
-            border: 1,
-            borderColor: "warning.light",
-          }}
-        >
-          <Stack direction="row" spacing={1.5} alignItems="flex-start">
-            <Typography sx={{ fontSize: "1.25rem" }}>⏰</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              You&apos;ve been on Maths for 92 minutes straight. The next 10 minutes will be more
-              productive if you actually take a break.
-            </Typography>
-          </Stack>
-        </Box>
-
-        {/* Breathing-circle animation */}
-        <Box
-          sx={{
-            height: 200,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-          }}
-        >
-          <Box
-            sx={{
-              width: 140,
-              height: 140,
-              borderRadius: "50%",
-              bgcolor: "primary.main",
-              opacity: 0.18,
-              position: "absolute",
-              animation: "breathe 5s ease-in-out infinite",
-              "@keyframes breathe": {
-                "0%, 100%": { transform: "scale(0.6)" },
-                "50%": { transform: "scale(1)" },
-              },
-            }}
-          />
-          <Box
-            sx={{
-              width: 90,
-              height: 90,
-              borderRadius: "50%",
-              bgcolor: "primary.main",
-              opacity: 0.35,
-              position: "absolute",
-              animation: "breathe 5s ease-in-out infinite",
-              animationDelay: "0.3s",
-            }}
-          />
-          <Typography variant="h6" sx={{ position: "relative", color: "primary.main", fontWeight: 600 }}>
-            Breathe in
-          </Typography>
-        </Box>
-
-        <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" useFlexGap>
-          {[
-            { emoji: "🌬️", label: "1-min breath" },
-            { emoji: "🧘", label: "3-min mindfulness" },
-            { emoji: "🎵", label: "Lofi beats" },
-            { emoji: "😂", label: "Funny clip" },
-          ].map((b) => (
-            <Chip
-              key={b.label}
-              label={`${b.emoji}  ${b.label}`}
-              variant="outlined"
-              sx={{ fontWeight: 500 }}
-            />
-          ))}
-        </Stack>
-      </Stack>
-    </MockAppFrame>
-  );
-}
-
+// It framed itself as /dashboard/break, which is not a route, and opened with
+// "You have been on Maths for 92 minutes straight", i.e. session-length
+// detection and an unprompted nudge. Nothing measures time on a subject and
+// nothing nudges. The four chips under the breathing circle offered a guided
+// mindfulness track, lofi audio and a video clip, none of which the product
+// has ever contained. Unused by any page. Deleted.
 // ============================================================
-// Wellbeing 4 — In-app counselling (book a session)
+// REMOVED: in-app counselling
 // ============================================================
-export function CounsellingDemo() {
-  return (
-    <MockAppFrame title="aptiverse.co.za/dashboard/psychologist" badge="Talk to a real human">
-      <Stack spacing={2}>
-        <Box>
-          <Typography variant="overline" color="text.secondary">
-            Verified counsellors
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            All HPCSA-registered. First session free on the Family Pro tier and above.
-          </Typography>
-        </Box>
-
-        <Stack spacing={1.5}>
-          <CounsellorRow
-            name="Dr Nomvula Mthethwa"
-            credentials="MA Clinical Psychology · HPCSA #PS0142378"
-            specialty="Exam anxiety · matric pressure"
-            rating={4.9}
-            nextSlot="Tomorrow, 4:00pm"
-            booked={false}
-          />
-          <CounsellorRow
-            name="Sipho Naidoo"
-            credentials="MA Counselling Psychology · HPCSA #PS0188421"
-            specialty="LGBTQ+ youth · family conflict"
-            rating={4.8}
-            nextSlot="Friday, 11:00am"
-            booked={false}
-          />
-          <CounsellorRow
-            name="Annelize van der Merwe"
-            credentials="DPsych · HPCSA #PS0091243"
-            specialty="Grief · loss · trauma"
-            rating={5.0}
-            nextSlot="Booked: Thurs 16:00"
-            booked={true}
-          />
-        </Stack>
-
-        <Box
-          sx={{
-            p: 1.5,
-            borderRadius: 1.5,
-            bgcolor: (t) =>
-              alpha(t.palette.secondary.main, t.palette.mode === "dark" ? 0.10 : 0.12),
-            border: 1,
-            borderColor: "primary.light",
-          }}
-        >
-          <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="space-between">
-            <Typography variant="caption" color="text.secondary">
-              <strong>Need to talk now?</strong> A counsellor on duty replies within 15 min on the
-              Crisis line.
-            </Typography>
-            <Chip label="Crisis line" size="small" color="error" sx={{ height: 22 }} />
-          </Stack>
-        </Box>
-      </Stack>
-    </MockAppFrame>
-  );
-}
-
-function CounsellorRow({
-  name,
-  credentials,
-  specialty,
-  rating,
-  nextSlot,
-  booked,
-}: {
-  name: string;
-  credentials: string;
-  specialty: string;
-  rating: number;
-  nextSlot: string;
-  booked: boolean;
-}) {
-  return (
-    <Box
-      sx={{
-        p: 1.5,
-        borderRadius: 1.5,
-        border: 1,
-        borderColor: booked ? "primary.light" : "divider",
-        bgcolor: booked
-          ? (t) =>
-              alpha(t.palette.secondary.main, t.palette.mode === "dark" ? 0.06 : 0.08)
-          : "transparent",
-      }}
-    >
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Avatar sx={{ bgcolor: "primary.light", width: 40, height: 40, flexShrink: 0 }}>
-          {name.split(" ").map((n) => n[0]).slice(0, 2).join("")}
-        </Avatar>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.25 }}>
-            <Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {name}
-            </Typography>
-            <VerifiedIcon sx={{ fontSize: 14, color: "primary.main", flexShrink: 0 }} />
-          </Stack>
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
-            {credentials}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
-            {specialty}
-          </Typography>
-        </Box>
-        <Stack alignItems="flex-end" spacing={0.5} sx={{ flexShrink: 0 }}>
-          <Stack direction="row" spacing={0.25} alignItems="center">
-            <StarIcon sx={{ fontSize: 14, color: "achievement.main" }} />
-            <Typography variant="caption" sx={{ fontWeight: 700 }}>
-              {rating.toFixed(1)}
-            </Typography>
-          </Stack>
-          {booked ? (
-            <Chip label="Booked" size="small" color="primary" sx={{ height: 22, fontSize: "0.7rem" }} />
-          ) : (
-            <Button variant="outlined" size="small" sx={{ minWidth: 0, px: 1.25, py: 0.25, fontSize: "0.72rem" }}>
-              {nextSlot}
-            </Button>
-          )}
-        </Stack>
-      </Stack>
-    </Box>
-  );
-}
+// The most dangerous mock in the file. It listed three named counsellors with
+// invented HPCSA registration numbers, star ratings, bookable time slots, and
+// a "Crisis line" promising a reply within 15 minutes. WellbeingController
+// .GetCounsellors returns Array.Empty permanently: there is no roster, no
+// booking, no session and no duty line. A person in crisis is exactly the
+// reader this picture would have convinced. Unused by any page. Deleted.
 
 // ============================================================
 // 6. Exam simulator — timer + paper

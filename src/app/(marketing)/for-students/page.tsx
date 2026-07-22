@@ -172,7 +172,7 @@ export default function ForStudentsPage() {
           // the page a struggling student reads before deciding to trust us, so
           // it gets the plainest version of the truth. You do the noticing; we
           // keep the record and stay out of your family's hands.
-          body="A 60-second daily check-in, kept week after week, so you can see a run of hard days for what it is. Your family sees the trend, never what you wrote."
+          body="A 60-second daily check-in, kept week after week, so you can see a run of hard days for what it is. It is yours: no parent endpoint returns a mood or an entry, so nobody at home has a screen for it."
           bullets={[
             "Your mood, charted across days, not judged",
             "A diary no one in your family can open",
