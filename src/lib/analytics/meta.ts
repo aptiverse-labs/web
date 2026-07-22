@@ -20,6 +20,8 @@ const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 type Fbq = ((...args: unknown[]) => void) & {
   callMethod?: (...args: unknown[]) => void;
   queue: unknown[];
+  // fbevents.js reassigns this to itself once loaded and reads it while
+  // draining the queue. It is not decorative: see the note in loadMetaPixel.
   push?: unknown;
   loaded?: boolean;
   version?: string;
@@ -52,6 +54,12 @@ export function loadMetaPixel(): void {
       else fbq.queue.push(args);
     } as Fbq;
     fbq.queue = [];
+    // fbq.push = fbq is NOT boilerplate to be tidied away. fbevents.js drains
+    // the pre-load queue by calling fbq.push, and without this line the queued
+    // init call is never replayed: the script loads, the pixel initialises with
+    // no id, and the console reads "Invalid PixelID: null". Verified by
+    // omitting it, which is how this comment came to exist.
+    fbq.push = fbq;
     fbq.loaded = true;
     fbq.version = "2.0";
     window.fbq = fbq;

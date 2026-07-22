@@ -31,13 +31,22 @@ import { CONSENT_SUMMARY, setConsent } from "@/lib/analytics/consent";
 //   wall built out of tab stops.
 
 export function ConsentBanner({ onDismiss }: { onDismiss?: () => void }) {
-  const acceptRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const headingId = "consent-banner-heading";
 
   useEffect(() => {
-    // Focus the container rather than a button, so a screen reader announces
-    // what is being asked before it announces the answer.
-    acceptRef.current?.focus({ preventScroll: true });
+    // Focus the CONTAINER, not a button. Two reasons, and both matter.
+    //
+    // Accessibility: focusing the panel makes a screen reader announce the
+    // question before it announces one of the answers, so the person is not
+    // told "Accept, button" before being told what they would be accepting.
+    //
+    // Fairness: programmatically focusing Accept paints MUI's focus ripple on
+    // it, which visually distinguishes it from Reject. Two buttons that are
+    // identical in the markup but not on the screen are not equal weight, and
+    // pre-highlighting the answer we happen to prefer is exactly the nudge
+    // this banner is supposed to avoid.
+    panelRef.current?.focus({ preventScroll: true });
   }, []);
 
   function decide(marketing: boolean) {
@@ -47,10 +56,16 @@ export function ConsentBanner({ onDismiss }: { onDismiss?: () => void }) {
 
   return (
     <Box
+      ref={panelRef}
       role="dialog"
       aria-modal="false"
       aria-labelledby={headingId}
+      // Focusable as a target, but not a tab stop on the way back through the
+      // page. Nothing is trapped here: Tab leaves the banner normally, because
+      // a consent prompt you cannot tab out of is a cookie wall.
+      tabIndex={-1}
       sx={{
+        outline: "none",
         position: "fixed",
         left: 0,
         right: 0,
@@ -124,7 +139,6 @@ export function ConsentBanner({ onDismiss }: { onDismiss?: () => void }) {
             sx={{ flexShrink: 0, width: { xs: "100%", md: "auto" } }}
           >
             <Button
-              ref={acceptRef}
               onClick={() => decide(true)}
               variant="contained"
               color="primary"
