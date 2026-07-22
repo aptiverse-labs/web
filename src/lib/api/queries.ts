@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, openEventStream, ApiError } from "@/lib/api/fetcher";
 import { studyVocabulary } from "@/lib/study-vocabulary";
+import { track } from "@/lib/analytics/events";
 import {
   type Assessment,
   type Goal,
@@ -842,6 +843,13 @@ export type PracticeAttemptResult = {
   answers: number[];
   answerItems: PracticeAnswerItem[];
   summary?: PracticeScoreSummary | null;
+  // True only on the response to the submit that was this student's FIRST ever
+  // submitted attempt. The API decides it, not the browser, because "have you
+  // ever practised" is a fact about an account and not about a device: a
+  // localStorage flag would re-fire on a second phone, in a private window, and
+  // for anyone who cleared their storage. This is the campaign optimisation
+  // target, so it is the one flag that has to be right.
+  firstSubmittedAttempt?: boolean;
 };
 
 export const usePracticeQuestions = (testId: string) =>
@@ -872,10 +880,17 @@ export const useSubmitAttempt = () => {
         answerItems,
         focusLossCount: focusLossCount ?? 0,
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       // A scored attempt moves practice best-scores, mastery, and predictions.
       void qc.invalidateQueries({ queryKey: queryKeys.practiceTests() });
       void qc.invalidateQueries({ queryKey: ["mastery"] });
+      // Instrumented here rather than in PracticeRunner so every submit path
+      // is covered by construction, including the auto-submit on a timer
+      // expiry, which is the one a component-level hook would miss.
+      track("practice_attempt_submitted", { score: result.score ?? -1 });
+      if (result.firstSubmittedAttempt) {
+        track("first_practice_attempt", { score: result.score ?? -1 });
+      }
     },
   });
 };

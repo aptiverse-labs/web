@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -29,6 +29,7 @@ import { registerStep2Schema, type RegisterValues } from "@/lib/schemas";
 import { homeRouteForRole } from "@/lib/home-route";
 import { api } from "@/lib/api/client";
 import { useHydrated } from "@/lib/hooks/useHydrated";
+import { track } from "@/lib/analytics/events";
 
 // Self-signup is intentionally limited to roles a person can claim on
 // their own. School-side roles (Teacher, SchoolAdmin) are provisioned
@@ -114,6 +115,17 @@ function RegisterForm() {
   const isStudent = role === "student";
   const hydrated = useHydrated();
 
+  // signup_started is "they are looking at the account form", not "they landed
+  // on /register". Step 0 is a role picker, and counting a person who bounced
+  // off the role cards as a started signup would flatter the funnel at exactly
+  // the step where the drop-off is most worth seeing.
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (step !== 1 || startedRef.current) return;
+    startedRef.current = true;
+    track("signup_started", { role: role ?? "unknown", plan: paidPlan ?? "free" });
+  }, [step, role, paidPlan]);
+
   const mutation = useMutation({
     mutationFn: async (v: RegisterValues) => {
       // 1. Create the account on the .NET API. Just the basics — the academic
@@ -127,6 +139,10 @@ function RegisterForm() {
         role,
         acceptedTerms: v.acceptedTerms,
       });
+      // The account exists. Report it here rather than after the redirect,
+      // because on the paid path the very next thing that happens is a
+      // hand-off to Paystack's domain and the event would never be sent.
+      track("signup_completed", { role: role ?? "unknown", plan: paidPlan ?? "free" });
       // 2. Sign in so the session carries the Aptiverse JWT, which the API
       //    client needs as a Bearer token for the authenticated checkout.
       const signInRes = await signIn("credentials", {

@@ -7,6 +7,7 @@ import Divider from "@mui/material/Divider";
 import Link from "next/link";
 import MuiLink from "@mui/material/Link";
 import { Logo } from "@/components/common/Logo";
+import { openConsentPreferences } from "@/lib/analytics/consent";
 
 const SUPPORT_EMAIL = "support@aptiverse.co.za";
 
@@ -166,9 +167,36 @@ export function Footer() {
           <Typography variant="caption" color="text.secondary">
             © {new Date().getFullYear()} Aptiverse. All rights reserved.
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Built in South Africa for South African students.
-          </Typography>
+          <Stack direction="row" spacing={2} alignItems="center">
+            {/* Withdrawal has to be as reachable as the original ask, which is
+                why this is a real control in the footer of every page and not
+                a paragraph in the policy telling people to clear their
+                cookies. Rendered as a button, because it opens a dialog. */}
+            <Box
+              component="button"
+              type="button"
+              onClick={() => openConsentPreferences()}
+              sx={{
+                appearance: "none",
+                background: "none",
+                border: 0,
+                p: 0,
+                cursor: "pointer",
+                font: "inherit",
+                fontSize: "0.75rem",
+                color: "text.secondary",
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
+                transition: "color 150ms",
+                "&:hover": { color: "text.primary" },
+              }}
+            >
+              Privacy choices
+            </Box>
+            <Typography variant="caption" color="text.secondary">
+              Built in South Africa for South African students.
+            </Typography>
+          </Stack>
         </Stack>
       </Box>
     </Box>
