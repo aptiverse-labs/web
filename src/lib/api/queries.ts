@@ -905,6 +905,12 @@ export const useLatestAttempt = (testId: string, enabled = true) =>
 // the student's weakest (from useTopicMastery) to target them, or omit for a
 // general test. Metered server-side by the practice.generate quota; a 402
 // ApiError means the monthly allowance is spent.
+//
+// Generation is a QUEUED JOB, not a request. POST /tests/generate validates,
+// meters and returns 202 with a job; the API runs the model calls on a
+// background worker (one at a time, because production is a 1 GiB burstable
+// instance) and the client polls /generations/{id} until it settles. See
+// usePracticeGeneration for the polling, backoff and timeout policy.
 export type PracticeFormat =
   | "multiple_choice"
   | "short_answer"
@@ -930,18 +936,80 @@ export type GenerateTestInput = {
   totalMarks?: number;
 };
 
-export const useGenerateTest = () => {
-  const qc = useQueryClient();
-  return useMutation<PracticeTest, ApiError, GenerateTestInput>({
-    mutationFn: (input) =>
-      apiClient.post<PracticeTest>("/api/practice/tests/generate", input),
-    onSuccess: (test) => {
-      void qc.invalidateQueries({ queryKey: queryKeys.practiceTests() });
-      // The generated test is immediately fetchable by id in the runner.
-      qc.setQueryData(queryKeys.practiceTest(String(test.id)), test);
-    },
-  });
+// A queued generation, as the API reports it.
+export type GenerationJobStatus = "queued" | "running" | "succeeded" | "failed";
+
+export type GenerationJob = {
+  id: string;
+  status: GenerationJobStatus;
+  format: PracticeFormat;
+  // The finished test. Null until the job succeeds.
+  practiceTestId: string | null;
+  // A real message on failure. Null otherwise.
+  error: string | null;
+  attempts: number;
+  createdAt: string;
+  startedAt: string | null;
+  finishedAt: string | null;
 };
+
+export const generationKeys = {
+  job: (id: string) => ["practice-generation", id] as const,
+  active: () => ["practice-generation", "active"] as const,
+};
+
+// Queue a generation. Returns immediately with the job to poll — the model
+// calls have not started yet.
+export const useStartGeneration = () =>
+  useMutation<GenerationJob, ApiError, GenerateTestInput>({
+    mutationFn: (input) =>
+      apiClient.post<GenerationJob>("/api/practice/tests/generate", input),
+  });
+
+// Poll one job. Backs off as it goes: a multiple-choice test is usually done
+// inside ten seconds, an exam paper takes a minute or more, and hammering the
+// API every second for that whole minute is exactly the load this change
+// exists to remove.
+function pollDelay(polls: number) {
+  if (polls < 4) return 1500;
+  if (polls < 10) return 3000;
+  return 6000;
+}
+
+export const useGenerationJob = (jobId: string | null) =>
+  useQuery<GenerationJob>({
+    queryKey: generationKeys.job(jobId ?? ""),
+    queryFn: () => apiClient.get<GenerationJob>(`/api/practice/generations/${jobId}`),
+    enabled: !!jobId,
+    // A settled job never changes again, so stop polling the moment it does.
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status === "succeeded" || status === "failed") return false;
+      return pollDelay(query.state.dataUpdateCount);
+    },
+    refetchIntervalInBackground: false,
+    staleTime: 0,
+    retry: 1,
+  });
+
+// The student's most recent unfinished generation, straight from the API.
+//
+// This is what makes closing the tab safe: the job lives in the database, not
+// in this browser, so coming back to the practice page picks it up again even
+// on a different device.
+export const useActiveGeneration = (enabled = true) =>
+  useQuery<GenerationJob | null>({
+    queryKey: generationKeys.active(),
+    queryFn: async () => {
+      const job = await apiClient.get<GenerationJob | null>("/api/practice/generations/active");
+      // 204 comes back as undefined from the fetcher; normalise to null so
+      // TanStack does not treat it as a failed query.
+      return job ?? null;
+    },
+    enabled,
+    staleTime: 0,
+    retry: false,
+  });
 
 // Mastery — computed on read by the API from real practice + graded-SBA
 // signals (no ML, no fake fields). Both return [] until the student has

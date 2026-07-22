@@ -23,6 +23,7 @@ import Alert from "@mui/material/Alert";
 import Skeleton from "@mui/material/Skeleton";
 import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import QuizIcon from "@mui/icons-material/QuizOutlined";
+import { CheckCircle2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/common/PageHeader";
@@ -35,10 +36,14 @@ import {
   useCourses,
   useAcademicProfile,
   useAssessments,
-  useGenerateTest,
   useTopicMastery,
   type PracticeFormat,
 } from "@/lib/api/queries";
+import {
+  usePracticeGeneration,
+  type PracticeGeneration,
+} from "@/lib/hooks/usePracticeGeneration";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 import type { Assessment, PracticeTest } from "@/lib/mockData";
 
 // A study unit the generator + list filter target: a CAPS subject (high
@@ -80,6 +85,9 @@ function PracticeFallback() {
 
 function PracticeContent() {
   const testsQuery = usePracticeTests();
+  // Generation lives here, not inside the dialog, so closing the dialog (or
+  // leaving the page entirely) does not abandon the job.
+  const generation = usePracticeGeneration();
   const subjectsQuery = useSubjects();
   const coursesQuery = useCourses();
   const profileQuery = useAcademicProfile();
@@ -87,8 +95,9 @@ function PracticeContent() {
   const searchParams = useSearchParams();
   const [genOpen, setGenOpen] = useState(false);
 
-  const isTertiary = profileQuery.data?.educationLevel === "tertiary";
-  const unitNoun = isTertiary ? "course" : "subject";
+  const vocab = useStudyVocabulary();
+  const isTertiary = vocab.isTertiary;
+  const unitNoun = vocab.unitSingular;
 
   // What the generator + list can target: courses (tertiary) or subjects
   // (high school). id is the practice key generation, mastery, and every
@@ -127,6 +136,8 @@ function PracticeContent() {
           </Button>
         }
       />
+
+      <GenerationBanner generation={generation} />
 
       {!canGenerate && !assessmentsQuery.isLoading && (
         <Alert
@@ -175,8 +186,90 @@ function PracticeContent() {
         unitNoun={unitNoun}
         nameForUnit={nameForUnit}
         defaultAssessmentId={defaultAssessmentId}
+        generation={generation}
       />
     </AtmosphericBackdrop>
+  );
+}
+
+// ── Generation banner ─────────────────────────────────────────────────
+
+// The waiting state, and the reason the student is not trapped by it.
+//
+// Generation runs on the server, so this is a report on a job rather than a
+// frozen button: the dialog closes the moment the job is queued, the student
+// can go anywhere, and the banner is waiting for them when they come back with
+// either the finished test or an honest reason it did not happen.
+function GenerationBanner({ generation }: { generation: PracticeGeneration }) {
+  const router = useRouter();
+  const { phase, isWorking, practiceTestId, error, elapsedMs, dismiss } = generation;
+  if (phase === "idle" || phase === "starting") return null;
+
+  const seconds = Math.floor(elapsedMs / 1000);
+  const elapsedLabel =
+    seconds < 60 ? `${seconds}s so far` : `${Math.floor(seconds / 60)}m ${seconds % 60}s so far`;
+
+  if (isWorking) {
+    return (
+      <Card variant="outlined" sx={{ mb: 2, borderColor: "secondary.main" }}>
+        <CardContent sx={{ py: 2 }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            alignItems={{ xs: "flex-start", sm: "center" }}
+          >
+            <CubeSpinner color="primary" sx={{ fontSize: 28, flexShrink: 0 }} />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                {phase === "queued" ? "Your test is queued" : "Writing your test"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {generation.format === "exam"
+                  ? "Setting a full paper: sections, marks, and a marking memo. Usually a minute or two."
+                  : "Writing and checking your questions. Usually well under a minute."}{" "}
+                You can leave this page. It will be in your list when it is done. {elapsedLabel}.
+              </Typography>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (phase === "succeeded" && practiceTestId) {
+    return (
+      <Alert
+        severity="success"
+        icon={<CheckCircle2 size={20} />}
+        sx={{ mb: 2 }}
+        onClose={dismiss}
+        action={
+          // Navigate first, dismiss second. Dismissing unmounts this alert, and
+          // an unmounted <Link> never completes its navigation, which is how
+          // "Open it" managed to clear the banner and go nowhere.
+          <Button
+            size="small"
+            color="inherit"
+            onClick={() => {
+              router.push(testHref({ id: practiceTestId }));
+              dismiss();
+            }}
+          >
+            Open it
+          </Button>
+        }
+      >
+        Your test is ready.
+      </Alert>
+    );
+  }
+
+  // failed, timed out, or succeeded without a test id (which would be a bug on
+  // our side, so it reads as a failure rather than as nothing at all).
+  return (
+    <Alert severity={phase === "timeout" ? "warning" : "error"} sx={{ mb: 2 }} onClose={dismiss}>
+      {error ?? "The generator had trouble. Please try again."}
+    </Alert>
   );
 }
 
@@ -281,6 +374,7 @@ function GenerateTestDialog({
   unitNoun,
   nameForUnit,
   defaultAssessmentId,
+  generation,
 }: {
   open: boolean;
   onClose: () => void;
@@ -291,9 +385,10 @@ function GenerateTestDialog({
   unitNoun: string;
   nameForUnit: (subjectId: string) => string;
   defaultAssessmentId?: string;
+  // Owned by the page, not by this dialog: the dialog only queues the job and
+  // gets out of the way. The banner behind it reports on it from there.
+  generation: PracticeGeneration;
 }) {
-  const router = useRouter();
-  const gen = useGenerateTest();
   const [assessmentId, setAssessmentId] = useState(defaultAssessmentId ?? "");
   const [format, setFormat] = useState<PracticeFormat>("multiple_choice");
   const [difficulty, setDifficulty] = useState<"foundation" | "core" | "challenge">("core");
@@ -342,40 +437,37 @@ function GenerateTestDialog({
       .map((t) => t.topic);
   }, [masteryQ.data, targetWeak, subjectId]);
 
+  // True only for the moment the POST is in flight. Queuing is fast, which is
+  // the whole point: the wait that used to live here now lives on the server.
+  const isQueuing = generation.phase === "starting";
+  // Something of the student's is already generating. Queuing a second one
+  // would only sit behind it and cost them another generation.
+  const alreadyRunning = generation.isWorking && !isQueuing;
+
   function handleClose() {
-    if (gen.isPending) return;
-    gen.reset();
+    if (isQueuing) return;
     onClose();
   }
 
   function submit() {
-    if (!assessmentId) return;
-    gen.mutate(
-      {
-        assessmentId,
-        format,
-        difficulty,
-        questionCount: count,
-        totalMarks: isExam ? totalMarks : undefined,
-        topics: weakTopics.length > 0 ? weakTopics : undefined,
-      },
-      {
-        onSuccess: (test) => {
-          gen.reset();
-          onClose();
-          router.push(testHref(test));
-        },
-      },
-    );
+    if (!assessmentId || alreadyRunning) return;
+    generation.start({
+      assessmentId,
+      format,
+      difficulty,
+      questionCount: count,
+      totalMarks: isExam ? totalMarks : undefined,
+      topics: weakTopics.length > 0 ? weakTopics : undefined,
+    });
   }
 
-  const errMsg = gen.error
-    ? gen.error.status === 402
-      ? "You've used this month's practice-test generations. Upgrade your plan for more."
-      : gen.error.status === 503
-        ? "AI generation isn't available on this environment right now."
-        : "The generator had trouble. Please try again."
-    : null;
+  // Close as soon as the job is on the queue. The banner takes over from here,
+  // which is what lets the student walk away from the page.
+  useEffect(() => {
+    if (open && generation.job && generation.isWorking && !isQueuing) onClose();
+  }, [open, generation.job, generation.isWorking, isQueuing, onClose]);
+
+  const errMsg = generation.phase === "failed" ? generation.error : null;
 
   const noMasteryYet = targetWeak && !!subjectId && !masteryQ.isLoading && weakTopics.length === 0;
 
@@ -383,16 +475,14 @@ function GenerateTestDialog({
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
       <DialogTitle sx={{ fontWeight: 600 }}>Generate a practice test</DialogTitle>
       <DialogContent>
-        {gen.isPending ? (
+        {isQueuing ? (
           <Stack alignItems="center" spacing={2} sx={{ py: 5 }}>
             {/* Filled tiles are a graphical object, so they need 3:1. Citron
                 only reaches 1.4:1 on light paper, which made the spinner
                 invisible in light mode. */}
             <CubeSpinner color="primary" sx={{ fontSize: 44 }} />
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
-              {isExam
-                ? "Setting your paper: sections, questions, and a marking memo. A full paper takes a minute or so."
-                : "Writing and checking your questions. This takes a few seconds."}
+              Queuing your test. This closes in a second and keeps going without you.
             </Typography>
           </Stack>
         ) : (
@@ -514,22 +604,29 @@ function GenerateTestDialog({
               </Alert>
             )}
 
+            {alreadyRunning && (
+              <Alert severity="info">
+                One test is already being written. It will appear in your list when it is done,
+                and you can start another after that.
+              </Alert>
+            )}
+
             {errMsg && <Alert severity="error">{errMsg}</Alert>}
           </Stack>
         )}
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5 }}>
-        <Button onClick={handleClose} color="inherit" disabled={gen.isPending}>
+        <Button onClick={handleClose} color="inherit" disabled={isQueuing}>
           Cancel
         </Button>
         <Button
           onClick={submit}
           variant="contained"
           color="secondary"
-          disabled={!assessmentId || gen.isPending}
-          startIcon={!gen.isPending && <AutoAwesomeIcon />}
+          disabled={!assessmentId || isQueuing || alreadyRunning}
+          startIcon={!isQueuing && <AutoAwesomeIcon />}
         >
-          {gen.isPending ? "Generating…" : "Generate"}
+          {isQueuing ? "Queuing…" : "Generate"}
         </Button>
       </DialogActions>
     </Dialog>
