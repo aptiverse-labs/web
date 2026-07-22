@@ -9,8 +9,10 @@ import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarC
 import { PieChart } from "@mui/x-charts/PieChart";
 import { PieChartArcLabel } from "@/components/common/PieChartArcLabel";
 import { PageHeader } from "@/components/common/PageHeader";
+import { useChartSeriesColors } from "@/components/common/chartPalette";
 
 export default function SchoolAnalyticsPage() {
+  const seriesColor = useChartSeriesColors();
   return (
     <>
       <PageHeader
@@ -30,8 +32,8 @@ export default function SchoolAnalyticsPage() {
                 height={320}
                 xAxis={[{ data: ["Maths", "PhSci", "Eng HL", "LSci", "Geo", "Afr FAL", "LO"], scaleType: "band" }]}
                 series={[
-                  { data: [71, 68, 76, 70, 72, 64, 82], label: "School", color: "#0F6963" },
-                  { data: [62, 60, 70, 65, 68, 58, 78], label: "Province", color: "#9FB1C2" },
+                  { data: [71, 68, 76, 70, 72, 64, 82], label: "School", color: seriesColor(0) },
+                  { data: [62, 60, 70, 65, 68, 58, 78], label: "Province", color: seriesColor(2) },
                 ]}
                 grid={{ horizontal: true }}
               />
@@ -77,7 +79,7 @@ export default function SchoolAnalyticsPage() {
                 xAxis={[{ data: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov"], scaleType: "point" }]}
                 yAxis={[{ min: 1, max: 5 }]}
                 series={[
-                  { data: [3.6, 3.7, 3.5, 3.4, 3.5, 3.7, 3.8, 3.6, 3.4, 3.3, 3.5], label: "Avg mood (1-5)", curve: "monotoneX", color: "#F25C2E" },
+                  { data: [3.6, 3.7, 3.5, 3.4, 3.5, 3.7, 3.8, 3.6, 3.4, 3.3, 3.5], label: "Avg mood (1-5)", curve: "monotoneX", color: seriesColor(1) },
                 ]}
                 grid={{ horizontal: true }}
               />

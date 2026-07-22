@@ -5,6 +5,7 @@ import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
 import FavoriteIcon from "@mui/icons-material/FavoriteBorder";
+import { useTheme } from "@mui/material/styles";
 import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { PageHeader } from "@/components/common/PageHeader";
 import { QueryStates } from "@/components/common/QueryStates";
@@ -46,6 +47,7 @@ export default function WellbeingSummaryPage() {
 
 function ChildWellbeingCard({ child: c }: { child: Child }) {
   const mood = c.moodAvg;
+  const theme = useTheme();
   return (
     <Card>
       <CardContent sx={{ p: 3 }}>
@@ -69,7 +71,10 @@ function ChildWellbeingCard({ child: c }: { child: Child }) {
                 {
                   data: Array.from({ length: 14 }, () => Math.max(1, Math.min(5, mood + (Math.random() - 0.5)))),
                   label: "Mood",
-                  color: mood >= 3.5 ? "#3D9762" : "#E89D14",
+                  // Theme-derived so the line follows the colour scheme. The
+                  // previous fixed gold sat near 2.2:1 on the light chart
+                  // surface, under the 3:1 floor for a graphical object.
+                  color: mood >= 3.5 ? theme.palette.success.main : theme.palette.warning.main,
                 },
               ]}
             />

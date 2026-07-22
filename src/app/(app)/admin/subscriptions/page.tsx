@@ -16,6 +16,7 @@ import { DataList } from "@/components/data/DataList";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
 import { formatCurrency, formatDate } from "@/lib/format";
 import dayjs from "dayjs";
+import { useChartSeriesColors } from "@/components/common/chartPalette";
 
 const SUBS = Array.from({ length: 30 }).map((_, i) => ({
   id: `sub-${i}`,
@@ -27,6 +28,7 @@ const SUBS = Array.from({ length: 30 }).map((_, i) => ({
 }));
 
 export default function SubscriptionsPage() {
+  const seriesColor = useChartSeriesColors();
   return (
     <PermissionGuard require="subscriptions.read">
       <PageHeader
@@ -60,7 +62,7 @@ export default function SubscriptionsPage() {
               <LineChart
                 height={260}
                 xAxis={[{ data: ["May", "Jun", "Jul", "Aug", "Sep", "Oct"], scaleType: "point" }]}
-                series={[{ data: [890_000, 950_000, 1_010_000, 1_080_000, 1_180_000, 1_240_000], curve: "monotoneX", color: "#0F6963", area: true }]}
+                series={[{ data: [890_000, 950_000, 1_010_000, 1_080_000, 1_180_000, 1_240_000], curve: "monotoneX", color: seriesColor(0), area: true }]}
                 grid={{ horizontal: true }}
               />
             </CardContent>

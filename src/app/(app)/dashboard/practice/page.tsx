@@ -385,7 +385,10 @@ function GenerateTestDialog({
       <DialogContent>
         {gen.isPending ? (
           <Stack alignItems="center" spacing={2} sx={{ py: 5 }}>
-            <CubeSpinner color="secondary" sx={{ fontSize: 44 }} />
+            {/* Filled tiles are a graphical object, so they need 3:1. Citron
+                only reaches 1.4:1 on light paper, which made the spinner
+                invisible in light mode. */}
+            <CubeSpinner color="primary" sx={{ fontSize: 44 }} />
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
               {isExam
                 ? "Setting your paper: sections, questions, and a marking memo. A full paper takes a minute or so."

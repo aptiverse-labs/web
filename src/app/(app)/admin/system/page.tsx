@@ -13,6 +13,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { PermissionGuard } from "@/components/common/PermissionGuard";
 import { Dot } from "@/components/common/Dot";
 import { useTicker } from "@/lib/hooks/useTicker";
+import { useChartSeriesColors } from "@/components/common/chartPalette";
 
 const SERVICES = [
   { name: "auth-provider", port: 5000, status: "healthy", p95: 42, rps: 124 },
@@ -26,6 +27,7 @@ const SERVICES = [
 ];
 
 export default function SystemHealth() {
+  const seriesColor = useChartSeriesColors();
   const tick = useTicker(2000);
   const series = Array.from({ length: 30 }, (_, i) => 80 + Math.round(Math.sin((tick + i) / 4) * 30 + Math.random() * 20));
 
@@ -55,7 +57,7 @@ export default function SystemHealth() {
               <LineChart
                 height={260}
                 xAxis={[{ data: Array.from({ length: 30 }, (_, i) => `${30 - i}s`), scaleType: "point" }]}
-                series={[{ data: series, color: "#0F6963", curve: "natural", showMark: false, area: true }]}
+                series={[{ data: series, color: seriesColor(0), curve: "natural", showMark: false, area: true }]}
                 grid={{ horizontal: true }}
               />
             </CardContent>

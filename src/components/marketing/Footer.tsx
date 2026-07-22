@@ -59,7 +59,14 @@ export function Footer() {
         borderTop: 1,
         borderColor: "divider",
         bgcolor: "background.paper",
-        py: { xs: 6, md: 9 },
+        // Tighter vertical rhythm on phones. The footer measured 624px against
+        // an 844px viewport, nearly three quarters of a screen, and almost all
+        // of that was padding and gaps rather than content: it holds only ten
+        // links. Trimming the spacing is the honest fix. Dropping links on
+        // mobile is not, since mobile is where most of these users are, and
+        // Google indexes the mobile DOM, so a link that only exists on desktop
+        // effectively does not exist.
+        py: { xs: 4.5, md: 9 },
       }}
     >
       <Box sx={{ maxWidth: 1240, mx: "auto", px: { xs: 2.5, sm: 4, lg: 6 } }}>
@@ -71,7 +78,7 @@ export function Footer() {
             // three ragged lines beside the link grid.
             gridTemplateColumns: { xs: "1fr", md: "minmax(240px, 1.2fr) 2fr" },
             columnGap: { md: 8 },
-            rowGap: { xs: 5, md: 0 },
+            rowGap: { xs: 3.5, md: 0 },
           }}
         >
           <Stack spacing={2} alignItems="flex-start">
@@ -97,7 +104,17 @@ export function Footer() {
                   color: "text.primary",
                   fontWeight: 600,
                   transition: "color 150ms",
-                  "&:hover": { color: "secondary.main" },
+                  // Citron is surface-only. As a hover text colour it scored
+                  // 1.4:1 on light paper, so the address vanished on hover.
+                  // The hover state is carried by an underline plus a citron
+                  // underline colour, keeping the ink at full contrast.
+                  textDecorationColor: "transparent",
+                  "&:hover": {
+                    textDecoration: "underline",
+                    textDecorationThickness: 2,
+                    textUnderlineOffset: 3,
+                    textDecorationColor: "secondary.main",
+                  },
                 }}
               >
                 {SUPPORT_EMAIL}
@@ -110,7 +127,7 @@ export function Footer() {
               display: "grid",
               gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" },
               columnGap: { xs: 3, sm: 4 },
-              rowGap: 4,
+              rowGap: { xs: 3, sm: 4 },
             }}
           >
             {COLUMNS.map((c) => (
@@ -138,7 +155,7 @@ export function Footer() {
           </Box>
         </Box>
 
-        <Divider sx={{ my: { xs: 4, md: 5 } }} />
+        <Divider sx={{ my: { xs: 3, md: 5 } }} />
 
         <Stack
           direction={{ xs: "column", sm: "row" }}

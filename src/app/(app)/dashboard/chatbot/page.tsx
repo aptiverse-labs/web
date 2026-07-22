@@ -527,7 +527,14 @@ export default function ChatbotPage() {
             flexShrink: 0,
             px: { xs: 2, sm: 3 },
             pt: 1,
-            pb: { xs: 1.5, sm: 2 },
+            // The composer is pinned to the bottom edge of a full-bleed
+            // 100dvh route, which on a gesture-bar phone is exactly where the
+            // home indicator sits. Pay back the inset or the send button is
+            // half under system chrome.
+            pb: {
+              xs: "calc(env(safe-area-inset-bottom) + 12px)",
+              sm: "calc(env(safe-area-inset-bottom) + 16px)",
+            },
             bgcolor: "background.default",
           }}
         >
@@ -948,7 +955,9 @@ function ModePicker({
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>
                     {m.label}
                   </Typography>
-                  {selected && <CheckIcon fontSize="small" sx={{ color: "secondary.main" }} />}
+                  {/* Citron is surface-only: as an icon colour it scored
+                      1.4:1 on light paper and the tick vanished. */}
+                  {selected && <CheckIcon fontSize="small" sx={{ color: "secondary.dark" }} />}
                 </Stack>
                 <Typography
                   variant="caption"
