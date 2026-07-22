@@ -181,10 +181,15 @@ img {
   /* Chips are frequently the only way to filter or pick something, and MUI's
    * small chip is 24px tall. 32px plus the gap its row already carries clears
    * the WCAG 2.2 target-size minimum without turning a chip row into a wall of
-   * buttons. Applies only to interactive chips: static status chips stay
-   * compact because you cannot mis-tap something that is not a target. */
-  .MuiChip-clickable,
-  .MuiChip-deletable {
+   * buttons.
+   *
+   * Applied to every chip, not only the interactive ones. Sizing by
+   * interactivity is correct reasoning about touch targets and wrong about
+   * layout: chips sit in mixed rows, so on the dashboard header the linked
+   * plan chip grew to 32px while the static institution chip stayed at 24px
+   * and the two sat at visibly different heights. A row of chips has to read
+   * as one row. Static chips gaining 8px on touch costs nothing. */
+  .MuiChip-root {
     min-height: 32px;
   }
 
