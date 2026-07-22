@@ -41,6 +41,17 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Next's defaults (width=device-width, initial-scale=1) are kept. Nothing
+  // here caps maximumScale or sets userScalable: false, deliberately. Pinch
+  // zoom is an accessibility right, and a student squinting at a formula on a
+  // 5-inch screen is exactly the person who needs it.
+  width: "device-width",
+  initialScale: 1,
+  // viewport-fit=cover lets the page paint under the notch and the gesture
+  // bar, which is what makes env(safe-area-inset-*) resolve to anything other
+  // than 0. The insets are then applied in globals.css and on the fixed
+  // elements that would otherwise sit under the home indicator.
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
     { media: "(prefers-color-scheme: dark)", color: "#0F1012" },

@@ -227,7 +227,11 @@ export default function ReportsPage() {
               {/* Subject standing */}
               {predictions.length > 0 && (
                 <Section title="Subject standing">
-                  <Table size="small">
+                  {/* A four-column table with subject names does not fit
+                      360px. It scrolls inside its own box so the page itself
+                      never scrolls sideways. */}
+                  <Box sx={{ overflowX: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 420 }}>
                     <TableHead>
                       <TableRow>
                         <TableCell>Subject</TableCell>
@@ -253,13 +257,15 @@ export default function ReportsPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  </Box>
                 </Section>
               )}
 
               {/* Graded assessments */}
               {graded.length > 0 && (
                 <Section title="Graded assessments">
-                  <Table size="small">
+                  <Box sx={{ overflowX: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 540 }}>
                     <TableHead>
                       <TableRow>
                         <TableCell>Assessment</TableCell>
@@ -290,6 +296,7 @@ export default function ReportsPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  </Box>
                 </Section>
               )}
 

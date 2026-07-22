@@ -108,7 +108,10 @@ function CheckIn() {
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           How are you feeling, really?
         </Typography>
-        <Stack direction="row" spacing={1.5} sx={{ mb: 3 }}>
+        {/* Five mood targets share one row. At 360px the card's own padding
+            leaves ~312px, so the gap has to come down or each target drops
+            under a comfortable thumb width. */}
+        <Stack direction="row" spacing={{ xs: 0.75, sm: 1.5 }} sx={{ mb: 3 }}>
           {([1, 2, 3, 4, 5] as const).map((n) => {
             const selected = mood === n;
             const m = MOOD[n];
@@ -152,7 +155,19 @@ function CheckIn() {
           value={entry}
           onChange={(e) => setEntry(e.target.value)}
         />
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
+        {/* Wrapping is not optional here. Four prompt chips laid out in a
+            single non-wrapping row measured 635px wide inside a 390px phone
+            viewport, so the last two were clipped and completely untappable.
+            useFlexGap makes Stack's spacing a real `gap`, which is what
+            applies between wrapped lines as well as along them. */}
+        <Stack
+          direction="row"
+          spacing={1}
+          useFlexGap
+          flexWrap="wrap"
+          alignItems="center"
+          sx={{ mt: 1 }}
+        >
           <Typography variant="caption" color="text.secondary">
             Try a prompt:
           </Typography>
@@ -194,8 +209,19 @@ function EntriesList({ entries }: { entries: DiaryEntry[] }) {
         return (
           <Card key={e.id}>
             <CardContent sx={{ p: 3 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
-                <Stack direction="row" spacing={1.5} alignItems="center">
+              {/* An entry can carry any number of tags, so the header row has
+                  to be allowed to drop them onto a second line rather than
+                  squeeze the date and mood out of the way. */}
+              <Stack
+                direction="row"
+                spacing={1}
+                useFlexGap
+                flexWrap="wrap"
+                justifyContent="space-between"
+                alignItems="flex-start"
+                sx={{ mb: 1 }}
+              >
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
                   <Box sx={{ color: m.color, display: "grid", placeItems: "center" }}>
                     <m.Icon sx={{ fontSize: 28 }} />
                   </Box>
@@ -208,7 +234,7 @@ function EntriesList({ entries }: { entries: DiaryEntry[] }) {
                     </Typography>
                   </Box>
                 </Stack>
-                <Stack direction="row" spacing={0.75}>
+                <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap">
                   {e.tags.map((t) => (
                     <Chip key={t} label={t} size="small" variant="outlined" />
                   ))}

@@ -117,9 +117,14 @@ function EnquiriesView({
 
   return (
     <>
+      {/* Fixed-width tabs compress into unreadable slivers at phone width.
+          Scrollable keeps each label legible and lets the row pan instead. */}
       <Tabs
         value={tab}
         onChange={(_, v) => onTab(v as TabKey)}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
         sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}
       >
         {TABS.map((t) => (
@@ -204,7 +209,7 @@ function EnquiryCard({ enquiry, onClick }: { enquiry: SchoolEnquiry; onClick: ()
                 </Typography>
               )}
               {curricula.length > 0 && (
-                <Stack direction="row" spacing={0.5}>
+                <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap">
                   {curricula.map((c) => (
                     <Chip
                       key={c}

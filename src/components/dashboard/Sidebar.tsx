@@ -138,7 +138,7 @@ function DesktopRail({ tree }: { tree: NavNode[] }) {
           // Full-height rail, pinned while content scrolls beside it.
           position: "sticky",
           top: 0,
-          height: "100vh",
+          height: "100dvh",
           transition: (t) =>
             t.transitions.create("width", { duration: t.transitions.duration.shorter }),
         },

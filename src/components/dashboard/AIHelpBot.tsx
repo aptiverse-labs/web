@@ -124,8 +124,17 @@ export function AIHelpBot() {
           onClick={() => setOpen(true)}
           sx={{
             position: "fixed",
-            bottom: { xs: 16, sm: 24 },
-            right: { xs: 16, sm: 24 },
+            // Offset by the gesture bar, not just a flat 16px. On an iPhone
+            // with a home indicator a bare `bottom: 16` puts half the FAB
+            // under system chrome, where taps are swallowed by the OS.
+            bottom: {
+              xs: "calc(env(safe-area-inset-bottom) + 16px)",
+              sm: "calc(env(safe-area-inset-bottom) + 24px)",
+            },
+            right: {
+              xs: "calc(env(safe-area-inset-right) + 16px)",
+              sm: "calc(env(safe-area-inset-right) + 24px)",
+            },
             zIndex: (t) => t.zIndex.drawer - 1,
           }}
           aria-label="Open help bot"
@@ -138,11 +147,19 @@ export function AIHelpBot() {
         anchor="right"
         open={open}
         onClose={() => setOpen(false)}
-        PaperProps={{
-          sx: {
-            width: { xs: "100vw", sm: 420 },
-            display: "flex",
-            flexDirection: "column",
+        slotProps={{
+          paper: {
+            sx: {
+              // 100% of the drawer's own container, not 100vw. 100vw includes
+              // the scrollbar gutter, which pushes the drawer a few pixels
+              // past the right edge and gives the page a sideways scroll.
+              // dvh so the composer is not pushed under the browser chrome.
+              width: { xs: "100%", sm: 420 },
+              maxWidth: "100%",
+              height: "100dvh",
+              display: "flex",
+              flexDirection: "column",
+            },
           },
         }}
       >

@@ -223,6 +223,9 @@ function TaskRow({
           transition: "opacity 150ms ease",
           ".MuiStack-root:hover &": { opacity: 1 },
           "&:focus-visible": { opacity: 1 },
+          // There is no hover on a phone, so a hover-revealed control is an
+          // invisible control. Touch devices get it permanently.
+          "@media (hover: none)": { opacity: 1 },
         }}
         aria-label={`Remove "${task.label}"`}
       >

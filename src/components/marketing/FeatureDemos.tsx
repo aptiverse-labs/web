@@ -16,9 +16,30 @@ import VerifiedIcon from "@mui/icons-material/VerifiedOutlined";
 import StarIcon from "@mui/icons-material/Star";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import TipsIcon from "@mui/icons-material/TipsAndUpdatesOutlined";
-import { Frown, Annoyed, Meh, Smile, Laugh, Heart, TrendingDown, Timer } from "lucide-react";
+import {
+  Frown,
+  Annoyed,
+  Meh,
+  Smile,
+  Laugh,
+  Heart,
+  TrendingDown,
+  Timer,
+  Sparkles,
+  ShieldCheck,
+  Flame,
+  CalendarCheck,
+  ClipboardList,
+  Gift,
+  Zap,
+  Brain,
+  ChevronRight,
+  CalendarClock,
+} from "lucide-react";
+import { alpha } from "@mui/material/styles";
 import { MockAppFrame } from "./FeatureShowcase";
 import { AptiverseLineChart } from "@/components/common/AptiverseLineChart";
+import { useChartSeriesColors } from "@/components/common/chartPalette";
 
 // ============================================================
 // 1. AI Tutor: chat-UI mock
@@ -51,7 +72,9 @@ export function TutorChatDemo() {
           <Box sx={{ mt: 1.5, p: 1.5, bgcolor: "action.hover", borderRadius: 1, fontFamily: "monospace", fontSize: "0.9em" }}>
             d/dx [f(g(x))] = f&apos;(g(x)) · g&apos;(x)
           </Box>
-          <Stack direction="row" spacing={0.75} sx={{ mt: 1.5 }}>
+          {/* These two chips measured 400px wide inside a 390px phone
+              viewport, so the second one was cut off by the bubble. */}
+          <Stack direction="row" spacing={0.75} useFlexGap flexWrap="wrap" sx={{ mt: 1.5 }}>
             <Chip
               icon={<MenuBookIcon sx={{ fontSize: 14 }} />}
               label="Knows you take Mathematics"
@@ -254,6 +277,13 @@ function FeedbackRow({ tone, tag, text }: { tone: "warn" | "info" | "good"; tag:
 // labelled as an interval with numbers we do not compute, and the headline is
 // the next term, not the final mark.
 export function MasteryChartDemo() {
+  // Series colours come from the validated categorical ramp so they follow the
+  // colour scheme. They used to be retired Chalk & Pine hexes (#0F6963 /
+  // #3F9D95), fixed in both modes, which left the "Actual" line at roughly
+  // 1.5:1 on the dark chart surface.
+  const seriesColor = useChartSeriesColors();
+  const actualColor = seriesColor(0);
+  const predictedColor = seriesColor(2);
   // Projected term mark over the year.
   const months = ["Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct"];
   const actual = [54, 58, 61, 62, 65, 68, null, null, null];
@@ -294,7 +324,7 @@ export function MasteryChartDemo() {
               {
                 data: upperBand,
                 label: "Upper band",
-                color: "rgba(63,157,149,0.18)",
+                color: alpha(actualColor, 0.18),
                 area: true,
                 showMark: false,
                 connectNulls: false,
@@ -310,14 +340,14 @@ export function MasteryChartDemo() {
               {
                 data: actual,
                 label: "Actual",
-                color: "#0F6963",
+                color: actualColor,
                 showMark: true,
                 connectNulls: false,
               },
               {
                 data: predicted,
                 label: "Predicted",
-                color: "#3F9D95",
+                color: predictedColor,
                 showMark: true,
                 connectNulls: false,
               },
@@ -327,9 +357,9 @@ export function MasteryChartDemo() {
         </Box>
 
         <Stack direction="row" spacing={2} sx={{ pt: 0.5 }}>
-          <LegendDot color="#0F6963" label="Marks you logged" />
-          <LegendDot color="#3F9D95" label="Projection" />
-          <LegendDot color="rgba(63,157,149,0.4)" label="Uncertainty" />
+          <LegendDot color={actualColor} label="Marks you logged" />
+          <LegendDot color={predictedColor} label="Projection" />
+          <LegendDot color={alpha(actualColor, 0.4)} label="Uncertainty" />
         </Stack>
       </Stack>
     </MockAppFrame>
@@ -457,9 +487,7 @@ export function AdaptivePracticeDemo() {
               bgcolor:
                 r.status === "current"
                   ? (t) =>
-                      t.palette.mode === "dark"
-                        ? "rgba(63,157,149,0.12)"
-                        : "rgba(15,105,99,0.08)"
+                      alpha(t.palette.secondary.main, t.palette.mode === "dark" ? 0.12 : 0.16)
                   : "transparent",
             }}
           >
@@ -582,9 +610,7 @@ export function MoodCheckInDemo() {
                 borderColor: m.active ? "primary.main" : "transparent",
                 bgcolor: m.active
                   ? (t) =>
-                      t.palette.mode === "dark"
-                        ? "rgba(63,157,149,0.18)"
-                        : "rgba(15,105,99,0.10)"
+                      alpha(t.palette.secondary.main, t.palette.mode === "dark" ? 0.18 : 0.2)
                   : "action.hover",
               }}
             >
@@ -618,7 +644,7 @@ export function MoodCheckInDemo() {
             p: 1.75,
             borderRadius: 1.5,
             bgcolor: (t) =>
-              t.palette.mode === "dark" ? "rgba(63,157,149,0.10)" : "rgba(15,105,99,0.06)",
+              alpha(t.palette.secondary.main, t.palette.mode === "dark" ? 0.10 : 0.12),
             border: 1,
             borderColor: "primary.light",
           }}
@@ -709,7 +735,7 @@ export function DiaryEncryptedDemo() {
             p: 2,
             borderRadius: 1.5,
             bgcolor: (t) =>
-              t.palette.mode === "dark" ? "rgba(255,255,255,0.03)" : "rgba(15,105,99,0.04)",
+              alpha(t.palette.text.primary, 0.04),
             border: 1,
             borderColor: "divider",
             fontFamily: '"Georgia", "Cambria", serif',
@@ -735,9 +761,7 @@ export function DiaryEncryptedDemo() {
             p: 1.5,
             borderRadius: 1.5,
             bgcolor: (t) =>
-              t.palette.mode === "dark"
-                ? "rgba(63,157,149,0.08)"
-                : "rgba(15,105,99,0.05)",
+              alpha(t.palette.secondary.main, t.palette.mode === "dark" ? 0.08 : 0.1),
             border: 1,
             borderColor: "divider",
           }}
@@ -909,9 +933,7 @@ export function CounsellingDemo() {
             p: 1.5,
             borderRadius: 1.5,
             bgcolor: (t) =>
-              t.palette.mode === "dark"
-                ? "rgba(63,157,149,0.10)"
-                : "rgba(15,105,99,0.06)",
+              alpha(t.palette.secondary.main, t.palette.mode === "dark" ? 0.10 : 0.12),
             border: 1,
             borderColor: "primary.light",
           }}
@@ -953,9 +975,7 @@ function CounsellorRow({
         borderColor: booked ? "primary.light" : "divider",
         bgcolor: booked
           ? (t) =>
-              t.palette.mode === "dark"
-                ? "rgba(63,157,149,0.06)"
-                : "rgba(15,105,99,0.04)"
+              alpha(t.palette.secondary.main, t.palette.mode === "dark" ? 0.06 : 0.08)
           : "transparent",
       }}
     >
@@ -979,7 +999,7 @@ function CounsellorRow({
         </Box>
         <Stack alignItems="flex-end" spacing={0.5} sx={{ flexShrink: 0 }}>
           <Stack direction="row" spacing={0.25} alignItems="center">
-            <StarIcon sx={{ fontSize: 14, color: "#FFB400" }} />
+            <StarIcon sx={{ fontSize: 14, color: "achievement.main" }} />
             <Typography variant="caption" sx={{ fontWeight: 700 }}>
               {rating.toFixed(1)}
             </Typography>
@@ -1097,5 +1117,684 @@ export function ExamSimulatorDemo() {
         </Typography>
       </Stack>
     </MockAppFrame>
+  );
+}
+
+// ============================================================
+// 7. Goals board — the real /dashboard/goals list
+// ============================================================
+// Built against the running app and goals/page.tsx, not from imagination.
+// Every element below exists on the real page:
+//
+//   - the four tabs, in order: TABS (goals/page.tsx:50)
+//   - the card itself is CardRow (components/common/CardRow.tsx): category chip,
+//     h6 title, caption subtitle, body copy, then a pinned block of
+//     progress-label + right-aligned percent, a 4px bar, and a status pill with
+//     the due/verified meta opposite it
+//   - the progress label reads "62% of 75%": progressLabel (:177) prints the
+//     current and target values rather than the percent, deliberately
+//   - the footer chips are GoalFooter (:761). A rewarded goal gets the points
+//     chip, every measured goal gets "Auto-checked", an unrewarded one gets
+//     "Tracked", and a verified goal also shows the difficulty it cleared
+//   - "Up from 61% when you set this." / "Started at 62%. Now 68%." are the two
+//     literal baseline sentences at :832-834
+//
+// Deliberately not drawn: milestones. GoalMilestone has full server CRUD but
+// every write button on the detail page renders without a handler, so a student
+// cannot make one, and a picture of a milestone list would be a claim we would
+// have to walk back.
+export function GoalsBoardDemo() {
+  return (
+    <MockAppFrame title="aptiverse.co.za/dashboard/goals" badge="Checked, not self-reported">
+      <Stack spacing={2}>
+        <Box sx={{ borderBottom: 1, borderColor: "divider", display: "flex", gap: 2.5 }}>
+          {["Active", "At risk", "Completed", "Verified"].map((t) => (
+            <Typography
+              key={t}
+              variant="body2"
+              sx={{
+                pb: 1,
+                fontWeight: t === "Verified" ? 700 : 500,
+                color: t === "Verified" ? "primary.main" : "text.secondary",
+                borderBottom: 2,
+                borderColor: t === "Verified" ? "primary.main" : "transparent",
+                whiteSpace: "nowrap",
+                fontSize: { xs: "0.78rem", sm: "0.875rem" },
+              }}
+            >
+              {t}
+            </Typography>
+          ))}
+        </Box>
+
+        <MockGoalCard
+          category="Academic"
+          title="Lift Trigonometry mastery to 75%"
+          subject="Mathematics"
+          description="Two practice sets a week until the term test."
+          progressLabel="78% of 75%"
+          progressValue={100}
+          tone="achievement"
+          statusLabel="Verified"
+          meta="Verified 2 days ago"
+          points="320 pts earned"
+          checkLabel="Auto-checked"
+          difficulty="challenge"
+          baseline="Up from 61% when you set this."
+        />
+
+        <MockGoalCard
+          category="Academic"
+          title="Beat your practice score: 80%"
+          subject="Physical Sciences"
+          progressLabel="68% of 80%"
+          progressValue={85}
+          tone="warning"
+          statusLabel="At risk"
+          dot
+          meta="Due in 5 days"
+          points="At least 180 pts"
+          checkLabel="Auto-checked"
+          baseline="Started at 62%. Now 68%."
+        />
+      </Stack>
+    </MockAppFrame>
+  );
+}
+
+type GoalTone = "achievement" | "warning";
+
+function MockGoalCard({
+  category,
+  title,
+  subject,
+  description,
+  progressLabel,
+  progressValue,
+  tone,
+  statusLabel,
+  dot,
+  meta,
+  points,
+  checkLabel,
+  difficulty,
+  baseline,
+}: {
+  category: string;
+  title: string;
+  subject: string;
+  description?: string;
+  progressLabel: string;
+  progressValue: number;
+  tone: GoalTone;
+  statusLabel: string;
+  dot?: boolean;
+  meta: string;
+  points: string;
+  checkLabel: string;
+  difficulty?: string;
+  baseline: string;
+}) {
+  return (
+    <Box
+      sx={{
+        p: { xs: 1.75, sm: 2 },
+        borderRadius: 1.5,
+        border: 1,
+        borderColor: "divider",
+        display: "flex",
+        flexDirection: "column",
+        gap: 1.25,
+      }}
+    >
+      <Box>
+        <Chip label={category} size="small" sx={{ height: 20, fontSize: "0.68rem" }} />
+      </Box>
+
+      <Box>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+          {title}
+        </Typography>
+        <Typography variant="caption" color="text.secondary">
+          {subject}
+        </Typography>
+      </Box>
+
+      {description && (
+        <Typography variant="caption" color="text.secondary">
+          {description}
+        </Typography>
+      )}
+
+      <Box>
+        <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">
+            {progressLabel}
+          </Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+            {progressValue}%
+          </Typography>
+        </Stack>
+        <LinearProgress
+          variant="determinate"
+          value={progressValue}
+          color={tone === "achievement" ? "success" : "warning"}
+        />
+      </Box>
+
+      <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+        <MockStatusChip tone={tone} label={statusLabel} dot={dot} />
+        <Typography variant="caption" color="text.secondary" sx={{ textAlign: "right" }}>
+          {meta}
+        </Typography>
+      </Stack>
+
+      <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+        <Chip
+          size="small"
+          icon={<Sparkles size={12} />}
+          label={points}
+          sx={{
+            height: 22,
+            fontSize: "0.68rem",
+            fontWeight: 600,
+            bgcolor: (t) => alpha(t.palette.achievement.main, 0.14),
+            color: (t) => t.palette.achievement.dark,
+            "& .MuiChip-icon": { color: "inherit", ml: 0.75 },
+          }}
+        />
+        <Chip
+          size="small"
+          variant="outlined"
+          icon={<ShieldCheck size={12} />}
+          label={checkLabel}
+          sx={{ height: 22, fontSize: "0.68rem", "& .MuiChip-icon": { ml: 0.75 } }}
+        />
+        {difficulty && (
+          <Chip
+            size="small"
+            variant="outlined"
+            label={difficulty}
+            sx={{ height: 22, fontSize: "0.68rem", textTransform: "capitalize" }}
+          />
+        )}
+      </Stack>
+
+      <Typography variant="caption" color="text.secondary">
+        {baseline}
+      </Typography>
+    </Box>
+  );
+}
+
+// StatusChip (components/common/StatusChip.tsx) paints its colour as text on a
+// 12% wash of itself with a 24% border. Re-derived here from theme tokens so the
+// mock matches the real pill in both schemes without importing app internals.
+function MockStatusChip({ tone, label, dot }: { tone: GoalTone; label: string; dot?: boolean }) {
+  return (
+    <Chip
+      size="small"
+      icon={
+        dot ? (
+          <Box
+            component="span"
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              bgcolor: `${tone}.main`,
+              ml: 1,
+              mr: -0.25,
+            }}
+          />
+        ) : undefined
+      }
+      label={label}
+      sx={{
+        height: 22,
+        fontSize: "0.7rem",
+        fontWeight: 600,
+        flexShrink: 0,
+        bgcolor: (t) => alpha(t.palette[tone].main, 0.12),
+        color: (t) => t.palette[tone].main,
+        border: (t) => `1px solid ${alpha(t.palette[tone].main, 0.24)}`,
+      }}
+    />
+  );
+}
+
+// ============================================================
+// 8. Rewards — points spent on real quota
+// ============================================================
+// The other half of the goals loop, and the half nobody could picture from a
+// card that said "points buy real headroom".
+//
+// Ground truth is /dashboard/rewards as it renders today: LevelCard (:122)
+// prints "Level N", the rank, "N points to spend" and "N points to level N+1"
+// over a secondary bar, with practice streak, check-in streak and tests done
+// alongside. RewardRow (:364) prints the reward title, the quota it raises,
+// the cost in pts, a Redeem button that is only contained when affordable, and
+// "N points short" underneath when it is not.
+//
+// The three quota keys are the only ones the meter knows (QUOTA, :50), and the
+// costs and copy below are the seeded rewards read off the running app. Level 1
+// and the rank "Getting started" are the real starting state, so nothing here
+// implies a ladder we have not built.
+export function RewardsSpendDemo() {
+  return (
+    <MockAppFrame title="aptiverse.co.za/dashboard/rewards" badge="Spends on real limits">
+      <Stack spacing={2}>
+        <Box
+          sx={{
+            p: { xs: 1.75, sm: 2.25 },
+            borderRadius: 1.5,
+            border: 1,
+            borderColor: (t) => alpha(t.palette.achievement.main, 0.3),
+            bgcolor: (t) => alpha(t.palette.achievement.main, 0.1),
+          }}
+        >
+          <Typography variant="overline" color="text.secondary">
+            Level 1
+          </Typography>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.25 }}>
+            Getting started
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            320 points to spend
+          </Typography>
+          <Box sx={{ mt: 1.5 }}>
+            <LinearProgress
+              variant="determinate"
+              value={64}
+              color="secondary"
+              sx={{ height: 8, borderRadius: 999 }}
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.75, display: "block" }}>
+              180 points to level 2.
+            </Typography>
+          </Box>
+
+          <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
+            <MiniStat icon={<Flame size={15} />} value="6" label="Practice streak" />
+            <MiniStat icon={<CalendarCheck size={15} />} value="4" label="Check-in streak" />
+            <MiniStat icon={<ClipboardList size={15} />} value="12" label="Tests done" />
+          </Stack>
+        </Box>
+
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Box sx={{ color: "text.secondary", display: "flex" }}>
+              <Gift size={16} />
+            </Box>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              Spend your points
+            </Typography>
+          </Stack>
+          <Typography variant="caption" color="text.secondary">
+            320 available
+          </Typography>
+        </Stack>
+
+        <MockRewardRow
+          title="100 extra quick questions"
+          quota="Quick questions"
+          quotaIcon={<Zap size={12} />}
+          body="A hundred more quick tutor exchanges for a week."
+          cost="250 pts"
+          affordable
+        />
+        <MockRewardRow
+          title="10 extra deep sessions"
+          quota="Deep tutor sessions"
+          quotaIcon={<Brain size={12} />}
+          body="Ten more deep-mode tutor sessions on top of your plan, for a week."
+          cost="400 pts"
+          short="80 points short"
+        />
+
+        <Typography variant="caption" color="text.secondary">
+          Each one raises a limit on your plan for a set number of days. It goes live straight away.
+        </Typography>
+      </Stack>
+    </MockAppFrame>
+  );
+}
+
+function MiniStat({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+}) {
+  return (
+    <Box sx={{ minWidth: 0 }}>
+      <Box sx={{ color: "text.secondary", display: "flex", mb: 0.25 }}>{icon}</Box>
+      <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+        {value}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
+function MockRewardRow({
+  title,
+  quota,
+  quotaIcon,
+  body,
+  cost,
+  affordable,
+  short,
+}: {
+  title: string;
+  quota: string;
+  quotaIcon: React.ReactNode;
+  body: string;
+  cost: string;
+  affordable?: boolean;
+  short?: string;
+}) {
+  return (
+    <Box sx={{ p: 1.5, borderRadius: 1.5, border: 1, borderColor: "divider" }}>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1.5}
+        alignItems={{ xs: "flex-start", sm: "flex-start" }}
+        justifyContent="space-between"
+      >
+        <Box sx={{ minWidth: 0 }}>
+          <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" useFlexGap>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {title}
+            </Typography>
+            <Chip
+              size="small"
+              icon={quotaIcon as React.ReactElement}
+              label={quota}
+              variant="outlined"
+              sx={{ height: 20, fontSize: "0.65rem", "& .MuiChip-icon": { ml: 0.75 } }}
+            />
+          </Stack>
+          <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+            {body}
+          </Typography>
+        </Box>
+        <Stack
+          spacing={0.5}
+          alignItems={{ xs: "flex-start", sm: "flex-end" }}
+          sx={{ flexShrink: 0 }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}
+          >
+            {cost}
+          </Typography>
+          <Button
+            size="small"
+            variant={affordable ? "contained" : "outlined"}
+            disabled={!affordable}
+            sx={{ py: 0.25, fontSize: "0.72rem" }}
+          >
+            Redeem
+          </Button>
+          {short && (
+            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+              {short}
+            </Typography>
+          )}
+        </Stack>
+      </Stack>
+    </Box>
+  );
+}
+
+// ============================================================
+// 9. Career navigator — plans measured against real marks
+// ============================================================
+// Shipped, free on every plan (features.ts:140), and until now the page never
+// showed it. Drawn from /dashboard/career in the running app:
+//
+//   - the plan list is headed "Sorted by how far off you are", closest first,
+//     and its own caption explains why the number is the biggest single gap
+//   - each row is a status dot, programme, institution, a ReachChip, and a
+//     chevron, over a stacked bar whose segments are the requirement counts
+//   - "On track" and "4 short" are reachLabel (lib/targets/reach.ts:347); the
+//     "2 clear · 1 short" line is joined from the same counts (career/page.tsx:561)
+//   - the deadline line reads "8 days to apply · 30 Jul 2026" and turns warning
+//     inside 30 days, with a wash inside 14 (:642-656)
+//   - the right-hand panel is "Where you stand, course by course", each row a
+//     current mark with "N topics practised" when practice has measured it
+//
+// The requirements are entered by the student. Nothing here implies we hold a
+// university prospectus, because we do not.
+export function CareerTargetsDemo() {
+  return (
+    <MockAppFrame title="aptiverse.co.za/dashboard/career" badge="Free on every plan">
+      <Stack spacing={2}>
+        <Box>
+          <Typography variant="overline" color="text.secondary">
+            Your plans
+          </Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            Sorted by how far off you are
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Closest first. The number is your biggest single gap, because an application is judged on
+            the requirement you missed.
+          </Typography>
+        </Box>
+
+        <MockPlanRow
+          tone="success"
+          programme="BSc Computer Science"
+          institution="University of Cape Town"
+          reach="On track"
+          segments={[{ n: 4, tone: "success" }]}
+          counts="4 clear"
+          deadline="8 days to apply · 30 Jul 2026"
+          urgent
+        />
+        <MockPlanRow
+          tone="warning"
+          programme="BSc Actuarial Science"
+          institution="University of the Witwatersrand"
+          reach="4 short"
+          segments={[
+            { n: 3, tone: "success" },
+            { n: 1, tone: "warning" },
+          ]}
+          counts="3 clear · 1 short"
+          deadline="62 days to apply · 30 Sep 2026"
+        />
+
+        <Box sx={{ pt: 0.5, borderTop: 1, borderColor: "divider" }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ pt: 1.5 }}>
+            <Box>
+              <Typography variant="overline" color="text.secondary">
+                Your record
+              </Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                Where you stand, subject by subject
+              </Typography>
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap", pt: 1 }}>
+              2 measured
+            </Typography>
+          </Stack>
+
+          <Stack spacing={1.25} sx={{ mt: 1.5 }}>
+            <MockRecordRow name="Mathematics" note="Current mark · 8 topics practised" mark={78} />
+            <MockRecordRow name="Physical Sciences" note="Current mark" mark={64} />
+          </Stack>
+        </Box>
+      </Stack>
+    </MockAppFrame>
+  );
+}
+
+type ReachTone = "success" | "warning";
+
+function MockPlanRow({
+  tone,
+  programme,
+  institution,
+  reach,
+  segments,
+  counts,
+  deadline,
+  urgent,
+}: {
+  tone: ReachTone;
+  programme: string;
+  institution: string;
+  reach: string;
+  segments: { n: number; tone: ReachTone }[];
+  counts: string;
+  deadline: string;
+  urgent?: boolean;
+}) {
+  const total = segments.reduce((sum, s) => sum + s.n, 0);
+  return (
+    <Box sx={{ p: 1.5, borderRadius: 1.5, border: 1, borderColor: "divider" }}>
+      <Stack direction="row" spacing={1.25} alignItems="flex-start">
+        <Box
+          aria-hidden
+          sx={{
+            width: 9,
+            height: 9,
+            borderRadius: "50%",
+            flexShrink: 0,
+            mt: 0.75,
+            bgcolor: `${tone}.main`,
+            boxShadow: (t) => `0 0 0 3px ${alpha(t.palette[tone].main, 0.12)}`,
+          }}
+        />
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+            {programme}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+            {institution}
+          </Typography>
+        </Box>
+        <Box
+          component="span"
+          sx={{
+            px: 1,
+            py: 0.375,
+            borderRadius: 1,
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            lineHeight: 1.4,
+            whiteSpace: "nowrap",
+            flexShrink: 0,
+            fontVariantNumeric: "tabular-nums",
+            color: `${tone}.main`,
+            bgcolor: (t) => alpha(t.palette[tone].main, 0.14),
+          }}
+        >
+          {reach}
+        </Box>
+        <Box sx={{ color: "text.disabled", display: "flex", flexShrink: 0, pt: 0.25 }}>
+          <ChevronRight size={16} />
+        </Box>
+      </Stack>
+
+      <Stack direction="row" spacing={0.5} sx={{ mt: 1.25 }}>
+        {segments.map((s, i) => (
+          <Box
+            key={i}
+            sx={{
+              flex: s.n / total,
+              height: 4,
+              borderRadius: 999,
+              bgcolor: `${s.tone}.main`,
+            }}
+          />
+        ))}
+      </Stack>
+
+      <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap sx={{ mt: 1.25 }}>
+        <Typography variant="caption" color="text.secondary">
+          {counts}
+        </Typography>
+        <Stack
+          direction="row"
+          spacing={0.5}
+          alignItems="center"
+          sx={
+            urgent
+              ? {
+                  px: 0.75,
+                  py: 0.25,
+                  borderRadius: 1,
+                  bgcolor: (t) => alpha(t.palette.warning.main, 0.14),
+                }
+              : undefined
+          }
+        >
+          {/* The real page only colours a deadline inside 30 days and only
+              washes it inside 14 (career/page.tsx:642). A far-off date is plain
+              text there, so it is plain text here. */}
+          <Box sx={{ color: urgent ? "warning.main" : "text.disabled", display: "flex" }}>
+            <CalendarClock size={13} />
+          </Box>
+          <Typography
+            variant="caption"
+            sx={{
+              color: urgent ? "warning.main" : "text.secondary",
+              fontWeight: urgent ? 700 : 400,
+            }}
+          >
+            {deadline}
+          </Typography>
+        </Stack>
+      </Stack>
+    </Box>
+  );
+}
+
+function MockRecordRow({ name, note, mark }: { name: string; note: string; mark: number }) {
+  return (
+    <Box>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="body2" sx={{ fontWeight: 700 }} noWrap>
+            {name}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
+            {note}
+          </Typography>
+        </Box>
+        <Box
+          component="span"
+          sx={{
+            px: 1,
+            py: 0.25,
+            borderRadius: 1,
+            fontSize: "0.72rem",
+            fontWeight: 700,
+            flexShrink: 0,
+            fontVariantNumeric: "tabular-nums",
+            color: "success.main",
+            bgcolor: (t) => alpha(t.palette.success.main, 0.14),
+          }}
+        >
+          {mark}%
+        </Box>
+      </Stack>
+      <LinearProgress
+        variant="determinate"
+        value={mark}
+        color="success"
+        sx={{ mt: 0.75, height: 4, borderRadius: 999 }}
+      />
+    </Box>
   );
 }
