@@ -3,8 +3,8 @@
 // hook from React components — server-only callers can pass a token
 // explicitly.
 
-import { getSession } from "next-auth/react";
 import { humanizeApiError } from "@/lib/api/errors";
+import { getAccessToken } from "@/lib/api/token";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5100";
 
@@ -52,8 +52,8 @@ export type CheckoutInput = {
 
 async function authHeaders(): Promise<HeadersInit> {
   if (typeof window === "undefined") return { "Content-Type": "application/json" };
-  const session = await getSession();
-  const token = (session as { accessToken?: string } | null)?.accessToken;
+  // Shares the same in-memory cache as fetcher(). See token.ts.
+  const token = await getAccessToken();
   return token
     ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
     : { "Content-Type": "application/json" };

@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiClient, openEventStream, ApiError } from "@/lib/api/fetcher";
+import { studyVocabulary } from "@/lib/study-vocabulary";
 import {
   type Assessment,
   type Goal,
@@ -274,13 +275,18 @@ export const useAddSubject = () => {
 
 // --- Institutions + courses (tertiary) ---------------------------------
 
-export const useInstitutions = (type?: string) =>
+// `enabled` lets a caller that only needs the catalog for tertiary students
+// skip the request entirely for high-school ones, the same way
+// useAcademicUnits gates subjects vs courses. Defaults to on so existing
+// callers are unchanged.
+export const useInstitutions = (type?: string, options?: { enabled?: boolean }) =>
   useQuery<Institution[]>({
     queryKey: queryKeys.institutions(type),
     queryFn: () =>
       apiClient.get<Institution[]>(
         `/api/academic-planning/institutions${type ? `?type=${encodeURIComponent(type)}` : ""}`,
       ),
+    enabled: options?.enabled ?? true,
     staleTime: 1000 * 60 * 60, // institution catalog is static within a session
   });
 
@@ -316,7 +322,8 @@ export type AcademicUnit = {
 
 export function useAcademicUnits() {
   const profileQuery = useAcademicProfile();
-  const isTertiary = profileQuery.data?.educationLevel === "tertiary";
+  const vocabulary = studyVocabulary(profileQuery.data?.educationLevel);
+  const isTertiary = vocabulary.isTertiary;
 
   const subjectsQuery = useQuery<Subject[]>({
     queryKey: queryKeys.subjects(),
@@ -352,10 +359,13 @@ export function useAcademicUnits() {
   return {
     units,
     isTertiary,
-    // Singular/plural nouns + the page to add more, so shared UI reads correctly.
-    unitNoun: isTertiary ? "course" : "subject",
-    unitNounPlural: isTertiary ? "courses" : "subjects",
-    addHref: isTertiary ? "/dashboard/courses" : "/dashboard/subjects",
+    // Singular/plural nouns + the page to add more, so shared UI reads
+    // correctly. Sourced from the shared study vocabulary rather than spelled
+    // out here, so these nouns and the ones useStudyVocabulary hands to copy
+    // can never drift apart.
+    unitNoun: vocabulary.unitSingular,
+    unitNounPlural: vocabulary.unitPlural,
+    addHref: vocabulary.unitsHref,
     isLoading: profileQuery.isLoading || (isTertiary ? coursesQuery.isLoading : subjectsQuery.isLoading),
     isReady: profileQuery.isSuccess && (isTertiary ? coursesQuery.isSuccess : subjectsQuery.isSuccess),
     nameFor: (id: string | null | undefined) =>
@@ -586,9 +596,8 @@ export const useUploadAssessmentFile = (assessmentId: string) => {
   const qc = useQueryClient();
   return useMutation<AssessmentUpload, Error, File>({
     mutationFn: async (file) => {
-      const { getSession } = await import("next-auth/react");
-      const session = await getSession();
-      const token = (session as { accessToken?: string } | null)?.accessToken;
+      const { getAccessToken } = await import("@/lib/api/token");
+      const token = await getAccessToken();
       const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5100";
 
       const fd = new FormData();

@@ -7,8 +7,9 @@
 // task. Until then, an expired access token redirects through the
 // standard sign-in flow.
 
-import { getSession, signIn } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { humanizeApiError } from "@/lib/api/errors";
+import { clearAccessToken, getAccessToken } from "@/lib/api/token";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5100";
 
@@ -25,8 +26,9 @@ export class ApiError extends Error {
 
 async function authHeaders(): Promise<HeadersInit> {
   if (typeof window === "undefined") return { "Content-Type": "application/json" };
-  const session = await getSession();
-  const token = (session as { accessToken?: string } | null)?.accessToken;
+  // Cached in memory. See token.ts: this used to be a session round trip on
+  // every single call, in front of every single query.
+  const token = await getAccessToken();
   return token
     ? { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
     : { "Content-Type": "application/json" };
@@ -41,6 +43,9 @@ export async function fetcher<T>(path: string, init: RequestInit = {}): Promise<
 
   if (res.status === 401) {
     if (typeof window !== "undefined") {
+      // Drop the cached token first. The API has just refused it, so replaying
+      // it on the next call would only produce another 401.
+      clearAccessToken();
       void signIn();
     }
     throw new ApiError(401, "", "Not authenticated");
@@ -74,8 +79,7 @@ export function openEventStream(
 
   void (async () => {
     if (typeof window === "undefined") return;
-    const session = await getSession();
-    const token = (session as { accessToken?: string } | null)?.accessToken;
+    const token = await getAccessToken();
     try {
       const res = await fetch(`${API_URL}${path}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},

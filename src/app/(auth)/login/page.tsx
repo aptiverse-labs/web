@@ -20,6 +20,7 @@ import { PasswordField } from "@/components/auth/PasswordField";
 import { loginSchema, type LoginValues } from "@/lib/schemas";
 import { homeRouteForRole } from "@/lib/home-route";
 import { useHydrated } from "@/lib/hooks/useHydrated";
+import { clearAccessToken } from "@/lib/api/token";
 
 export default function LoginPage() {
   return (
@@ -132,6 +133,12 @@ function LoginInner() {
       setError("Invalid email or password");
       return;
     }
+
+    // A different account may have been signed in a moment ago, and the API
+    // token is cached in memory for the lifetime of the tab. Drop it here so
+    // the first request after signing in cannot go out carrying the previous
+    // user's token.
+    clearAccessToken();
 
     // Resolve where to send the user. If they were redirected here from
     // a specific protected page, honour that. Otherwise fall back to the
