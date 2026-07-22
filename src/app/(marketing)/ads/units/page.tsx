@@ -35,7 +35,7 @@ export default function AdUnitsIndexPage() {
     };
   }, []);
 
-  const groups: AdUnit["audience"][] = ["uni", "parent", "tutor", "brand"];
+  const groups: AdUnit["audience"][] = ["organic", "uni", "parent", "tutor", "brand"];
 
   return (
     <Box sx={{ p: { xs: 2.5, md: 5 }, bgcolor: "background.default", minHeight: "100vh" }}>

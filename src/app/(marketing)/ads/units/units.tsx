@@ -25,6 +25,7 @@ import {
   TutorChatDepiction,
   TutorMathsDepiction,
 } from "./depictions";
+import { ORGANIC_UNITS } from "./organic";
 
 // =====================================================================
 // The exportable ad units.
@@ -62,8 +63,11 @@ export type AdUnit = {
   width: number;
   height: number;
   scheme: AdScheme;
-  audience: "uni" | "parent" | "tutor" | "brand";
-  concept: "product" | "typographic" | "problem" | "og";
+  // "organic" is not a fourth demographic: it is the same university
+  // student seen in a feed they chose rather than an ad break. Kept as its
+  // own bucket so paid and organic never get shipped as one campaign.
+  audience: "uni" | "parent" | "tutor" | "brand" | "organic";
+  concept: "product" | "typographic" | "problem" | "og" | "chart" | "carousel";
   /** What a human should understand this unit is doing. */
   note: string;
   render: () => React.ReactNode;
@@ -506,6 +510,113 @@ export const AD_UNITS: AdUnit[] = [
     note: "Open Graph and Twitter card. Mirrors app/opengraph-image.tsx, which is what actually serves the tag.",
     render: () => <OpenGraphCard />,
   },
+
+  // -------------------------------------------------------------------
+  // ORGANIC. Posts rather than ads: no CTA pill, no landing-page push,
+  // and each one has to be worth looking at even if nobody clicks. Built
+  // in organic.tsx and charts.tsx; see the header of each for what is and
+  // is not allowed on them.
+  // -------------------------------------------------------------------
+  {
+    slug: "org-chart-projection-1080x1350",
+    width: 1080,
+    height: 1350,
+    scheme: "dark",
+    audience: "organic",
+    concept: "chart",
+    note: "THE chart. Dumbbell of current mark to projected mark across one student's six courses, full 0-100 domain, three rows honestly left unprojected. Status colours validated with the dataviz palette validator (CVD dE 10.2 deutan).",
+    render: () => <ORGANIC_UNITS.ChartPortrait />,
+  },
+  {
+    slug: "org-chart-projection-1080x1920",
+    width: 1080,
+    height: 1920,
+    scheme: "dark",
+    audience: "organic",
+    concept: "chart",
+    note: "The same chart cut for story, reel and WhatsApp status. Plot sits in the middle band, clear of the platform furniture top and bottom.",
+    render: () => <ORGANIC_UNITS.ChartStory />,
+  },
+  {
+    slug: "org-week9-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "organic",
+    concept: "typographic",
+    note: "Square feed. No product at all. The week-9 observation, made to be recognised and forwarded, with the wordmark as the only ask.",
+    render: () => <ORGANIC_UNITS.WeekNine />,
+  },
+  {
+    slug: "org-recall-idea-1080x1350",
+    width: 1080,
+    height: 1350,
+    scheme: "light",
+    audience: "organic",
+    concept: "typographic",
+    note: "Portrait feed. One study technique, complete and usable on paper, branded only in the footer. The screenshot-and-send unit.",
+    render: () => <ORGANIC_UNITS.RecallIdea />,
+  },
+  {
+    slug: "org-free-tier-1080x1350",
+    width: 1080,
+    height: 1350,
+    scheme: "light",
+    audience: "organic",
+    concept: "product",
+    note: "Portrait feed. The free plan stated in full, every figure read out of the entitlements seeder, including the line saying what is not free.",
+    render: () => <ORGANIC_UNITS.FreeTier />,
+  },
+  {
+    slug: "org-carousel-1of5-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "organic",
+    concept: "carousel",
+    note: "Carousel 1/5. Hook: the app refuses before it obliges.",
+    render: () => <ORGANIC_UNITS.CarouselOne />,
+  },
+  {
+    slug: "org-carousel-2of5-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "organic",
+    concept: "carousel",
+    note: "Carousel 2/5. What the generator already knows before you type anything.",
+    render: () => <ORGANIC_UNITS.CarouselTwo />,
+  },
+  {
+    slug: "org-carousel-3of5-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "organic",
+    concept: "carousel",
+    note: "Carousel 3/5. The only product picture in the set, reusing the real practice depiction.",
+    render: () => <ORGANIC_UNITS.CarouselThree />,
+  },
+  {
+    slug: "org-carousel-4of5-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "organic",
+    concept: "carousel",
+    note: "Carousel 4/5. The integrity rules, which are real: one attempt, timed, tutor locked, focus loss recorded.",
+    render: () => <ORGANIC_UNITS.CarouselFour />,
+  },
+  {
+    slug: "org-carousel-5of5-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "organic",
+    concept: "carousel",
+    note: "Carousel 5/5. Closes the loop back to mastery and states the free numbers.",
+    render: () => <ORGANIC_UNITS.CarouselFive />,
+  },
 ];
 
 export const AUDIENCE_LABELS: Record<AdUnit["audience"], string> = {
@@ -513,6 +624,7 @@ export const AUDIENCE_LABELS: Record<AdUnit["audience"], string> = {
   parent: "Parents",
   tutor: "Tutors",
   brand: "Brand",
+  organic: "Organic posts",
 };
 
 export function findUnit(slug: string): AdUnit | undefined {
