@@ -15,10 +15,11 @@ import { adSurfaces, type AdScheme } from "./adkit";
 // thumbnail. Neither is allowed to invent anything.
 //
 // The one chart in this file plots the mastery projection: the current
-// mark per course, and the projected mark where MasteryController has
-// enough graded work to compute one. Three of the six courses have no
-// projection, and that is drawn rather than hidden, because "no marks in,
-// no projection" is the honest shape of the feature.
+// mark per course, and the projected mark MasteryController computes from the
+// graded work already logged. This account has enough marks in every course,
+// so all six project. The renderer still handles a missing projection and
+// draws it plainly rather than hiding the row, because "no marks in, no
+// projection" is a real state of the feature; it just is not this student's.
 //
 // DELIBERATELY ABSENT, and this is the whole point of the file:
 //   - no outcome statistic, no "students improve by X"
@@ -67,12 +68,22 @@ export type CourseRow = {
 // The shape of one real seeded student: a first-year Aeronautical
 // Engineering student at Wits with six courses. Ordered by current mark
 // so the reader's eye falls down the list into the one that is dropping.
+// Read back from GET /api/mastery/predictions for the seeded first-year
+// Aeronautical Engineering account, not from memory. Every course has a
+// projection: the three nulls that were here previously came from an
+// incomplete brief rather than from the data, and printing "no projection"
+// against a course the product does in fact project is exactly the kind of
+// small untruth this whole marketing set exists to avoid.
+//
+// The real shape is a better argument anyway. Five courses flat or climbing
+// and exactly one falling is a sharper picture than three shrugs, and it is
+// what the account actually says.
 export const AERO_COURSES: CourseRow[] = [
-  { name: "Engineering Drawing", current: 78, predicted: null },
+  { name: "Engineering Drawing", current: 78, predicted: 78 },
   { name: "Electrical Engineering", current: 70, predicted: 73 },
-  { name: "Mathematics", current: 65, predicted: null },
+  { name: "Mathematics", current: 65, predicted: 65 },
   { name: "Physics", current: 61, predicted: 66 },
-  { name: "Mechanics", current: 57, predicted: null },
+  { name: "Mechanics", current: 57, predicted: 58 },
   { name: "Chemistry", current: 51, predicted: 46 },
 ];
 
@@ -134,9 +145,19 @@ export function ProjectionDumbbell({
           }}
         />
         {rows.map((r) => {
-        const up = r.predicted !== null && r.predicted >= r.current;
-        const tone = r.predicted === null ? s.muted : up ? CHART_UP : CHART_DOWN;
+        // Three-way, not two. Treating "no change" as up painted a green
+        // rising arrow next to a delta of zero, which claims improvement the
+        // arithmetic does not support. A flat projection is its own state and
+        // gets the neutral ink and a flat glyph.
         const delta = r.predicted === null ? 0 : r.predicted - r.current;
+        const direction: "up" | "flat" | "down" =
+          r.predicted === null || delta === 0 ? "flat" : delta > 0 ? "up" : "down";
+        const tone =
+          r.predicted === null || direction === "flat"
+            ? s.muted
+            : direction === "up"
+              ? CHART_UP
+              : CHART_DOWN;
         const lo = Math.min(r.current, r.predicted ?? r.current);
         const hi = Math.max(r.current, r.predicted ?? r.current);
 
@@ -190,7 +211,13 @@ export function ProjectionDumbbell({
                   alignItems="center"
                   sx={{ width: scale.value * 4.4, justifyContent: "flex-end", flexShrink: 0, color: tone }}
                 >
-                  {up ? <ArrowUpRight size={scale.value * 0.8} /> : <ArrowDownRight size={scale.value * 0.8} />}
+                  {direction === "up" ? (
+                    <ArrowUpRight size={scale.value * 0.8} />
+                  ) : direction === "down" ? (
+                    <ArrowDownRight size={scale.value * 0.8} />
+                  ) : (
+                    <Minus size={scale.value * 0.8} />
+                  )}
                   <Typography
                     sx={{
                       fontSize: scale.value,

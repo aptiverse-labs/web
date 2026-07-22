@@ -99,9 +99,9 @@ function ChartPortrait() {
       <ProjectionDumbbell scheme={scheme} scale={{ name: 30, value: 29, row: 94, dot: 21 }} />
       <Box sx={{ flex: 1, minHeight: 16 }} />
       <Typography sx={{ fontSize: 22, lineHeight: 1.4, color: s.muted, maxWidth: 900 }}>
-        Three rows have no projection because there is not enough graded work in them yet. The app
-        says so rather than guessing. This is arithmetic on real marks, weighted by topic mastery
-        from practice. It is not a forecast of a final result.
+        Five are flat or climbing. One is not, and it was heading there before anyone noticed. This
+        is arithmetic on marks already logged, weighted by topic mastery from practice. It is not a
+        forecast of a final result.
       </Typography>
       <Box sx={{ height: 26 }} />
       <OrganicFooter scheme={scheme} />
@@ -139,8 +139,7 @@ function ChartStory() {
       <ProjectionDumbbell scheme={scheme} scale={{ name: 36, value: 34, row: 118, dot: 25 }} />
       <Box sx={{ flex: 1, minHeight: 30 }} />
       <Typography sx={{ fontSize: 26, lineHeight: 1.4, color: s.muted, maxWidth: 920 }}>
-        No projection on three of them, because there is not enough graded work in yet. Saying so is
-        the feature.
+        One of the six is going the wrong way. Nobody had noticed yet.
       </Typography>
       <Box sx={{ height: 34 }} />
       <OrganicFooter scheme={scheme} size={34} />

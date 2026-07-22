@@ -26,6 +26,7 @@ import {
   TutorMathsDepiction,
 } from "./depictions";
 import { ORGANIC_UNITS } from "./organic";
+import { SHOWCASE_UNITS } from "./showcase";
 
 // =====================================================================
 // The exportable ad units.
@@ -616,6 +617,59 @@ export const AD_UNITS: AdUnit[] = [
     concept: "carousel",
     note: "Carousel 5/5. Closes the loop back to mastery and states the free numbers.",
     render: () => <ORGANIC_UNITS.CarouselFive />,
+  },
+
+  // -------------------------------------------------------------------
+  // SHOWCASE SHEET. The features page compressed into one postable picture:
+  // nine real screens on an even grid, each labelled, so a reader sees the
+  // whole product in one sweep. Built in showcase.tsx; the header there
+  // records which surface came from which screen and what is legible at
+  // which viewing size.
+  //
+  // Deliberately dense and small typed, which is the opposite of every
+  // other unit here. The paid units interrupt somebody with one idea; this
+  // one rewards stopping. Complementary to org-chart-projection-*, which
+  // owns the projection as a plot.
+  // -------------------------------------------------------------------
+  {
+    slug: "showcase-sheet-1080x1350",
+    width: 1080,
+    height: 1350,
+    scheme: "dark",
+    audience: "uni",
+    concept: "product",
+    note: "THE sheet. Portrait feed. Nine real surfaces on a 3x3 grid: courses, mastery, projection, the timed runner, the ground rules, assessments, an auto-checked goal, the tutor, the diary check-in.",
+    render: () => <SHOWCASE_UNITS.ShowcasePortrait />,
+  },
+  {
+    slug: "showcase-sheet-1080x1080",
+    width: 1080,
+    height: 1080,
+    scheme: "dark",
+    audience: "uni",
+    concept: "product",
+    note: "Square cut. Six surfaces on a 3x2 grid rather than the portrait squashed: a whole row is dropped, not shrunk.",
+    render: () => <SHOWCASE_UNITS.ShowcaseSquare />,
+  },
+  {
+    slug: "showcase-sheet-1080x1920",
+    width: 1080,
+    height: 1920,
+    scheme: "dark",
+    audience: "uni",
+    concept: "product",
+    note: "Story and reel. The same nine, with the grid in the middle band clear of the platform furniture top and bottom.",
+    render: () => <SHOWCASE_UNITS.ShowcaseStory />,
+  },
+  {
+    slug: "showcase-sheet-light-1080x1350",
+    width: 1080,
+    height: 1350,
+    scheme: "light",
+    audience: "uni",
+    concept: "product",
+    note: "The same nine on paper. For a deck, a pitch page, a printed one-pager, or anywhere the sheet lands on white.",
+    render: () => <SHOWCASE_UNITS.ShowcaseLight />,
   },
 ];
 
