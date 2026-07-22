@@ -24,6 +24,7 @@ import {
   useAcademicUnits,
   useCurriculumSubjects,
 } from "@/lib/api/queries";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 import {
   useCreateAdmissionTarget,
   useUpdateAdmissionTarget,
@@ -72,7 +73,8 @@ const newRow = (unitId = "", minimum = ""): Row => ({ key: `r${rowSeq++}`, unitI
 export function TargetDialog({ open, onClose, target }: TargetDialogProps) {
   const profile = useAcademicProfile();
   const academic = useAcademicUnits();
-  const isTertiary = profile.data?.educationLevel === "tertiary";
+  const vocab = useStudyVocabulary();
+  const isTertiary = vocab.isTertiary;
   const catalog = useCurriculumSubjects(isTertiary ? null : profile.data?.curriculumId);
 
   const create = useCreateAdmissionTarget();
@@ -183,7 +185,7 @@ export function TargetDialog({ open, onClose, target }: TargetDialogProps) {
   };
 
   const saving = create.isPending || update.isPending;
-  const unitNoun = isTertiary ? "course" : "subject";
+  const unitNoun = vocab.unitSingular;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" scroll="paper">
@@ -302,7 +304,7 @@ export function TargetDialog({ open, onClose, target }: TargetDialogProps) {
 
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
-              {isTertiary ? "Course minimums" : "Subject minimums"}
+              {vocab.UnitSingular} minimums
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
               This is the part that becomes goals. Each minimum is tracked against your real marks.
@@ -326,7 +328,7 @@ export function TargetDialog({ open, onClose, target }: TargetDialogProps) {
                         isTertiary ? `Add your courses first` : "No subjects for your curriculum"
                       }
                       renderInput={(params) => (
-                        <TextField {...params} label={isTertiary ? "Course" : "Subject"} />
+                        <TextField {...params} label={vocab.UnitSingular} />
                       )}
                     />
                     <TextField

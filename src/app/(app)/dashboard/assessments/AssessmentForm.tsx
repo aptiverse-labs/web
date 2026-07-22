@@ -15,6 +15,7 @@ import Link from "next/link";
 import AssignmentOutlinedIcon from "@mui/icons-material/AssignmentOutlined";
 import { useSnackbar } from "notistack";
 import { useAcademicUnits } from "@/lib/api/queries";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 import {
   CAPS_ASSESSMENT_TYPES,
   TERTIARY_ASSESSMENT_TYPES,
@@ -55,6 +56,7 @@ export function AssessmentForm({
 }) {
   const { enqueueSnackbar } = useSnackbar();
   const academic = useAcademicUnits();
+  const vocab = useStudyVocabulary();
 
   const units = academic.units;
   const noun = academic.unitNoun; // "subject" | "course"
@@ -218,7 +220,7 @@ export function AssessmentForm({
                   },
                   htmlInput: { min: 0, max: 100, step: 1 },
                 }}
-                helperText={`Portion of the ${academic.isTertiary ? "semester" : "term"} mark this assessment contributes.`}
+                helperText={`Portion of the ${vocab.periodSingular} mark this assessment contributes.`}
               />
             </Stack>
 

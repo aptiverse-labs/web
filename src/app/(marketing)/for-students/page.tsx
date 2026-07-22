@@ -80,7 +80,7 @@ export default function ForStudentsPage() {
       </GradientBackdrop>
 
       {/* How a week works */}
-      <Section eyebrow="How it works" title="A rhythm you can actually keep" subtitle="Aptiverse turns a term into a loop you repeat each week, not a mountain you face the night before the exam.">
+      <Section eyebrow="How it works" title="A rhythm you can actually keep" subtitle="Aptiverse turns a term or semester into a loop you repeat each week, not a mountain you face the night before the exam.">
         <Grid container spacing={3}>
           {STEPS.map((s, i) => (
             <Grid key={s.title} size={{ xs: 12, sm: 6, md: 3 }}>
@@ -172,7 +172,7 @@ export default function ForStudentsPage() {
           // the page a struggling student reads before deciding to trust us, so
           // it gets the plainest version of the truth. You do the noticing; we
           // keep the record and stay out of your family's hands.
-          body="A 60-second daily check-in, kept across the term, so you can see a run of hard days for what it is. Your family sees the trend, never what you wrote."
+          body="A 60-second daily check-in, kept week after week, so you can see a run of hard days for what it is. Your family sees the trend, never what you wrote."
           bullets={[
             "Your mood, charted across days, not judged",
             "A diary no one in your family can open",
@@ -359,7 +359,7 @@ function StageCard({ icon, label, items }: { icon: React.ReactNode; label: strin
 // "Practise: adaptive sets that get harder as you improve" is the same
 // non-existent adaptivity as everywhere else on this page.
 const STEPS = [
-  { icon: <CalendarDays size={18} />, title: "Track", body: "Log your subjects or courses and what is due, so the term stops living in your head." },
+  { icon: <CalendarDays size={18} />, title: "Track", body: "Log your subjects or courses and what is due, so the whole term stops living in your head." },
   { icon: <BookOpen size={18} />, title: "Learn", body: "Work through topics with the assistant beside you, pitched at your level." },
   { icon: <Target size={18} />, title: "Practise", body: "Generate a set on the topic you are weakest at, and let it mark you." },
   { icon: <Sparkles size={18} />, title: "Reflect", body: "A quick check-in and diary entry, so you notice progress and stress alike." },
@@ -439,7 +439,7 @@ const FEATURES = [
   {
     icon: <TrendingUp size={18} />,
     title: "Mastery and predictions",
-    description: "Per-topic mastery from your real attempts, and a projected mark for next term.",
+    description: "Per-topic mastery from your real attempts, and a projected mark for your next term or semester.",
     accent: "info" as const,
   },
   {
@@ -451,7 +451,7 @@ const FEATURES = [
   {
     icon: <HeartPulse size={18} />,
     title: "Wellbeing tools",
-    description: "Daily mood check-ins, a mood chart across the term, and a diary your family cannot open.",
+    description: "Daily mood check-ins, a mood chart across the year, and a diary your family cannot open.",
     accent: "secondary" as const,
   },
   {

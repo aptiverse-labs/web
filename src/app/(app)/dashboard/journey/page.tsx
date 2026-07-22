@@ -31,6 +31,7 @@ import {
 } from "@/lib/api/queries";
 import { ASSESSMENT_TYPE_LABELS, type Assessment, type Goal } from "@/lib/mockData";
 import { prettifyUnitId } from "@/lib/format";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 import { enter, enterStagger } from "@/lib/motion";
 import {
   ArrowRight,
@@ -901,7 +902,7 @@ function Stat({
 // ─── Where each unit is heading ──────────────────────────────────────
 
 function UnitProgress({ rows, unitNoun }: { rows: UnitRow[]; unitNoun: string }) {
-  const { isTertiary } = useAcademicUnits();
+  const vocab = useStudyVocabulary();
   // A unit with nothing logged and nothing predicted has no journey to show.
   // Listing it anyway just pads the page with dashes.
   const active = rows
@@ -926,7 +927,7 @@ function UnitProgress({ rows, unitNoun }: { rows: UnitRow[]; unitNoun: string })
                 Where each {unitNoun} is heading
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Now, and next {isTertiary ? "semester" : "term"}
+                Now, and {vocab.nextPeriod}
               </Typography>
             </Box>
             <Button
@@ -953,7 +954,7 @@ function UnitProgress({ rows, unitNoun }: { rows: UnitRow[]; unitNoun: string })
 }
 
 function UnitRowCard({ row }: { row: UnitRow }) {
-  const { isTertiary } = useAcademicUnits();
+  const vocab = useStudyVocabulary();
   const { unit, total, graded, upcoming, currentMark, predictedMark, confidence, mastery, nextUp } =
     row;
   const hasMark = currentMark != null;
@@ -1001,7 +1002,7 @@ function UnitRowCard({ row }: { row: UnitRow }) {
               {hasMark ? `${currentMark}%` : "No mark"}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {hasMark ? (isTertiary ? "Semester average" : "Term average") : "Nothing graded"}
+              {hasMark ? `${vocab.PeriodSingular} average` : "Nothing graded"}
             </Typography>
           </Box>
           {drift != null && (
@@ -1015,7 +1016,7 @@ function UnitRowCard({ row }: { row: UnitRow }) {
                   {predictedMark}%
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Next {isTertiary ? "semester" : "term"}
+                  {vocab.NextPeriod}
                 </Typography>
               </Box>
             </Stack>

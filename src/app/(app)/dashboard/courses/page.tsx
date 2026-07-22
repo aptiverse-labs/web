@@ -140,7 +140,7 @@ export default function CoursesPage() {
             No courses yet
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, mt: 0.5 }}>
-            Add the courses you&apos;re taking this term. You&apos;ll be able to log assessments and
+            Add the courses you&apos;re taking this semester. You&apos;ll be able to log assessments and
             generate practice against them.
           </Typography>
           <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>

@@ -42,6 +42,7 @@ import {
   type AssessmentStatus,
 } from "@/lib/mockData";
 import { formatDate, prettifyUnitId } from "@/lib/format";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 import { RelativeTime } from "@/components/common/RelativeTime";
 import { AtmosphericBackdrop } from "@/components/common/AtmosphericBackdrop";
 import { statusKind, isOpen, QuickSubmitButton } from "./AssessmentLifecycle";
@@ -61,7 +62,8 @@ export default function AssessmentsPage() {
   // "SBA" (school-based assessment) is CAPS high-school language. Tertiary
   // students just have "assessments", so the calls to action follow the
   // education level the same way the course/subject wording does.
-  const isTertiary = academic.isTertiary;
+  const vocab = useStudyVocabulary();
+  const isTertiary = vocab.isTertiary;
   const addLabel = isTertiary ? "Add assessment" : "Add SBA";
   const description = isTertiary
     ? "Every test, essay, project and exam. What is due, what is waiting on a mark, and where you stand."
@@ -189,7 +191,7 @@ function AssessmentsView({
       </Grid>
 
       {attention.length > 0 && (
-        <AttentionRail items={attention} unitName={unitName} isTertiary={unitNoun === "course"} />
+        <AttentionRail items={attention} unitName={unitName} />
       )}
 
       <Box>
@@ -406,12 +408,11 @@ function Overview({
 function AttentionRail({
   items,
   unitName,
-  isTertiary,
 }: {
   items: Assessment[];
   unitName: (id: string) => string;
-  isTertiary: boolean;
 }) {
+  const vocab = useStudyVocabulary();
   return (
     <Box>
       <Typography variant="overline" sx={{ color: "text.secondary", letterSpacing: "0.08em" }}>
@@ -455,7 +456,8 @@ function AttentionRail({
                     {a.title}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" noWrap sx={{ display: "block" }}>
-                    {unitName(a.subjectId)} · {a.weight}% of {isTertiary ? "semester" : "term"} mark
+                    {unitName(a.subjectId)} · {a.weight}% of {vocab.periodSingular}{" "}
+                    mark
                   </Typography>
                 </Box>
               </Box>
@@ -505,6 +507,7 @@ function UnitSummary({
   items: Assessment[];
   predictions: TermPrediction[];
 }) {
+  const vocab = useStudyVocabulary();
   const graded = items.filter((a) => a.actualMark != null);
   const subjectId = items[0]?.subjectId;
   const prediction = predictions.find((p) => p.subjectId === subjectId);
@@ -521,7 +524,7 @@ function UnitSummary({
             fontVariantNumeric: "tabular-nums",
           }}
         >
-          {prediction.currentTerm}% term
+          {prediction.currentTerm}% {vocab.periodSingular}
         </Typography>
       )}
       <Typography

@@ -43,6 +43,7 @@ import {
 } from "@/lib/api/queries";
 import type { Assessment, MoodPoint } from "@/lib/mockData";
 import { prettifyUnitId } from "@/lib/format";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 
 export default function AnalyticsPage() {
   const academic = useAcademicUnits();
@@ -135,7 +136,6 @@ export default function AnalyticsPage() {
           mood={mood}
           moodAvg7d={wellbeing?.moodAvg7d ?? 0}
           finishedIds={finishedIds}
-          unitNoun={academic.isTertiary ? "course" : "subject"}
           nameOf={(id, fallback) => academic.nameFor(id) ?? prettifyUnitId(fallback ?? id)}
         />
       )}
@@ -205,7 +205,6 @@ function AnalyticsView({
   mood,
   moodAvg7d,
   finishedIds,
-  unitNoun,
   nameOf,
 }: {
   predictions: TermPrediction[];
@@ -215,10 +214,10 @@ function AnalyticsView({
   moodAvg7d: number;
   // Unit ids (practiceKey / subject slug) the student is done with.
   finishedIds: Set<string>;
-  unitNoun: "course" | "subject";
   nameOf: (id: string, fallback?: string) => string;
 }) {
   const theme = useTheme();
+  const vocab = useStudyVocabulary();
   const mode = theme.palette.mode === "dark" ? "dark" : "light";
   const courses = buildCourses(predictions, topics, graded, nameOf);
 
@@ -226,7 +225,6 @@ function AnalyticsView({
   // top competing for attention with what the student is taking now.
   const activeCourses = courses.filter((c) => !finishedIds.has(c.id));
   const pastCourses = courses.filter((c) => finishedIds.has(c.id));
-  const unitPlural = unitNoun === "course" ? "courses" : "subjects";
 
   const predictedAvg =
     predictions.length > 0
@@ -258,7 +256,7 @@ function AnalyticsView({
             hint={
               predictedAvg == null
                 ? "Log marks to project"
-                : `Across ${courses.length} course${courses.length === 1 ? "" : "s"}`
+                : `Across ${courses.length} ${courses.length === 1 ? vocab.unitSingular : vocab.unitPlural}`
             }
           />
         </Grid>
@@ -277,7 +275,7 @@ function AnalyticsView({
             value={graded.length}
             icon={<FactCheckIcon />}
             color="primary"
-            hint={unitNoun === "course" ? "Graded this semester" : "Graded this term"}
+            hint={`Graded this ${vocab.periodSingular}`}
           />
         </Grid>
         <Grid size={{ xs: 6, md: 3 }}>
@@ -297,10 +295,10 @@ function AnalyticsView({
       {activeCourses.length > 0 && (
         <Box sx={{ mb: { xs: 2, md: 3 } }}>
           <Typography variant="overline" color="text.secondary">
-            By {unitNoun}
+            By {vocab.unitSingular}
           </Typography>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Where each {unitNoun} actually stands
+            Where each {vocab.unitSingular} actually stands
           </Typography>
           {/* Three-up suits the usual five-to-eight courses, but hard-coding it
               stranded a student carrying two: their cards took a third of the
@@ -331,7 +329,7 @@ function AnalyticsView({
           <AccordionSummary expandIcon={<ChevronDown size={18} />} sx={{ px: 2.5 }}>
             <Stack direction="row" spacing={1.5} alignItems="baseline">
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                Past {unitPlural}
+                Past {vocab.unitPlural}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {pastCourses.length} finished
@@ -405,7 +403,7 @@ function AnalyticsView({
                 />
               ) : (
                 <SectionEmpty
-                  text="A daily mood check-in builds a picture of how the term is treating you."
+                  text={`A daily mood check-in builds a picture of how the ${vocab.periodSingular} is treating you.`}
                   href="/dashboard/wellbeing"
                   cta="Log today's mood"
                 />

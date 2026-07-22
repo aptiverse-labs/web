@@ -29,6 +29,7 @@ import {
   type TermPrediction,
 } from "@/lib/api/queries";
 import { prettifyUnitId } from "@/lib/format";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import InsightsIcon from "@mui/icons-material/InsightsOutlined";
@@ -37,6 +38,7 @@ export default function MasteryPage() {
   const masteryQuery = useTopicMastery();
   const predictionsQuery = useTermPredictions();
   const academic = useAcademicUnits();
+  const vocab = useStudyVocabulary();
 
   const topics = masteryQuery.data ?? [];
   const predictions = predictionsQuery.data ?? [];
@@ -49,7 +51,7 @@ export default function MasteryPage() {
     <AtmosphericBackdrop>
       <PageHeader
         title="Mastery"
-        description={`Where you're growing, where you're stuck, and what's coming next ${academic.isTertiary ? "semester" : "term"}.`}
+        description={`Where you're growing, where you're stuck, and what's coming next ${vocab.periodSingular}.`}
         breadcrumbs={[{ label: "Dashboard", href: "/dashboard" }, { label: "Mastery" }]}
       />
 
@@ -84,7 +86,7 @@ export default function MasteryPage() {
 // ── states ────────────────────────────────────────────────────────────
 
 function EmptyMastery() {
-  const { isTertiary } = useAcademicUnits();
+  const vocab = useStudyVocabulary();
   return (
     <Card>
       <CardContent sx={{ py: 8, textAlign: "center" }}>
@@ -108,7 +110,8 @@ function EmptyMastery() {
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, mx: "auto", mb: 3 }}>
           Take a few practice tests and log your graded marks. Topic-by-topic mastery and
-          predicted next-{isTertiary ? "semester" : "term"} marks build from your real answers, not guesses.
+          predicted {vocab.nextPeriod}{" "}
+          marks build from your real answers, not guesses.
         </Typography>
         <Stack direction="row" spacing={1.5} justifyContent="center" flexWrap="wrap" useFlexGap>
           <Button component={Link} href="/dashboard/practice" variant="contained" color="secondary">
@@ -167,7 +170,7 @@ function MasteryView({
   labelFor: (subjectId: string) => string;
 }) {
   const theme = useTheme();
-  const { isTertiary } = useAcademicUnits();
+  const vocab = useStudyVocabulary();
   const hasTopics = topics.length > 0;
 
   const overall = hasTopics
@@ -335,15 +338,17 @@ function MasteryView({
             <>
               <ProjectionSlope predictions={predictions} labelFor={labelFor} />
               <Typography variant="caption" color="text.secondary">
-                Each line runs from your current {isTertiary ? "semester" : "term"} mark to the predicted
-                next-{isTertiary ? "semester" : "term"} mark. Rising lines mean momentum; predictions
+                Each line runs from your current {vocab.periodSingular}{" "}
+                mark to the predicted {vocab.nextPeriod}{" "}
+                mark. Rising lines mean momentum; predictions
                 strengthen as you log marks and practise.
               </Typography>
             </>
           ) : (
             <Box sx={{ py: 5, textAlign: "center" }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Log a couple of graded marks to see a predicted next-{isTertiary ? "semester" : "term"} projection here.
+                Log a couple of graded marks to see a predicted {vocab.nextPeriod}{" "}
+                projection here.
               </Typography>
               <Button component={Link} href="/dashboard/assessments" variant="outlined" size="small">
                 Log a mark

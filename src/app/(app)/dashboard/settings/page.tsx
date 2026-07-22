@@ -28,6 +28,7 @@ import {
   type NotificationPreferences,
   type UpdateAcademicProfileInput,
 } from "@/lib/api/queries";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 import type { AcademicProfile } from "@/lib/mockData";
 
 export default function SettingsPage() {
@@ -74,7 +75,8 @@ function ProfileTab() {
 function ProfileForm({ profile }: { profile: AcademicProfile }) {
   const update = useUpdateAcademicProfile();
   const { enqueueSnackbar } = useSnackbar();
-  const isTertiary = profile.educationLevel === "tertiary";
+  const vocab = useStudyVocabulary();
+  const isTertiary = vocab.isTertiary;
 
   const [firstName, setFirstName] = useState(profile.firstName);
   const [lastName, setLastName] = useState(profile.lastName);
@@ -156,11 +158,11 @@ function ProfileForm({ profile }: { profile: AcademicProfile }) {
           <Chip
             size="small"
             variant="outlined"
-            label={isTertiary ? "University or college" : "High school"}
+            label={vocab.levelLabel}
             sx={{ fontWeight: 600 }}
           />
           <Typography variant="caption" color="text.secondary">
-            Set when you signed up. It decides whether you track {isTertiary ? "courses" : "subjects"}.
+            Set when you signed up. It decides whether you track {vocab.unitPlural}.
           </Typography>
         </Stack>
 

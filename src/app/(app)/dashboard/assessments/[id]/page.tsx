@@ -40,6 +40,7 @@ import {
   type Assessment,
 } from "@/lib/mockData";
 import { formatDate, prettifyUnitId } from "@/lib/format";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 import { enter } from "@/lib/motion";
 import { LifecyclePanel, statusKind, isSettled, isOpen } from "../AssessmentLifecycle";
 
@@ -48,6 +49,7 @@ export default function AssessmentDetail({ params }: { params: Promise<{ id: str
   const router = useRouter();
   const assessmentQuery = useAssessment(id);
   const academic = useAcademicUnits();
+  const vocab = useStudyVocabulary();
   const del = useDeleteAssessment();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -65,7 +67,7 @@ export default function AssessmentDetail({ params }: { params: Promise<{ id: str
         title={a?.title ?? "Assessment"}
         description={
           a
-            ? `${unitName} · ${ASSESSMENT_TYPE_LABELS[a.type] ?? a.type} · worth ${a.weight}% of the ${academic.isTertiary ? "semester" : "term"} mark`
+            ? `${unitName} · ${ASSESSMENT_TYPE_LABELS[a.type] ?? a.type} · worth ${a.weight}% of the ${vocab.periodSingular} mark`
             : undefined
         }
         breadcrumbs={[
@@ -128,7 +130,6 @@ export default function AssessmentDetail({ params }: { params: Promise<{ id: str
             assessment={assessment}
             unitName={unitName}
             unitHref={unit?.href}
-            unitNoun={academic.unitNoun}
           />
         )}
       </QueryStates>
@@ -156,13 +157,12 @@ function AssessmentBody({
   assessment: a,
   unitName,
   unitHref,
-  unitNoun,
 }: {
   assessment: Assessment;
   unitName?: string;
   unitHref?: string;
-  unitNoun: string;
 }) {
+  const vocab = useStudyVocabulary();
   const predictionsQuery = useTermPredictions();
   const practiceQuery = usePracticeTests();
 
@@ -198,7 +198,7 @@ function AssessmentBody({
         <Facet
           label={settled ? "Your mark" : "Weight"}
           value={settled ? `${a.actualMark}%` : `${a.weight}%`}
-          hint={settled ? `on a ${a.weight}% weighting` : `of the ${unitNoun === "course" ? "semester" : "term"} mark`}
+          hint={settled ? `on a ${a.weight}% weighting` : `of the ${vocab.periodSingular} mark`}
         />
         <Facet
           label={settled ? "Marked" : isOverdue ? "Overdue by" : "Due in"}
@@ -227,7 +227,7 @@ function AssessmentBody({
         )}
         {prediction && prediction.currentTerm > 0 && (
           <Facet
-            label={`${unitName ?? "Term"} so far`}
+            label={`${unitName ?? vocab.PeriodSingular} so far`}
             value={`${prediction.currentTerm}%`}
             // Deliberately not phrased as "N points above your average": this
             // figure already includes this assessment's own mark, so comparing
@@ -272,7 +272,7 @@ function AssessmentBody({
               practice={practice}
               subjectId={a.subjectId}
               unitName={unitName}
-              unitNoun={unitNoun}
+              unitNoun={vocab.unitSingular}
               loading={practiceQuery.isLoading}
             />
 
@@ -297,7 +297,7 @@ function AssessmentBody({
             {unitName && unitHref && (
               <Panel eyebrow="Context" title={unitName}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  Every assessment for this {unitNoun}, in one place.
+                  Every assessment for this {vocab.unitSingular}, in one place.
                 </Typography>
                 <Button
                   component={Link}

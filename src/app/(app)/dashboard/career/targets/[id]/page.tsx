@@ -62,6 +62,7 @@ import {
   type TargetReach,
 } from "@/lib/targets/reach";
 import { formatDate } from "@/lib/format";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 import type { Goal } from "@/lib/mockData";
 
 // One plan, in full.
@@ -85,6 +86,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
   const goalsQuery = useGoals();
   const masteryQuery = useTopicMastery();
 
+  const vocab = useStudyVocabulary();
   const isTertiary = profile.isSuccess && profile.data?.educationLevel === "tertiary";
   const catalog = useCurriculumSubjects(
     profile.isSuccess && !isTertiary ? profile.data?.curriculumId : null,
@@ -221,7 +223,7 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
                       Granular
                     </Typography>
                     <Typography variant="h6">
-                      {isTertiary ? "Course" : "Subject"} minimums
+                      {vocab.UnitSingular} minimums
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, maxWidth: "60ch" }}>
                       What you entered, against what your marks say. The gap is the whole point:
@@ -250,8 +252,9 @@ export default function TargetDetailPage({ params }: { params: Promise<{ id: str
                 {target.requirements.length === 0 ? (
                   <Box sx={{ py: 4, textAlign: "center" }}>
                     <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 460, mx: "auto", mb: 2 }}>
-                      No {isTertiary ? "course" : "subject"} minimums yet. An overall score tells you
-                      nothing about what to do on a Tuesday. Add the mark each {isTertiary ? "course" : "subject"}{" "}
+                      No {vocab.unitSingular}{" "}
+                      minimums yet. An overall score tells you
+                      nothing about what to do on a Tuesday. Add the mark each {vocab.unitSingular}{" "}
                       needs and this becomes a list of gaps you can close.
                     </Typography>
                     <Button variant="outlined" size="small" startIcon={<Pencil size={15} />} onClick={() => setEditOpen(true)}>
@@ -728,7 +731,8 @@ function GenerateResult({ result, onDismiss }: { result: GenerateGoalsResult; on
 
 function OverallCard({ reach }: { reach: TargetReach }) {
   const theme = useTheme();
-  const { isTertiary, unitNoun, unitNounPlural } = useAcademicUnits();
+  const { unitNoun, unitNounPlural } = useAcademicUnits();
+  const vocab = useStudyVocabulary();
   const UnitNounPlural = unitNounPlural.charAt(0).toUpperCase() + unitNounPlural.slice(1);
   const o = reach.overall;
 
@@ -819,7 +823,8 @@ function OverallCard({ reach }: { reach: TargetReach }) {
             <Typography variant="caption" color="text.secondary">
               Your average across the {o.countedUnits} {unitNoun}{o.countedUnits === 1 ? "" : "s"} with
               graded marks. {UnitNounPlural} you&apos;ve only practised aren&apos;t counted: practice and a
-              {" "}{isTertiary ? "semester" : "term"} mark aren&apos;t the same thing, and averaging them
+              {" "}{vocab.periodSingular}{" "}
+              mark aren&apos;t the same thing, and averaging them
               would give you a number that is neither.
             </Typography>
           </>

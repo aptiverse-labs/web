@@ -48,6 +48,7 @@ import {
   type TargetReach,
 } from "@/lib/targets/reach";
 import { formatDate } from "@/lib/format";
+import { useStudyVocabulary } from "@/lib/hooks/useStudyVocabulary";
 
 // Career navigator.
 //
@@ -255,6 +256,7 @@ function CareerSkeleton() {
 // pointing out that two things the student told us contradict each other: their
 // plan names a subject their enrolment does not.
 function SubjectChoiceAlert({ blocked, unitNoun }: { blocked: TargetReach[]; unitNoun: string }) {
+  const vocab = useStudyVocabulary();
   const substituted = blocked.flatMap((r) => r.blocked.filter((b) => b.status === "substituted"));
 
   return (
@@ -305,7 +307,8 @@ function SubjectChoiceAlert({ blocked, unitNoun }: { blocked: TargetReach[]; uni
                 sx={{ display: "block", mt: 2, maxWidth: "68ch" }}
               >
                 If that&apos;s wrong, fix whichever half is out of date: update your subjects, or
-                edit the plan. If it&apos;s right, talk to someone at school about it this term.
+                edit the plan. If it&apos;s right, talk to someone at your {vocab.placeSingular}{" "}
+                about it this {vocab.periodSingular}.
                 Switching gets harder every year, and it is not always possible.
               </Typography>
             )}
@@ -682,6 +685,7 @@ function EvidenceCard({
   unitNounPlural: string;
   addHref: string;
 }) {
+  const vocab = useStudyVocabulary();
   return (
     <Card sx={{ height: "100%" }}>
       <CardContent sx={{ p: 3 }}>
@@ -744,7 +748,8 @@ function EvidenceCard({
         ) : (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-              Your current {unitNoun === "course" ? "semester" : "term"} mark, or practice mastery where you haven&apos;t been graded yet.
+              Your current {vocab.periodSingular}{" "}
+              mark, or practice mastery where you haven&apos;t been graded yet.
               This is what every plan is measured against.
             </Typography>
             <Stack spacing={2}>
