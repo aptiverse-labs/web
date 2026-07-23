@@ -180,16 +180,9 @@ export const authOptions: AuthOptions = {
               password: credentials.password,
             }),
           });
-          // The API answers 403 EmailNotConfirmed when the password was right
-          // but the address was never verified. Returning null here would
-          // render that as "Invalid email or password" and leave someone
-          // retyping a password that was correct. Throwing puts the code in
-          // `res.error` for the sign-in page to act on.
-          if (res.status === 403) {
-            const body = await res.json().catch(() => null);
-            if (body?.type === "EmailNotConfirmed") throw new Error("EmailNotConfirmed");
-            return null;
-          }
+          // Unverified accounts sign in fine — verification is a soft gate
+          // enforced inside the app (see VerificationGate), not at login — so
+          // there is no special 403 case to handle here.
           if (!res.ok) return null;
           const data = await res.json();
           // Shape returned by AuthService.LoginUserAsync — TokenDto<UserDto>.
@@ -208,10 +201,7 @@ export const authOptions: AuthOptions = {
             aptiverseRefreshToken: data.refreshToken,
             aptiverseUser: u,
           } as never;
-        } catch (err) {
-          // Let the unverified signal through. Everything else (network fault,
-          // bad JSON) stays a plain failed sign-in.
-          if (err instanceof Error && err.message === "EmailNotConfirmed") throw err;
+        } catch {
           return null;
         }
       },
@@ -279,14 +269,23 @@ export const authOptions: AuthOptions = {
       // fires this with trigger === "update". Lets us swap in a freshly-issued
       // JWT (e.g. after a plan change) without making the user re-login. See
       // useRefreshSession() in lib/hooks/useRefreshSession.ts.
-      if (trigger === "update" && session) {
+      if (trigger === "update") {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const s = session as any;
+        const s = (session ?? {}) as any;
         if (s.aptiverseToken) {
+          // A freshly-issued JWT was handed in (e.g. after a plan change).
           token.accessToken = s.aptiverseToken;
           token.accessTokenExpires = accessTokenExpiryMs(s.aptiverseToken);
+          if (s.aptiverseUser) token.aptiverse = s.aptiverseUser;
+          return token;
         }
-        if (s.aptiverseUser) token.aptiverse = s.aptiverseUser;
+        // A bare update() with no token means "pull my state again" — used
+        // right after email verification so the soft gate lifts without a
+        // re-login. Re-exchange the refresh token, which returns fresh user
+        // data including emailConfirmed=true.
+        if (token.refreshToken) {
+          return (await refreshAptiverseSession(token as JWT)) as typeof token;
+        }
         return token;
       }
 

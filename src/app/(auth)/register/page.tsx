@@ -30,6 +30,7 @@ import { homeRouteForRole } from "@/lib/home-route";
 import { api } from "@/lib/api/client";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { track } from "@/lib/analytics/events";
+import { captureReferralCode, getReferralCode } from "@/lib/analytics/attribution";
 
 // Self-signup is intentionally limited to roles a person can claim on
 // their own. School-side roles (Teacher, SchoolAdmin) are provisioned
@@ -125,6 +126,17 @@ function RegisterForm() {
     startedRef.current = true;
     track("signup_started", { role: role ?? "unknown", plan: paidPlan ?? "free" });
   }, [step, role, paidPlan]);
+
+  // Optional "someone referred me" field. Prefilled from a ?ref= link if one
+  // brought them here (set in a client effect to avoid a hydration mismatch),
+  // otherwise blank for a code they were given by hand. Whatever ends up here
+  // is handed to captureReferralCode on submit, which is first-touch-wins, so a
+  // real link is never overwritten by what is typed.
+  const [referral, setReferral] = useState("");
+  useEffect(() => {
+    const fromLink = getReferralCode();
+    if (fromLink) setReferral(fromLink);
+  }, []);
 
   const mutation = useMutation({
     mutationFn: async (v: RegisterValues) => {
@@ -323,7 +335,17 @@ function RegisterForm() {
                     : callback ?? "/dashboard"
                 }
               />
-              <Box component="form" noValidate onSubmit={handleSubmit((v) => mutation.mutate(v))}>
+              <Box
+                component="form"
+                noValidate
+                onSubmit={handleSubmit((v) => {
+                  // Persist the referral code before registering so the existing
+                  // claim flow and the paid-checkout metadata both pick it up.
+                  const code = referral.trim();
+                  if (code) captureReferralCode(code);
+                  mutation.mutate(v);
+                })}
+              >
                 <Stack spacing={2}>
                   {mutation.isError && <Alert severity="error">{(mutation.error as Error).message}</Alert>}
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
@@ -339,6 +361,14 @@ function RegisterForm() {
                     {...register("password")}
                     error={!!errors.password}
                     helperText={errors.password?.message ?? "At least 8 chars, one uppercase, one number"}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Referral code (optional)"
+                    value={referral}
+                    onChange={(e) => setReferral(e.target.value.toUpperCase())}
+                    inputProps={{ style: { textTransform: "uppercase" }, autoCapitalize: "characters" }}
+                    helperText="Got a code from someone? Enter it so they get credit."
                   />
                   {isStudent && (
                     <Typography variant="body2" color="text.secondary">
