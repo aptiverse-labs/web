@@ -1,11 +1,13 @@
 // Typed fetch for the .NET API. Reads the Aptiverse JWT off the NextAuth
 // session and attaches it as a Bearer token. On 401, redirects to /login.
 //
-// Refresh-token flow (server endpoint exists at POST /api/auth/refresh-token)
-// is not yet wired here — wiring it requires extending the NextAuth jwt
-// callback to detect token expiry and call refresh, which is a separate
-// task. Until then, an expired access token redirects through the
-// standard sign-in flow.
+// Renewal happens upstream of this file. The NextAuth jwt callback
+// (lib/auth.ts) exchanges the refresh token for a new access token whenever the
+// session is read and the current one is close to expiring, and token.ts
+// re-reads the session shortly before expiry — so by the time a request is
+// built here the token is already fresh. A 401 now means the session is
+// genuinely over, not merely stale, which is why bouncing to sign-in is the
+// right response to it.
 
 import { signIn } from "next-auth/react";
 import { humanizeApiError } from "@/lib/api/errors";

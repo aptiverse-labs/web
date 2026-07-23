@@ -26,7 +26,8 @@ import MuiLink from "@mui/material/Link";
 import { alpha } from "@mui/material/styles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signOutAptiverse } from "@/lib/auth-client";
 import {
   Users,
   ShieldAlert,
@@ -318,7 +319,7 @@ function InviteInner({ token }: { token: string }) {
             variant="contained"
             size="large"
             fullWidth
-            onClick={() => signOut({ callbackUrl: loginHref })}
+            onClick={() => void signOutAptiverse(loginHref)}
             endIcon={<LogOut size={16} />}
           >
             Sign out and switch account

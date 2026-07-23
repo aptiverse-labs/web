@@ -3,7 +3,8 @@
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Link from "next/link";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
+import { signOutAptiverse } from "@/lib/auth-client";
 import { StatusPanel } from "./StatusPanel";
 import { homeRouteForRole } from "@/lib/home-route";
 
@@ -64,7 +65,7 @@ export function SignedInForbidden({ allow }: SignedInForbiddenProps) {
             <Button component={Link} href={home} variant="contained" size="large">
               Go to my dashboard
             </Button>
-            <Button variant="text" size="large" onClick={() => signOut({ callbackUrl: "/login" })}>
+            <Button variant="text" size="large" onClick={() => void signOutAptiverse("/login")}>
               Switch account
             </Button>
           </>
