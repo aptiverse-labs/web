@@ -715,6 +715,16 @@ export const AD_UNITS: AdUnit[] = [
     render: () => <CARD_UNITS.CardsStory />,
   },
   {
+    slug: "three-cards-1350x1920",
+    width: 1350,
+    height: 1920,
+    scheme: "dark",
+    audience: "uni",
+    concept: "product",
+    note: "The wide cut of the three-screen unit, 45:64. Same composition, same copy, more width in both columns. The projection row is why it exists: its 0-100 domain gets roughly 450px here against roughly 260 on the 1080 cuts, so the travel between the current mark and the projected one is legible on every course. No platform-safe spacers, because this is a feed image and not a story.",
+    render: () => <CARD_UNITS.CardsWide />,
+  },
+  {
     slug: "showcase-sheet-light-1080x1350",
     width: 1080,
     height: 1350,

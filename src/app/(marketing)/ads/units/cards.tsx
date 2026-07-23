@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import {
   AdChip,
-  AdCta,
   AdEyebrow,
   AdPanel,
   Artboard,
@@ -66,9 +65,9 @@ import { AERO_COURSES, CHART_UP, CHART_DOWN } from "./charts";
 //      block on the second line of its heading and a soft citron wash
 //      behind its screen, which is the same radial the FeatureShowcase
 //      paints behind every demo. Rows two and three are graphite and ink.
-//      Spending the accent on all three is how a layout goes flat. The
-//      footer pill stays citron because it is the ask, not decoration, and
-//      every unit in the registry carries it.
+//      Spending the accent on all three is how a layout goes flat. With the
+//      footer pill gone the citron block on row one is now the only citron
+//      on the artboard, which is the rule stated exactly rather than nearly.
 //   4. THE SCREENS BREATHE PAST THE GUTTER. Each window is 24px wider than
 //      its column and pulled toward the copy, so it crosses the gutter
 //      line instead of sitting in a tidy box. The chrome always keeps its
@@ -88,14 +87,17 @@ import { AERO_COURSES, CHART_UP, CHART_DOWN } from "./charts";
 // WHAT READS AT WHAT SIZE, checked at scale rather than guessed:
 //   full size (1080 wide, or the 2160 export)  everything.
 //   half feed (~540px)  every heading, every body line, the course names
-//       with their tracks and projected marks, the countdown and the exam
-//       question, the shape of the chat.
+//       with their tracks, both marks per course and the travel bar between
+//       them, the countdown and the exam question, the shape of the chat.
 //   thumbnail (~260px)  the three headings, the citron block, the three
 //       window silhouettes with their traffic lights and the zigzag they
-//       make, the six plotted tracks as a shape, and the countdown. The
-//       body lines, the chat text and the exam question go. That is the
-//       honest limit, and the zigzag is the thing that still works at that
-//       size, which is the point of the composition.
+//       make, and the countdown. In the plot the six tracks, the 50 rule and
+//       the coloured travel bars still read as a shape, green rungs with one
+//       clay one low down; the numerals, the tick and the disc do not
+//       separate at that size. The body lines, the chat text and the exam
+//       question go. That is the honest limit, and the zigzag is the thing
+//       that still works at that size, which is the point of the
+//       composition.
 //
 // THE GROUND. The artboard carries the campaign-wide dot lattice from
 // adkit's Artboard, at 5% ink. It is masked by every window and never sits
@@ -440,17 +442,87 @@ function TutorScreen({ scheme }: { scheme: AdScheme }) {
 // apparent size of every gap. Same rule as charts.tsx, same reason.
 // ---------------------------------------------------------------------
 
+// WHAT THE TWO MARKERS ARE, and why they are not two dots.
+//
+// The first plot drew "now" and "projected" as two circles of the same
+// family, a small white one and a larger coloured one, each ringed in the
+// panel surface. On the six real deltas that fails: Mechanics moves 57 to 58,
+// which on this row's axis is under three pixels, so a 13px dot and a 17px
+// dot centred three pixels apart are one lumpy blob, and Electrical (+3) and
+// Physics (+5) are half eaten. No amount of extra width fixes it either. The
+// widest cut in the set gives the domain about 450px, so one mark is still
+// only four and a half pixels and a one-mark move still puts two circles
+// inside each other.
+//
+// So the two ends stop being the same kind of object. "Now" is a vertical
+// tick, a slim ink capsule that marks a position the way a gate does.
+// "Projected" is a filled round terminal at the end of the travel bar. A tick
+// and a disc never merge into one shape however close they get: at +1 the
+// tick simply sits inside the disc, haloed in the panel surface so its edges
+// hold, and the reader sees a dot with a start gate near its middle, which is
+// exactly what a one-mark move is. The tick is also the smaller mark and is
+// drawn last, so it is never the thing that gets buried.
+//
+// The travel between them is a bar in the direction colour, thick enough to
+// be the loudest thing in the row, because the distance moved is the story.
+// A flat course gets no bar and no invented movement: the tick lands dead
+// centre on a muted disc, and the symmetry of that glyph is what says "held"
+// rather than "broken". The value column says the same thing a third way:
+// current, glyph, projected, so 78 - 78 and 70 up 73 read without colour.
+
 /** Row label column. Sized so "Electrical Engineering" sets on one line. */
 const PROJ_NAME_W = 186;
-/** The projected numeral and its direction glyph. */
-const PROJ_VALUE_W = 62;
-const PROJ_DOT = 13;
+/** Current numeral, direction glyph, projected numeral, right aligned. */
+const PROJ_VALUE_W = 78;
+/**
+ * Vertical room one plotted row gets. Must clear the tick and its halo, and
+ * six of these plus the caption and the axis have to fit the shortest panel
+ * this screen is drawn into, which is the portrait cut's middle row. At 30
+ * the axis labels were pushed under the panel's own rounded corner.
+ */
+const PROJ_ROW_H = 28;
+/** The 0-100 track every row sits on. */
+const PROJ_TRACK_H = 7;
+/** The travel bar between now and projected. Heavier than the track. */
+const PROJ_SEG_H = 12;
+/**
+ * The projected terminal, and the now tick.
+ *
+ * These are as small as they can be and still read, because every pixel of
+ * marker is a pixel of travel bar the marker covers. On a full 0-100 domain
+ * in this row's width one mark is under three pixels, so a 15px disc and a
+ * 5px tick already eat the whole of a three-mark move. That is a fact about
+ * the data and the honest domain, not a bug to style away: Electrical moving
+ * 70 to 73 IS a three-percent move, and any drawing where it looks like a
+ * long journey is the cropped-axis lie in another costume. What the drawing
+ * owes the reader is that the move is visible AS a move, which the numerals,
+ * the glyph and the sign do at every delta, and that the big moves look big,
+ * which the bar does from about four marks up. The wide cut buys roughly
+ * 450px of domain against 260 here, and that is where the bar starts doing
+ * real work on the five-mark rows.
+ */
+const PROJ_DOT = 15;
+/**
+ * The flat marker runs larger than the moving one. It has to clear the tick
+ * that lands in the middle of it plus that tick's halo, or the ring is a
+ * grey sliver either side of a white bar and the deliberate glyph reads as a
+ * rendering accident, which is the exact failure it exists to fix.
+ */
+const PROJ_FLAT_DOT = 22;
+const PROJ_TICK_W = 5;
+const PROJ_TICK_H = 22;
 
 function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
   const s = adSurfaces(scheme);
-  // The markers are ringed in the panel's own surface so two that nearly
-  // touch stay separate objects. Read off the same helper AdPanel fills with.
+  // The tick is haloed in the panel's own surface so it holds its edge over
+  // the disc it can land inside. Read off the same helper AdPanel fills with,
+  // rather than a second copy of the literal that would quietly drift.
   const ring = adPanelBg(scheme);
+  // The track and the 50 rule are drawn off the ink rather than off s.hair.
+  // s.hair is a 14% hairline meant for borders; at plot scale it recedes into
+  // the panel and the six tracks stop reading as a grid at all.
+  const track = alpha(s.ink, 0.16);
+  const rule = alpha(s.ink, 0.32);
   const rows = AERO_COURSES;
 
   return (
@@ -480,14 +552,16 @@ function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
             display: "grid",
             gridTemplateColumns: `${PROJ_NAME_W}px 1fr ${PROJ_VALUE_W}px`,
             gridTemplateRows: `repeat(${rows.length}, 1fr)`,
-            columnGap: "14px",
+            columnGap: "12px",
             alignItems: "center",
           }}
         >
           {/* One continuous 50 rule behind every track rather than a tick per
               row, so it reads as a single reference line. Spanning the plot
               column of the grid is what keeps it aligned to the tracks
-              without anybody measuring anything. */}
+              without anybody measuring anything. It carries a z-index because
+              the six row boxes are painted after it and a 2px line at 14% ink
+              was disappearing under every one of them. */}
           <Box
             sx={{
               gridColumn: 2,
@@ -497,7 +571,16 @@ function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
             }}
           >
             <Box
-              sx={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 2, bgcolor: s.hair }}
+              sx={{
+                position: "absolute",
+                left: "50%",
+                top: 0,
+                bottom: 0,
+                width: 3,
+                ml: "-1.5px",
+                bgcolor: rule,
+                zIndex: 1,
+              }}
             />
           </Box>
 
@@ -532,7 +615,7 @@ function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
                     gridColumn: 2,
                     gridRow: i + 1,
                     position: "relative",
-                    height: PROJ_DOT + 6,
+                    height: PROJ_ROW_H,
                   }}
                 >
                   {/* Percentages are the scale: left edge is 0, right edge
@@ -543,12 +626,16 @@ function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
                       left: 0,
                       right: 0,
                       top: "50%",
-                      height: 5,
-                      mt: "-2.5px",
+                      height: PROJ_TRACK_H,
+                      mt: `${-PROJ_TRACK_H / 2}px`,
                       borderRadius: 999,
-                      bgcolor: s.hair,
+                      bgcolor: track,
+                      zIndex: 0,
                     }}
                   />
+                  {/* The travel. Two points on a scale with nothing drawn
+                      between them is two facts; the bar is what makes it one
+                      movement. Absent, deliberately, where nothing moved. */}
                   {c.predicted !== null && hi > lo && (
                     <Box
                       sx={{
@@ -556,35 +643,89 @@ function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
                         left: `${lo}%`,
                         width: `${hi - lo}%`,
                         top: "50%",
-                        height: 8,
-                        mt: "-4px",
+                        height: PROJ_SEG_H,
+                        mt: `${-PROJ_SEG_H / 2}px`,
                         borderRadius: 999,
                         bgcolor: tone,
+                        zIndex: 2,
                       }}
                     />
                   )}
-                  <ChartMarker left={c.current} size={PROJ_DOT} fill={s.ink} ring={ring} />
-                  {c.predicted !== null && c.predicted !== c.current && (
-                    <ChartMarker
-                      left={c.predicted}
-                      size={PROJ_DOT * 1.34}
-                      fill={tone}
-                      ring={ring}
+                  {/* The projected terminal. No surface halo on this one: it
+                      sits at the end of its own bar in its own colour, so a
+                      ring would only cut the travel two pixels short of where
+                      it arrives.
+
+                      A course that did not move gets the same disc HOLLOW.
+                      With the tick landing dead centre in it, that glyph is
+                      symmetrical and closed, which is what makes a flat
+                      projection read as a state the chart drew on purpose
+                      rather than as a marker that failed to render. */}
+                  {c.predicted !== null && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        left: `${c.predicted}%`,
+                        top: "50%",
+                        width: delta === 0 ? PROJ_FLAT_DOT : PROJ_DOT,
+                        height: delta === 0 ? PROJ_FLAT_DOT : PROJ_DOT,
+                        mt: `${-(delta === 0 ? PROJ_FLAT_DOT : PROJ_DOT) / 2}px`,
+                        ml: `${-(delta === 0 ? PROJ_FLAT_DOT : PROJ_DOT) / 2}px`,
+                        borderRadius: "50%",
+                        bgcolor: delta === 0 ? "transparent" : tone,
+                        border: delta === 0 ? `3px solid ${s.muted}` : "none",
+                        boxSizing: "border-box",
+                        zIndex: 3,
+                      }}
                     />
                   )}
+                  {/* Now. Last in the paint order and haloed, so it survives
+                      landing inside the disc on a one-mark move. */}
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      left: `${c.current}%`,
+                      top: "50%",
+                      width: PROJ_TICK_W,
+                      height: PROJ_TICK_H,
+                      mt: `${-PROJ_TICK_H / 2}px`,
+                      ml: `${-PROJ_TICK_W / 2}px`,
+                      borderRadius: 999,
+                      bgcolor: s.ink,
+                      boxShadow: `0 0 0 2.5px ${ring}`,
+                      zIndex: 4,
+                    }}
+                  />
                 </Box>
 
+                {/* Both numbers, current then projected, because a
+                    before-and-after that prints only the after is half a
+                    chart. The two are told apart by weight and colour as well
+                    as by order: the current mark is the quiet one. */}
                 <Stack
                   direction="row"
-                  spacing="4px"
+                  spacing="5px"
                   alignItems="center"
                   justifyContent="flex-end"
-                  sx={{ gridColumn: 3, gridRow: i + 1, color: tone }}
+                  sx={{ gridColumn: 3, gridRow: i + 1 }}
                 >
-                  <Glyph size={16} />
                   <Typography
                     sx={{
-                      fontSize: 20,
+                      fontSize: 18,
+                      fontWeight: 600,
+                      lineHeight: 1.2,
+                      color: s.muted,
+                      fontVariantNumeric: "tabular-nums",
+                    }}
+                  >
+                    {c.current}
+                  </Typography>
+                  <Box sx={{ display: "flex", color: tone, flexShrink: 0 }}>
+                    <Glyph size={15} />
+                  </Box>
+                  <Typography
+                    sx={{
+                      fontSize: 22,
                       fontWeight: 700,
                       lineHeight: 1.2,
                       color: tone,
@@ -599,16 +740,17 @@ function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
           })}
         </Box>
 
-        {/* Axis. Three labels: the ends, and the 50 the rule marks. */}
+        {/* Axis. Three labels: the ends, and the 50 the rule marks. The 50
+            is the one that carries meaning, so it is the one set in ink. */}
         <Box
           sx={{
             display: "grid",
             gridTemplateColumns: `${PROJ_NAME_W}px 1fr ${PROJ_VALUE_W}px`,
-            columnGap: "14px",
+            columnGap: "12px",
             mt: "8px",
           }}
         >
-          <Box sx={{ gridColumn: 2, position: "relative", height: 16 }}>
+          <Box sx={{ gridColumn: 2, position: "relative", height: 17 }}>
             {[0, 50, 100].map((tick) => (
               <Typography
                 key={tick}
@@ -617,9 +759,10 @@ function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
                   left: `${tick}%`,
                   transform:
                     tick === 0 ? "none" : tick === 100 ? "translateX(-100%)" : "translateX(-50%)",
-                  fontSize: 15,
+                  fontSize: 16,
+                  fontWeight: tick === 50 ? 700 : 500,
                   lineHeight: 1,
-                  color: s.muted,
+                  color: tick === 50 ? s.ink : s.muted,
                   fontVariantNumeric: "tabular-nums",
                 }}
               >
@@ -630,35 +773,6 @@ function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
         </Box>
       </Stack>
     </AdPanel>
-  );
-}
-
-function ChartMarker({
-  left,
-  size,
-  fill,
-  ring,
-}: {
-  left: number;
-  size: number;
-  fill: string;
-  ring: string;
-}) {
-  return (
-    <Box
-      sx={{
-        position: "absolute",
-        left: `${left}%`,
-        top: "50%",
-        width: size,
-        height: size,
-        mt: `${-size / 2}px`,
-        ml: `${-size / 2}px`,
-        borderRadius: "50%",
-        bgcolor: fill,
-        boxShadow: `0 0 0 3px ${ring}`,
-      }}
-    />
   );
 }
 
@@ -894,15 +1008,21 @@ function Row1Heading({ size }: { size: number }) {
   );
 }
 
+/**
+ * Footer. Wordmark and domain, and nothing else.
+ *
+ * The "Start free" pill was removed on the same reasoning showcase.tsx was:
+ * an image travels further than the campaign that placed it, and a button
+ * painted into a PNG is a control nobody can press. What has to survive the
+ * screenshot and the repost is attribution, so the wordmark and the domain
+ * stay and the ask moves to the placement, where it is a real link.
+ */
 function CardFooter({ scheme, size = 28 }: { scheme: AdScheme; size?: number }) {
   const s = adSurfaces(scheme);
   return (
-    <Stack direction="row" alignItems="center" justifyContent="space-between" spacing="20px">
-      <Stack direction="row" spacing="14px" alignItems="baseline">
-        <Wordmark scheme={scheme} size={size} />
-        <Typography sx={{ fontSize: size * 0.76, color: s.muted }}>{SITE}</Typography>
-      </Stack>
-      <AdCta size={size * 0.8}>Start free</AdCta>
+    <Stack direction="row" alignItems="baseline" spacing="14px">
+      <Wordmark scheme={scheme} size={size} />
+      <Typography sx={{ fontSize: size * 0.76, color: s.muted }}>{SITE}</Typography>
     </Stack>
   );
 }
@@ -917,24 +1037,33 @@ function CardFooter({ scheme, size = 28 }: { scheme: AdScheme; size?: number }) 
 function CardsPortrait() {
   const scheme: AdScheme = "dark";
   return (
-    <Artboard width={1080} height={1350} scheme={scheme} pad={48}>
+    <Artboard width={1080} height={1350} scheme={scheme} pad={40}>
       <AdEyebrow scheme={scheme} size={20}>
         For students
       </AdEyebrow>
       <Box sx={{ height: 26 }} />
-      {/* 413 + 328 + 346 and 24px gutters is the exact 1135 the three rows
-          have between the eyebrow and the footer. The exam paper is the row
-          that grew: a timer panel, a marked question and a written-answer
-          field do not fit in the 300 the multiple-choice runner used, and
-          rows 1 and 2 each gave up what it needed. The hierarchy is intact,
-          row one is still the tallest and still the only 44px heading. */}
+      {/* 408 + 350 + 342 and 24px gutters is the 1148 the three rows have
+          between the eyebrow and the footer. The exam paper is the row that
+          grew first: a timer panel, a marked question and a written-answer
+          field do not fit in the 300 the multiple-choice runner used. The
+          projection row grew second, and this is the cut that forced it: six
+          plotted rows, a caption and an axis need about 350 of row here, and
+          at 328 the axis labels were sliding under the panel's bottom
+          corner. Rows 1 and 3 gave up five and four pixels for it. The
+          hierarchy is intact, row one is still the tallest and still the only
+          44px heading.
+
+          The pad came down from 48 to 40, and the 16px that freed went to the
+          screens rather than the copy: the copy column is set to a comfortable
+          measure already, and the plot is the element on this artboard that
+          was actually short of room. */}
       <Stack spacing="24px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
         <Row
           scheme={scheme}
           copySide="left"
-          height={413}
-          copyWidth={390}
-          screenWidth={550}
+          height={408}
+          copyWidth={392}
+          screenWidth={564}
           eyebrow={ROW1.eyebrow}
           heading={<Row1Heading size={44} />}
           headingSize={44}
@@ -946,9 +1075,9 @@ function CardsPortrait() {
         <Row
           scheme={scheme}
           copySide="right"
-          height={328}
-          copyWidth={366}
-          screenWidth={574}
+          height={350}
+          copyWidth={368}
+          screenWidth={588}
           eyebrow={ROW2.eyebrow}
           heading={ROW2.heading}
           headingSize={36}
@@ -959,9 +1088,9 @@ function CardsPortrait() {
         <Row
           scheme={scheme}
           copySide="left"
-          height={346}
-          copyWidth={390}
-          screenWidth={550}
+          height={342}
+          copyWidth={392}
+          screenWidth={564}
           eyebrow={ROW3.eyebrow}
           heading={ROW3.heading}
           headingSize={36}
@@ -992,7 +1121,7 @@ function CardsPortrait() {
 function CardsSquare() {
   const scheme: AdScheme = "dark";
   return (
-    <Artboard width={1080} height={1080} scheme={scheme} pad={44}>
+    <Artboard width={1080} height={1080} scheme={scheme} pad={40}>
       <AdEyebrow scheme={scheme} size={20}>
         For students
       </AdEyebrow>
@@ -1002,8 +1131,8 @@ function CardsSquare() {
           scheme={scheme}
           copySide="left"
           height={452}
-          copyWidth={396}
-          screenWidth={552}
+          copyWidth={398}
+          screenWidth={558}
           eyebrow={ROW1.eyebrow}
           heading={<Row1Heading size={46} />}
           headingSize={46}
@@ -1017,7 +1146,7 @@ function CardsSquare() {
           copySide="right"
           height={372}
           copyWidth={370}
-          screenWidth={578}
+          screenWidth={586}
           eyebrow={ROW2.eyebrow}
           heading={ROW2.heading}
           headingSize={38}
@@ -1044,19 +1173,25 @@ function CardsSquare() {
 function CardsStory() {
   const scheme: AdScheme = "dark";
   return (
-    <Artboard width={1080} height={1920} scheme={scheme} pad={48}>
+    <Artboard width={1080} height={1920} scheme={scheme} pad={36}>
       <Box sx={{ height: 140 }} />
       <AdEyebrow scheme={scheme} size={24}>
         For students
       </AdEyebrow>
       <Box sx={{ height: 30 }} />
+      {/* Pad 36 rather than 48. The story is the cut with the most vertical
+          air and the least horizontal, so it is the one where the side
+          margins were costing the most: the 24px freed goes straight into the
+          screens, and the projection row gets almost all of it. The top and
+          bottom edges are unaffected in practice because the platform-safe
+          spacers above and below are absolute, not derived from the pad. */}
       <Stack spacing="60px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
         <Row
           scheme={scheme}
           copySide="left"
           height={490}
-          copyWidth={390}
-          screenWidth={550}
+          copyWidth={396}
+          screenWidth={568}
           eyebrow={ROW1.eyebrow}
           heading={<Row1Heading size={46} />}
           headingSize={46}
@@ -1069,8 +1204,8 @@ function CardsStory() {
           scheme={scheme}
           copySide="right"
           height={410}
-          copyWidth={366}
-          screenWidth={574}
+          copyWidth={370}
+          screenWidth={594}
           eyebrow={ROW2.eyebrow}
           heading={ROW2.heading}
           headingSize={38}
@@ -1081,8 +1216,8 @@ function CardsStory() {
           scheme={scheme}
           copySide="left"
           height={380}
-          copyWidth={390}
-          screenWidth={550}
+          copyWidth={396}
+          screenWidth={568}
           eyebrow={ROW3.eyebrow}
           heading={ROW3.heading}
           headingSize={38}
@@ -1097,8 +1232,96 @@ function CardsStory() {
   );
 }
 
+// ---------------------------------------------------------------------
+// UNIT 4. The wide cut, 1350x1920, dark.
+//
+// WHY 1350x1920 AND NOT SOMETHING ELSE. The brief was "the entire image a bit
+// wider", and the constraint is that the composition is a copy column beside
+// a screen column, three times over, in a portrait frame. 1350x1920 is 45:64,
+// which is a hair wider than 3:4 and a long way off the 9:16 the story cut
+// is: wide enough that both columns get a real increase, tall enough that
+// three unequal rows still have somewhere to go. 1350 is also the width every
+// other portrait unit in the registry already uses as a HEIGHT, so nothing
+// new entered the set of numbers this campaign is authored on.
+//
+// The two rejected alternatives, briefly. 1080x1350 turned on its side gives
+// a landscape frame, and three stacked rows in a landscape frame are three
+// letterbox strips: the screens would have to shrink vertically, and the exam
+// paper is the row that already cannot lose height. 1200x1920 is only 120px
+// wider than the story and spends all of it on margins nobody notices.
+//
+// WHERE THE EXTRA WIDTH GOES. Not evenly. The copy column takes about a fifth
+// of it, which is enough for the headings to break where they want to rather
+// than where the measure forces them, and the screen column takes the rest.
+// The projection row is the largest beneficiary and it is meant to be: its
+// 0-100 domain gets roughly 450px here against roughly 260 on the 1080 cuts,
+// which is the difference between a one-mark move being three pixels and
+// being nearly five.
+//
+// No platform-safe spacers on this one. A 45:64 image is not a story, so
+// nothing is covering the top and bottom of it.
+// ---------------------------------------------------------------------
+
+function CardsWide() {
+  const scheme: AdScheme = "dark";
+  return (
+    <Artboard width={1350} height={1920} scheme={scheme} pad={44}>
+      <AdEyebrow scheme={scheme} size={24}>
+        For students
+      </AdEyebrow>
+      <Box sx={{ height: 34 }} />
+      <Stack spacing="64px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
+        <Row
+          scheme={scheme}
+          copySide="left"
+          height={560}
+          copyWidth={470}
+          screenWidth={748}
+          eyebrow={ROW1.eyebrow}
+          heading={<Row1Heading size={52} />}
+          headingSize={52}
+          body={ROW1.body}
+          bodySize={24}
+          bullets={ROW1.bullets}
+          glow
+          screen={() => <TutorScreen scheme={scheme} />}
+        />
+        <Row
+          scheme={scheme}
+          copySide="right"
+          height={470}
+          copyWidth={442}
+          screenWidth={776}
+          eyebrow={ROW2.eyebrow}
+          heading={ROW2.heading}
+          headingSize={42}
+          body={ROW2.body}
+          bodySize={23}
+          screen={() => <ProjectionScreen scheme={scheme} />}
+        />
+        <Row
+          scheme={scheme}
+          copySide="left"
+          height={440}
+          copyWidth={470}
+          screenWidth={748}
+          eyebrow={ROW3.eyebrow}
+          heading={ROW3.heading}
+          headingSize={42}
+          body={ROW3.body}
+          bodySize={23}
+          screen={() => <ExamScreen scheme={scheme} />}
+        />
+      </Stack>
+      <Box sx={{ height: 38 }} />
+      <CardFooter scheme={scheme} size={32} />
+    </Artboard>
+  );
+}
+
 export const CARD_UNITS = {
   CardsPortrait,
   CardsSquare,
   CardsStory,
+  CardsWide,
 };
