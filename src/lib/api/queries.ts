@@ -195,6 +195,11 @@ export const queryKeys = {
   adminSubscriptions: () => ["admin", "subscriptions"] as const,
   adminTutors: () => ["admin", "tutors"] as const,
   adminSystem: () => ["admin", "system"] as const,
+  paystackStatus: () => ["admin", "paystack", "status"] as const,
+  paystackBalance: () => ["admin", "paystack", "balance"] as const,
+  paystackTransactions: () => ["admin", "paystack", "transactions"] as const,
+  paystackSettlements: () => ["admin", "paystack", "settlements"] as const,
+  paystackCustomer: (q: string) => ["admin", "paystack", "customer", q] as const,
   curricula: () => ["curricula"] as const,
   curriculumSubjects: (curriculumId: string) => ["curriculum-subjects", curriculumId] as const,
   academicProfile: () => ["academic-profile"] as const,
@@ -2554,6 +2559,135 @@ export const useAdminSystem = () =>
     // Health is only useful if it is current. Cheap query, short window.
     refetchInterval: 15_000,
   });
+
+// ---- Paystack cockpit ------------------------------------------------------
+// Reads and writes against the live Paystack account, so an operator does not
+// have to sign in to Paystack's own dashboard. Every hook degrades on a missing
+// key: the status hook is checked first and the page shows a connect prompt
+// rather than a wall of failed requests.
+
+export type PaystackStatus = { configured: boolean };
+export type PaystackBalance = { currency: string; available: number; pending: number };
+export type PaystackTransaction = {
+  reference: string;
+  amount: number;
+  currency: string;
+  status: string | null;
+  paidAt: string | null;
+  customerEmail: string | null;
+  channel: string | null;
+  card: string | null;
+  refundable: boolean;
+};
+export type PaystackTransactionPage = {
+  rows: PaystackTransaction[];
+  page: number;
+  pageCount: number;
+  total: number;
+};
+export type PaystackSettlement = {
+  id: number;
+  amount: number;
+  currency: string;
+  status: string | null;
+  settledAt: string | null;
+  bankName: string | null;
+  accountLast4: string | null;
+};
+export type PaystackSettlementPage = {
+  rows: PaystackSettlement[];
+  page: number;
+  pageCount: number;
+  total: number;
+};
+export type PaystackCustomer = {
+  customerCode: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  transactions: PaystackTransaction[];
+};
+
+export const usePaystackStatus = () =>
+  useQuery<PaystackStatus>({
+    queryKey: queryKeys.paystackStatus(),
+    queryFn: () => apiClient.get<PaystackStatus>("/api/admin/paystack/status"),
+    staleTime: 5 * 60_000,
+  });
+
+export const usePaystackBalance = (enabled: boolean) =>
+  useQuery<PaystackBalance[]>({
+    queryKey: queryKeys.paystackBalance(),
+    queryFn: () => apiClient.get<PaystackBalance[]>("/api/admin/paystack/balance"),
+    enabled,
+    refetchInterval: 60_000,
+  });
+
+export const usePaystackTransactions = (
+  opts: { page?: number; status?: string } = {},
+  enabled = true,
+) =>
+  useQuery<PaystackTransactionPage>({
+    queryKey: [...queryKeys.paystackTransactions(), opts],
+    queryFn: () => {
+      const p = new URLSearchParams();
+      if (opts.page) p.set("page", String(opts.page));
+      if (opts.status) p.set("status", opts.status);
+      const qs = p.toString();
+      return apiClient.get<PaystackTransactionPage>(
+        `/api/admin/paystack/transactions${qs ? `?${qs}` : ""}`,
+      );
+    },
+    enabled,
+  });
+
+export const usePaystackSettlements = (enabled: boolean) =>
+  useQuery<PaystackSettlementPage>({
+    queryKey: queryKeys.paystackSettlements(),
+    queryFn: () => apiClient.get<PaystackSettlementPage>("/api/admin/paystack/settlements"),
+    enabled,
+  });
+
+// On-demand customer lookup. Not auto-run: only fires once a query string is
+// entered and the caller flips `enabled`.
+export const usePaystackCustomer = (query: string, enabled: boolean) =>
+  useQuery<PaystackCustomer>({
+    queryKey: queryKeys.paystackCustomer(query),
+    queryFn: () =>
+      apiClient.get<PaystackCustomer>(
+        `/api/admin/paystack/customer?query=${encodeURIComponent(query)}`,
+      ),
+    enabled: enabled && query.trim().length > 0,
+    retry: false,
+  });
+
+export const usePaystackRefund = () => {
+  const qc = useQueryClient();
+  return useMutation<
+    { status: string | null; refundedAmount: number; currency: string | null },
+    ApiError,
+    { reference: string; amount?: number }
+  >({
+    mutationFn: (input) => apiClient.post("/api/admin/paystack/refund", input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.paystackTransactions() });
+      void qc.invalidateQueries({ queryKey: queryKeys.paystackBalance() });
+      void qc.invalidateQueries({ queryKey: queryKeys.auditLogs() });
+    },
+  });
+};
+
+export const usePaystackSubscriptionAction = () => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, { code: string; action: "enable" | "disable" }>({
+    mutationFn: ({ code, action }) =>
+      apiClient.post<void>(`/api/admin/paystack/subscription/${code}/${action}`),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.auditLogs() });
+      void qc.invalidateQueries({ queryKey: queryKeys.adminSubscriptions() });
+    },
+  });
+};
 
 // Recent rows from the transactional outbox. Real messages written by the
 // modules via IEventPublisher and drained by the OutboxDispatcher.

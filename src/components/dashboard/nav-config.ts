@@ -33,7 +33,7 @@ import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import ExploreIcon from "@mui/icons-material/ExploreOutlined";
 import DescriptionIcon from "@mui/icons-material/DescriptionOutlined";
 import CampaignIcon from "@mui/icons-material/CampaignOutlined";
-import { Gift as GiftLucide, HandCoins as HandCoinsLucide } from "lucide-react";
+import { Gift as GiftLucide, HandCoins as HandCoinsLucide, Wallet as WalletLucide } from "lucide-react";
 import { navIcon } from "./lucide-nav-icon";
 import type { Role } from "@/providers/RoleProvider";
 
@@ -41,6 +41,7 @@ import type { Role } from "@/providers/RoleProvider";
 // existing set and are being replaced separately; nothing here adds to them.
 const ReferIcon = navIcon(GiftLucide);
 const AffiliateAdminIcon = navIcon(HandCoinsLucide);
+const WalletIcon = navIcon(WalletLucide);
 
 export type NavItem = {
   label: string;
@@ -245,6 +246,7 @@ export const ADMIN_NAV: NavSection[] = [
     heading: "Money",
     items: [
       { label: "Subscriptions", href: "/admin/subscriptions", icon: PaymentsIcon },
+      { label: "Paystack", href: "/admin/paystack", icon: WalletIcon },
       { label: "Referral programme", href: "/admin/affiliates", icon: AffiliateAdminIcon },
     ],
   },

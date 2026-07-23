@@ -39,7 +39,7 @@ import SummarizeIcon from "@mui/icons-material/SummarizeOutlined";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import Diversity3Icon from "@mui/icons-material/Diversity3Outlined";
 import CircleIcon from "@mui/icons-material/CircleOutlined";
-import { Gift as GiftLucide, HandCoins as HandCoinsLucide } from "lucide-react";
+import { Gift as GiftLucide, HandCoins as HandCoinsLucide, Wallet as WalletLucide } from "lucide-react";
 import { navIcon } from "./lucide-nav-icon";
 
 export type NavIcon = React.ComponentType<{ fontSize?: "small" | "medium" | "large" }>;
@@ -85,6 +85,7 @@ const REGISTRY: Record<string, NavIcon> = {
   // existing set, being replaced separately.
   refer: navIcon(GiftLucide),
   affiliates: navIcon(HandCoinsLucide),
+  wallet: navIcon(WalletLucide),
 };
 
 export function iconForKey(key: string): NavIcon {
