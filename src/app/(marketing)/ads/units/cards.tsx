@@ -4,15 +4,9 @@ import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { alpha, useTheme } from "@mui/material/styles";
-import { Fragment } from "react";
-import {
-  ArrowDownRight,
-  ArrowUpRight,
-  CheckCircle2,
-  Minus,
-  Sparkles,
-  User,
-} from "lucide-react";
+import { CheckCircle2, Clock, Sparkles, User } from "lucide-react";
+import { courseColor } from "@/components/common/chartPalette";
+import { MathText } from "@/components/practice/MathText";
 import {
   AdChip,
   AdEyebrow,
@@ -26,7 +20,7 @@ import {
   GRAPHITE,
   type AdScheme,
 } from "./adkit";
-import { AERO_COURSES, CHART_UP, CHART_DOWN } from "./charts";
+import { AERO_MARKS, markAxisLabel } from "./charts";
 
 // =====================================================================
 // THREE-SCREEN UNIT. The features page, compressed into one image.
@@ -41,33 +35,59 @@ import { AERO_COURSES, CHART_UP, CHART_DOWN } from "./charts";
 // This is the alternating editorial rhythm the site already uses, in
 // components/marketing/FeatureShowcase.tsx: a copy column and a screen
 // column, sides swapping every row, vertically centred against each other.
-// Copy left / screen right, then screen left / copy right, then copy left /
-// screen right. The reader's eye travels left, right, left, and the zigzag
-// is what carries them down a static image with no scroll to do it for
-// them.
+// The reader's eye travels left, right, left, and the zigzag is what carries
+// them down a static image with no scroll to do it for them.
+//
+// THE RUNNING ORDER, and why it is chart, test, tutor.
+//
+// The chart leads because it is the only row that is evidence rather than a
+// capability. Every AI product in this market opens on a chat bubble, and an
+// eye that has seen a thousand of them slides straight off the next one. A
+// line of somebody's own marks with one course falling off a cliff in April
+// is not a thing a first-year has seen a thousand times, and recognition is
+// what stops a scroll. The test follows because it is the response to the
+// problem the chart just posed, and it drills the very course the chart
+// shows dropping: Chemistry falls 65, 48, 51 in the window above, and the
+// window below is a Chemistry stoichiometry question. The red countdown is
+// also the most arresting object in the set, which keeps the eye moving
+// down rather than away. The tutor closes because it is the warmest of the three: ending on
+// something that already knows the course beats ending on a clock.
+//
+// THE SCREEN LEADS EACH ROW, not the copy. Row one is screen left, copy
+// right, and the zigzag inverts from there. In a left-to-right reading order
+// that lands the picture before the sentence, which is what a scroll-stopper
+// wants: the chart has to do its work before any words are read. It was
+// drawn both ways; copy-first made the top of the artboard a paragraph, and
+// a paragraph is not a hook.
 //
 // Four things keep it from flattening back into three rows of stuff:
 //
-//   1. THE ROWS ARE NOT EQUAL. Row one is the tallest, with a 44px heading,
-//      two bullets and the largest screen; rows two and three are shorter,
-//      with a 36px heading and no bullets. The first row is the argument,
-//      the other two are the proof, and the type sizes say so. Rows two and
-//      three are not equal to each other either, and which of them is taller
-//      is decided by what its screen has to hold: the exam paper needs a
-//      timer panel, a marked question and a written-answer field, so it took
-//      the room the projection chart did not need.
-//   2. THE SPLIT MOVES. Row one is 5fr/7fr, the same ratio the features
-//      page uses. Row two gives the screen more (7.5fr) because a
-//      six-course list needs the width. Row three comes back to 5fr/7fr.
-//      The copy column edge therefore never lines up down the page, which
-//      is what stops the two outer rows reading as a repeat.
-//   3. ONE ACCENT. Row one, and only row one, gets the citron: a citron
-//      block on the second line of its heading and a soft citron wash
-//      behind its screen, which is the same radial the FeatureShowcase
-//      paints behind every demo. Rows two and three are graphite and ink.
-//      Spending the accent on all three is how a layout goes flat. With the
-//      footer pill gone the citron block on row one is now the only citron
-//      on the artboard, which is the rule stated exactly rather than nearly.
+//   1. THE ROWS ARE NOT EQUAL. Row one is the tallest and carries the only
+//      44px heading; rows two and three step down to 36. The hook gets the
+//      room because the chart is the element that actually needed it: a
+//      0-100 domain is only honest if it has the height to be read at. Rows
+//      two and three are not equal to each other either, and which is taller
+//      is decided by what its screen has to hold: the test needs a
+//      countdown panel, a topic chip and four full-size options, so it took
+//      the room the two chat bubbles did not need. On the tightest cut, the
+//      1080x1350, it is in fact the tallest row on the artboard: the founder
+//      asked for the test window to grow as much as it needed and for the
+//      other two to pay for it, so the hierarchy there is carried by the
+//      44px heading and the lead position rather than by height.
+//   2. THE SPLIT MOVES. Every row has its own ratio, and the chart row takes
+//      the widest screen column of the three because a date axis with eleven
+//      slots is the thing on this artboard most short of width. The copy
+//      column edge therefore never lines up down the page, which is what
+//      stops the outer rows reading as a repeat.
+//   3. ONE ACCENT, AND IT IS AT THE BOTTOM. The tutor row, and only the
+//      tutor row, gets the citron: a citron block on the second line of its
+//      heading and a soft citron wash behind its screen, which is the same
+//      radial the FeatureShowcase paints behind every demo. It sits on the
+//      last row on purpose. An accent at the top only confirms where the eye
+//      already entered; low down it is a second focal point that pulls the
+//      eye through the full height. It also keeps a block of citron away
+//      from the chart, whose blue, orange and green are doing categorical
+//      work and do not need a fourth strong colour beside them.
 //   4. THE SCREENS BREATHE PAST THE GUTTER. Each window is 24px wider than
 //      its column and pulled toward the copy, so it crosses the gutter
 //      line instead of sitting in a tidy box. The chrome always keeps its
@@ -84,20 +104,26 @@ import { AERO_COURSES, CHART_UP, CHART_DOWN } from "./charts";
 // with dots and a URL, and the copy column is already saying the thing the
 // badge would say.
 //
-// WHAT READS AT WHAT SIZE, checked at scale rather than guessed:
+// WHAT READS AT WHAT SIZE, checked by re-shooting the portrait cut at 0.241
+// scale rather than by guessing:
 //   full size (1080 wide, or the 2160 export)  everything.
-//   half feed (~540px)  every heading, every body line, the course names
-//       with their tracks, both marks per course and the travel bar between
-//       them, the countdown and the exam question, the shape of the chat.
+//   half feed (~540px)  every heading, every body line, the three lines with
+//       their points and the date axis under them, the countdown, the four
+//       options with the chosen one, and the shape of the chat.
 //   thumbnail (~260px)  the three headings, the citron block, the three
 //       window silhouettes with their traffic lights and the zigzag they
-//       make, and the countdown. In the plot the six tracks, the 50 rule and
-//       the coloured travel bars still read as a shape, green rungs with one
-//       clay one low down; the numerals, the tick and the disc do not
-//       separate at that size. The body lines, the chat text and the exam
-//       question go. That is the honest limit, and the zigzag is the thing
-//       that still works at that size, which is the point of the
-//       composition.
+//       make, the countdown digits, the four option rows with the chosen one
+//       visibly heavier, and in the chart three separated coloured lines
+//       holding their shape, blue high and steady, green low with a dive in
+//       the middle. What goes: every body line, the legend labels, the axis
+//       labels, the option text, the chat text and the chips.
+//   And one honest correction to the premise this order was built on. The
+//       chart does survive the thumbnail and it does read as a chart of
+//       somebody's marks, which is the part that matters. It is not the
+//       loudest object at that size: the countdown panel and the citron
+//       block are, because both are high-contrast blocks and three 4px lines
+//       are not. The chart leads because of what it MEANS at half feed and
+//       above, not because it shouts at 260px.
 //
 // THE GROUND. The artboard carries the campaign-wide dot lattice from
 // adkit's Artboard, at 5% ink. It is masked by every window and never sits
@@ -109,19 +135,20 @@ import { AERO_COURSES, CHART_UP, CHART_DOWN } from "./charts";
 //                        units, which is what BuildTutorPrompt hands the
 //                        model. Not citations: nothing in the AI module can
 //                        cite anything.
-//   /dashboard/mastery   the ProjectionSlope chart. Current mark to
-//                        predicted mark per course, from AERO_COURSES, read
-//                        off GET /api/mastery/predictions for the seeded
+//   /dashboard/analytics MarksByCourse. Every graded mark already logged,
+//                        on a shared date axis, one line per course, y
+//                        pinned 0 to 100, marks shown at every point. Real
+//                        marks on their real due dates for the seeded
 //                        first-year Aeronautical Engineering account. No
-//                        band and no interval: MasteryController returns
-//                        CurrentTerm, PredictedNextTerm and one scalar
-//                        Confidence, so a shaded band would be invented.
-//   /dashboard/practice  PracticeRunner on an exam-format paper: the
-//                        countdown, the marks position, one long-form
-//                        written question with what it is out of, and the
-//                        empty answer field. Every part of that is in the
-//                        code; see the header on ExamScreen for the file
-//                        and symbol behind each element.
+//                        forward curve, no band, no interval: this is what
+//                        happened, and the projection is a different screen.
+//   /dashboard/practice  PracticeRunner on a timed generated test: the
+//                        countdown, the question position and answered
+//                        count, the topic chip, the mark value and four
+//                        options with one chosen. Every part of that is in
+//                        the code; see the header on PracticeScreen for the
+//                        file and symbol behind each element, including the
+//                        one liberty taken there and why.
 //
 // AUDIENCE AND LABEL ARE NOT THE SAME THING. What is depicted is a
 // university account: semesters, courses the student added, first year, a
@@ -149,6 +176,20 @@ const SITE = "aptiverse.co.za";
  * short and lost its last two characters to the ellipsis.
  */
 const RAIL_URL = 16;
+
+/**
+ * Window chrome, trimmed once for all three panels.
+ *
+ * The kit's defaults (18px rail padding, 30px body inset) are drawn for a
+ * unit with one window on it. This one has three, and at the kit defaults the
+ * chrome alone eats roughly 130px per window before a single pixel of product
+ * is drawn. On the 1080x1350 cut that is most of a row, and it was the
+ * difference between four exam options fitting and being clipped. Chrome is
+ * the cheapest height on a crowded artboard: nobody looks at rail padding.
+ * The rail still reads as a rail and the body still has a clear inset.
+ */
+const RAIL_PAD = 10;
+const PANEL_PAD = 22;
 
 // ---------------------------------------------------------------------
 // The row. Copy on one side, screen on the other, vertically centred.
@@ -345,19 +386,21 @@ function TutorScreen({ scheme }: { scheme: AdScheme }) {
       traffic
       dotSize={16}
       urlSize={RAIL_URL}
+      railPad={RAIL_PAD}
+      pad={PANEL_PAD}
       flex={1}
     >
-      <ScreenBody gap={14}>
+      <ScreenBody gap={12}>
         <Stack direction="row" spacing="12px" justifyContent="flex-end" alignItems="flex-start">
           <Box
             sx={{
               maxWidth: "82%",
-              px: "18px",
-              py: "11px",
+              px: "17px",
+              py: "10px",
               borderRadius: "14px",
               bgcolor: t.palette.primary.main,
               color: t.palette.primary.contrastText,
-              fontSize: 22,
+              fontSize: 20,
               lineHeight: 1.3,
             }}
           >
@@ -375,12 +418,12 @@ function TutorScreen({ scheme }: { scheme: AdScheme }) {
           <Box
             sx={{
               maxWidth: "96%",
-              px: "18px",
-              py: "12px",
+              px: "17px",
+              py: "11px",
               borderRadius: "14px",
               bgcolor: bubble,
               color: s.ink,
-              fontSize: 22,
+              fontSize: 20,
               lineHeight: 1.35,
             }}
           >
@@ -389,8 +432,12 @@ function TutorScreen({ scheme }: { scheme: AdScheme }) {
             {/* What the tutor is handed, not what it cites. There is no
                 retrieval and no citation path anywhere in the AI module. */}
             <Stack direction="row" spacing="8px" sx={{ mt: "10px" }} flexWrap="wrap" useFlexGap>
-              <AdChip scheme={scheme}>Knows you take Mechanics I</AdChip>
-              <AdChip scheme={scheme}>Pitched at first year</AdChip>
+              <AdChip scheme={scheme} size={15}>
+                Knows you take Mechanics I
+              </AdChip>
+              <AdChip scheme={scheme} size={15}>
+                Pitched at first year
+              </AdChip>
             </Stack>
           </Box>
         </Stack>
@@ -400,417 +447,362 @@ function TutorScreen({ scheme }: { scheme: AdScheme }) {
 }
 
 // ---------------------------------------------------------------------
-// Screen 2. The projection panel on /dashboard/mastery, PLOTTED.
+// Screen 2. The marks chart on /dashboard/analytics.
 //
-// This row used to be six course names with two numerals beside each, and
-// the founder read it as a table, correctly: a list of numbers in rows is a
-// list of numbers in rows however it is styled, and the row it sits in is
-// asking the reader to believe this is an analytics product.
+// WHAT THIS REDRAWS. MarksByCourse in
+// src/app/(app)/dashboard/analytics/page.tsx, element for element:
+//   - one shared date axis, built from the union of every course's mark
+//     dates, sorted, with scaleType "point", so the slots are evenly spaced
+//     however far apart the real dates are
+//   - one series per course, a point only where that course has a mark,
+//     connectNulls so a course with marks weeks apart stays one line
+//   - curve linear, showMark true, so every plotted point is a real logged
+//     mark and nothing between two points is invented
+//   - y pinned 0 to 100, horizontal gridlines, a legend because there is
+//     more than one series (AptiverseLineChart turns it on at two)
+//   - axis labels formatted DD MMM
 //
-// WHAT IT IS NOW, and what it deliberately is not.
+// THE DOMAIN IS THE FULL 0 TO 100, exactly as the real yAxis pins it. The
+// data here spans 48 to 82; cropping to that range would double the apparent
+// size of every move and turn a four-mark wobble into a cliff. That is the
+// most common way a truthful number becomes a dishonest picture, and it is
+// the same rule charts.tsx states.
 //
-// The screen this depicts, /dashboard/mastery, renders ProjectionSlope: a
-// LineChart with x = ["Current", "Predicted"], y pinned to 0-100, one line
-// per course, coloured by whether the projection rises or falls. That is
-// exactly two points per course on a real scale, so it is drawn here as
-// exactly two points per course on a real scale, laid horizontally instead
-// of vertically. The encoding is identical; only the axis is turned, and it
-// is turned for a reason given below.
+// NO PROJECTION ON THIS SCREEN. No forward curve past the last mark, no
+// band, no interval, no confidence. This is the marks already logged and
+// nothing else. The previous occupant of this row was the mastery
+// projection, and it moved out rather than sitting alongside: a line of
+// dated marks with a projection drawn on the same axes invites the reader to
+// read the projection as more of the same measurement, which it is not.
 //
-// The alternative brief was marks over time from graded assessments. It was
-// not taken: those marks are real but they are not this screen, and a line
-// of dated marks next to the words "projected next semester" invites the
-// reader to extend it, which is the exact misreading the confidence band was
-// removed for.
+// WHY THREE COURSES. See the note on AERO_MARKS in charts.tsx. Six lines on
+// one axis at this size is spaghetti; the three kept are the ones that
+// occupy separate horizontal bands and never cross.
 //
-// NO BAND, NO INTERVAL, EVER. MasteryController.GetPredictions returns
-// CurrentTerm, PredictedNextTerm and one scalar Confidence per course.
-// There is no series and no interval anywhere in the response, so a shaded
-// band would be drawing the shape of a feature that does not exist. The
-// scalar confidence is not shown either, because the screen being depicted
-// does not show it.
-//
-// WHY HORIZONTAL. Vertically, the six projected marks land on 78, 73, 66,
-// 65, 58 and 46. In the height this row can spend, 100 marks is about 165px,
-// so 65 and 66 are one and a half pixels apart and the labels for the six
-// lines are unplaceable without leader lines and nudging, which is a lot of
-// apparatus for an image somebody sees for two seconds. Turned on its side,
-// the course name is simply the row label, nothing can collide, and the
-// domain gets 240px instead of 165.
-//
-// THE DOMAIN IS THE FULL 0 TO 100. Cropping to 40-85 would triple the
-// apparent size of every gap. Same rule as charts.tsx, same reason.
+// HOW THE LINES ARE DRAWN. The plot area has no fixed pixel size: it is
+// whatever the row and the cut leave after the rail, the header, the legend
+// and the axis. So the geometry is expressed in percentages of that box.
+// The lines are one SVG on a 0-100 viewBox with preserveAspectRatio "none",
+// which stretches the coordinate space to the box exactly, plus
+// vector-effect non-scaling-stroke so the stroke stays the same weight in
+// device pixels however the box is stretched. The point markers are laid out
+// as positioned elements instead, because a circle in a stretched viewBox is
+// an ellipse.
 // ---------------------------------------------------------------------
 
-// WHAT THE TWO MARKERS ARE, and why they are not two dots.
-//
-// The first plot drew "now" and "projected" as two circles of the same
-// family, a small white one and a larger coloured one, each ringed in the
-// panel surface. On the six real deltas that fails: Mechanics moves 57 to 58,
-// which on this row's axis is under three pixels, so a 13px dot and a 17px
-// dot centred three pixels apart are one lumpy blob, and Electrical (+3) and
-// Physics (+5) are half eaten. No amount of extra width fixes it either. The
-// widest cut in the set gives the domain about 450px, so one mark is still
-// only four and a half pixels and a one-mark move still puts two circles
-// inside each other.
-//
-// So the two ends stop being the same kind of object. "Now" is a vertical
-// tick, a slim ink capsule that marks a position the way a gate does.
-// "Projected" is a filled round terminal at the end of the travel bar. A tick
-// and a disc never merge into one shape however close they get: at +1 the
-// tick simply sits inside the disc, haloed in the panel surface so its edges
-// hold, and the reader sees a dot with a start gate near its middle, which is
-// exactly what a one-mark move is. The tick is also the smaller mark and is
-// drawn last, so it is never the thing that gets buried.
-//
-// The travel between them is a bar in the direction colour, thick enough to
-// be the loudest thing in the row, because the distance moved is the story.
-// A flat course gets no bar and no invented movement: the tick lands dead
-// centre on a muted disc, and the symmetry of that glyph is what says "held"
-// rather than "broken". The value column says the same thing a third way:
-// current, glyph, projected, so 78 - 78 and 70 up 73 read without colour.
+/** Y axis label gutter. Right aligned, so "100" is what sets the width. */
+const MARKS_Y_W = 32;
+/**
+ * Gridlines and y labels. Horizontal only, which is the grid the real chart
+ * asks for, and five of them across a 0-100 domain: enough that a reader can
+ * place a point without counting, few enough that the lines stay the quietest
+ * thing in the panel.
+ */
+const MARKS_TICKS = [0, 25, 50, 75, 100];
+/**
+ * The point marker. Deliberately small: eleven of them land on this plot, and
+ * a fat dot on a four-mark move covers the move it is there to mark. It is
+ * ringed in the panel surface so two points that land close still read as two
+ * points.
+ */
+const MARKS_DOT = 11;
+/** Line weight in device pixels, held there by non-scaling-stroke. */
+const MARKS_STROKE = 4;
+/**
+ * Print every other date, and always the last one. Eleven labels across this
+ * width overlap at every cut, and the real axis thins its labels for the same
+ * reason. The dates that survive are real dates off real assessments; none is
+ * moved to a rounder day to make the axis tidier.
+ */
+const MARKS_LABEL_EVERY = 2;
 
-/** Row label column. Sized so "Electrical Engineering" sets on one line. */
-const PROJ_NAME_W = 186;
-/** Current numeral, direction glyph, projected numeral, right aligned. */
-const PROJ_VALUE_W = 78;
-/**
- * Vertical room one plotted row gets. Must clear the tick and its halo, and
- * six of these plus the caption and the axis have to fit the shortest panel
- * this screen is drawn into, which is the portrait cut's middle row. At 30
- * the axis labels were pushed under the panel's own rounded corner.
- */
-const PROJ_ROW_H = 28;
-/** The 0-100 track every row sits on. */
-const PROJ_TRACK_H = 7;
-/** The travel bar between now and projected. Heavier than the track. */
-const PROJ_SEG_H = 12;
-/**
- * The projected terminal, and the now tick.
- *
- * These are as small as they can be and still read, because every pixel of
- * marker is a pixel of travel bar the marker covers. On a full 0-100 domain
- * in this row's width one mark is under three pixels, so a 15px disc and a
- * 5px tick already eat the whole of a three-mark move. That is a fact about
- * the data and the honest domain, not a bug to style away: Electrical moving
- * 70 to 73 IS a three-percent move, and any drawing where it looks like a
- * long journey is the cropped-axis lie in another costume. What the drawing
- * owes the reader is that the move is visible AS a move, which the numerals,
- * the glyph and the sign do at every delta, and that the big moves look big,
- * which the bar does from about four marks up. The wide cut buys roughly
- * 450px of domain against 260 here, and that is where the bar starts doing
- * real work on the five-mark rows.
- */
-const PROJ_DOT = 15;
-/**
- * The flat marker runs larger than the moving one. It has to clear the tick
- * that lands in the middle of it plus that tick's halo, or the ring is a
- * grey sliver either side of a white bar and the deliberate glyph reads as a
- * rendering accident, which is the exact failure it exists to fix.
- */
-const PROJ_FLAT_DOT = 22;
-const PROJ_TICK_W = 5;
-const PROJ_TICK_H = 22;
-
-function ProjectionScreen({ scheme }: { scheme: AdScheme }) {
+function MarksScreen({ scheme }: { scheme: AdScheme }) {
   const s = adSurfaces(scheme);
-  // The tick is haloed in the panel's own surface so it holds its edge over
-  // the disc it can land inside. Read off the same helper AdPanel fills with,
+  // The marker ring, read off the same helper AdPanel fills the panel with
   // rather than a second copy of the literal that would quietly drift.
   const ring = adPanelBg(scheme);
-  // The track and the 50 rule are drawn off the ink rather than off s.hair.
-  // s.hair is a 14% hairline meant for borders; at plot scale it recedes into
-  // the panel and the six tracks stop reading as a grid at all.
-  const track = alpha(s.ink, 0.16);
-  const rule = alpha(s.ink, 0.32);
-  const rows = AERO_COURSES;
+  const grid = alpha(s.ink, 0.12);
+
+  // The shared axis, built the way MarksByCourse builds it: the union of every
+  // course's mark dates, sorted, then spaced evenly. Even spacing is what
+  // scaleType "point" does, so 23 April and 24 April sit one slot apart just
+  // as two dates a month apart do. That is the real screen's behaviour, not a
+  // simplification of it.
+  const dates = [...new Set(AERO_MARKS.flatMap((c) => c.marks.map((m) => m.date)))].sort();
+  const xAt = (i: number) => (i / (dates.length - 1)) * 100;
+
+  // Colour comes from the app's own categorical accessor at the slot each
+  // course holds in the list, which is exactly what the real chart passes it.
+  // No hue is invented for the ad, and the three slots used are Okabe-Ito
+  // blue, orange and green, which stay separable under every CVD type.
+  const series = AERO_MARKS.map((c, i) => ({
+    name: c.name,
+    colour: courseColor(i, scheme),
+    points: c.marks.map((m) => ({ x: xAt(dates.indexOf(m.date)), y: m.mark })),
+  }));
 
   return (
     <AdPanel
       scheme={scheme}
-      url={`${SITE}/dashboard/mastery`}
+      url={`${SITE}/dashboard/analytics`}
       traffic
       dotSize={16}
       urlSize={RAIL_URL}
+      railPad={RAIL_PAD}
+      pad={PANEL_PAD}
       flex={1}
     >
       <Stack sx={{ height: "100%" }}>
         <Stack direction="row" alignItems="baseline" spacing="14px" sx={{ mb: "10px" }}>
           <AdEyebrow scheme={scheme} size={15}>
-            Projected next semester
+            Marks this semester
           </AdEyebrow>
           <Box sx={{ flex: 1 }} />
           <Typography sx={{ fontSize: 15, color: s.muted, whiteSpace: "nowrap" }}>
-            mark now, then projected
+            every mark logged
           </Typography>
         </Stack>
 
-        <Box
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            display: "grid",
-            gridTemplateColumns: `${PROJ_NAME_W}px 1fr ${PROJ_VALUE_W}px`,
-            gridTemplateRows: `repeat(${rows.length}, 1fr)`,
-            columnGap: "12px",
-            alignItems: "center",
-          }}
+        {/* The legend the real chart shows as soon as there is more than one
+            series. It is not decoration here either: three lines carrying
+            three identities cannot leave that identity to colour alone, and
+            at this size there is no room to label each line at its end. */}
+        <Stack
+          direction="row"
+          spacing="18px"
+          alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
+          sx={{ mb: "12px" }}
         >
-          {/* One continuous 50 rule behind every track rather than a tick per
-              row, so it reads as a single reference line. Spanning the plot
-              column of the grid is what keeps it aligned to the tracks
-              without anybody measuring anything. It carries a z-index because
-              the six row boxes are painted after it and a 2px line at 14% ink
-              was disappearing under every one of them. */}
-          <Box
-            sx={{
-              gridColumn: 2,
-              gridRow: `1 / span ${rows.length}`,
-              position: "relative",
-              height: "100%",
-            }}
-          >
-            <Box
-              sx={{
-                position: "absolute",
-                left: "50%",
-                top: 0,
-                bottom: 0,
-                width: 3,
-                ml: "-1.5px",
-                bgcolor: rule,
-                zIndex: 1,
-              }}
-            />
-          </Box>
-
-          {rows.map((c, i) => {
-            // Three-way, not two. A flat projection is its own state: giving
-            // it the rising colour would claim an improvement the arithmetic
-            // did not produce.
-            const delta = c.predicted === null ? 0 : c.predicted - c.current;
-            const tone = delta > 0 ? CHART_UP : delta < 0 ? CHART_DOWN : s.muted;
-            const Glyph = delta > 0 ? ArrowUpRight : delta < 0 ? ArrowDownRight : Minus;
-            const lo = Math.min(c.current, c.predicted ?? c.current);
-            const hi = Math.max(c.current, c.predicted ?? c.current);
-
-            return (
-              <Fragment key={c.name}>
-                <Typography
-                  noWrap
-                  sx={{
-                    gridColumn: 1,
-                    gridRow: i + 1,
-                    fontSize: 18,
-                    fontWeight: 600,
-                    lineHeight: 1.2,
-                    color: s.ink,
-                  }}
-                >
-                  {c.name}
-                </Typography>
-
-                <Box
-                  sx={{
-                    gridColumn: 2,
-                    gridRow: i + 1,
-                    position: "relative",
-                    height: PROJ_ROW_H,
-                  }}
-                >
-                  {/* Percentages are the scale: left edge is 0, right edge
-                      is 100. No arithmetic, no magic numbers. */}
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      top: "50%",
-                      height: PROJ_TRACK_H,
-                      mt: `${-PROJ_TRACK_H / 2}px`,
-                      borderRadius: 999,
-                      bgcolor: track,
-                      zIndex: 0,
-                    }}
-                  />
-                  {/* The travel. Two points on a scale with nothing drawn
-                      between them is two facts; the bar is what makes it one
-                      movement. Absent, deliberately, where nothing moved. */}
-                  {c.predicted !== null && hi > lo && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        left: `${lo}%`,
-                        width: `${hi - lo}%`,
-                        top: "50%",
-                        height: PROJ_SEG_H,
-                        mt: `${-PROJ_SEG_H / 2}px`,
-                        borderRadius: 999,
-                        bgcolor: tone,
-                        zIndex: 2,
-                      }}
-                    />
-                  )}
-                  {/* The projected terminal. No surface halo on this one: it
-                      sits at the end of its own bar in its own colour, so a
-                      ring would only cut the travel two pixels short of where
-                      it arrives.
-
-                      A course that did not move gets the same disc HOLLOW.
-                      With the tick landing dead centre in it, that glyph is
-                      symmetrical and closed, which is what makes a flat
-                      projection read as a state the chart drew on purpose
-                      rather than as a marker that failed to render. */}
-                  {c.predicted !== null && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        left: `${c.predicted}%`,
-                        top: "50%",
-                        width: delta === 0 ? PROJ_FLAT_DOT : PROJ_DOT,
-                        height: delta === 0 ? PROJ_FLAT_DOT : PROJ_DOT,
-                        mt: `${-(delta === 0 ? PROJ_FLAT_DOT : PROJ_DOT) / 2}px`,
-                        ml: `${-(delta === 0 ? PROJ_FLAT_DOT : PROJ_DOT) / 2}px`,
-                        borderRadius: "50%",
-                        bgcolor: delta === 0 ? "transparent" : tone,
-                        border: delta === 0 ? `3px solid ${s.muted}` : "none",
-                        boxSizing: "border-box",
-                        zIndex: 3,
-                      }}
-                    />
-                  )}
-                  {/* Now. Last in the paint order and haloed, so it survives
-                      landing inside the disc on a one-mark move. */}
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      left: `${c.current}%`,
-                      top: "50%",
-                      width: PROJ_TICK_W,
-                      height: PROJ_TICK_H,
-                      mt: `${-PROJ_TICK_H / 2}px`,
-                      ml: `${-PROJ_TICK_W / 2}px`,
-                      borderRadius: 999,
-                      bgcolor: s.ink,
-                      boxShadow: `0 0 0 2.5px ${ring}`,
-                      zIndex: 4,
-                    }}
-                  />
-                </Box>
-
-                {/* Both numbers, current then projected, because a
-                    before-and-after that prints only the after is half a
-                    chart. The two are told apart by weight and colour as well
-                    as by order: the current mark is the quiet one. */}
-                <Stack
-                  direction="row"
-                  spacing="5px"
-                  alignItems="center"
-                  justifyContent="flex-end"
-                  sx={{ gridColumn: 3, gridRow: i + 1 }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: 18,
-                      fontWeight: 600,
-                      lineHeight: 1.2,
-                      color: s.muted,
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {c.current}
-                  </Typography>
-                  <Box sx={{ display: "flex", color: tone, flexShrink: 0 }}>
-                    <Glyph size={15} />
-                  </Box>
-                  <Typography
-                    sx={{
-                      fontSize: 22,
-                      fontWeight: 700,
-                      lineHeight: 1.2,
-                      color: tone,
-                      fontVariantNumeric: "tabular-nums",
-                    }}
-                  >
-                    {c.predicted ?? "-"}
-                  </Typography>
-                </Stack>
-              </Fragment>
-            );
-          })}
-        </Box>
-
-        {/* Axis. Three labels: the ends, and the 50 the rule marks. The 50
-            is the one that carries meaning, so it is the one set in ink. */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: `${PROJ_NAME_W}px 1fr ${PROJ_VALUE_W}px`,
-            columnGap: "12px",
-            mt: "8px",
-          }}
-        >
-          <Box sx={{ gridColumn: 2, position: "relative", height: 17 }}>
-            {[0, 50, 100].map((tick) => (
+          {series.map((k) => (
+            <Stack key={k.name} direction="row" spacing="8px" alignItems="center">
+              <Box
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: "50%",
+                  bgcolor: k.colour,
+                  flexShrink: 0,
+                }}
+              />
               <Typography
-                key={tick}
+                sx={{ fontSize: 16, fontWeight: 600, color: s.ink, whiteSpace: "nowrap" }}
+              >
+                {k.name}
+              </Typography>
+            </Stack>
+          ))}
+        </Stack>
+
+        {/* The plot. A flex row rather than a grid, so both columns inherit
+            the row height by stretching: a grid track sized to its content
+            collapses to nothing here, because everything inside the plot is
+            positioned rather than flowed. */}
+        <Stack direction="row" spacing="10px" sx={{ flex: 1, minHeight: 0 }}>
+          <Box sx={{ width: MARKS_Y_W, flexShrink: 0, position: "relative" }}>
+            {MARKS_TICKS.map((t) => (
+              <Typography
+                key={t}
                 sx={{
                   position: "absolute",
-                  left: `${tick}%`,
-                  transform:
-                    tick === 0 ? "none" : tick === 100 ? "translateX(-100%)" : "translateX(-50%)",
-                  fontSize: 16,
-                  fontWeight: tick === 50 ? 700 : 500,
+                  right: 0,
+                  top: `${100 - t}%`,
+                  transform: "translateY(-50%)",
+                  fontSize: 15,
                   lineHeight: 1,
-                  color: tick === 50 ? s.ink : s.muted,
+                  color: s.muted,
                   fontVariantNumeric: "tabular-nums",
                 }}
               >
-                {tick}
+                {t}
               </Typography>
             ))}
           </Box>
-        </Box>
+
+          <Box sx={{ flex: 1, minWidth: 0, position: "relative" }}>
+            {MARKS_TICKS.map((t) => (
+              <Box
+                key={t}
+                sx={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: `${100 - t}%`,
+                  height: 2,
+                  mt: "-1px",
+                  bgcolor: grid,
+                }}
+              />
+            ))}
+
+            {/* One SVG for the lines, on a 0-100 coordinate space stretched to
+                the box. non-scaling-stroke is what keeps the weight even after
+                that stretch, and overflow visible is what keeps the caps on the
+                first and last points from being sliced by the viewport edge. */}
+            <svg
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                overflow: "visible",
+              }}
+            >
+              {series.map((k) => (
+                <polyline
+                  key={k.name}
+                  points={k.points.map((p) => `${p.x},${100 - p.y}`).join(" ")}
+                  fill="none"
+                  stroke={k.colour}
+                  strokeWidth={MARKS_STROKE}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+            </svg>
+
+            {/* Every plotted point is a mark somebody actually got. Drawn as
+                elements rather than in the SVG, because a circle inside a
+                stretched viewBox comes out an ellipse. */}
+            {series.map((k) =>
+              k.points.map((p) => (
+                <Box
+                  key={`${k.name}-${p.x}`}
+                  sx={{
+                    position: "absolute",
+                    left: `${p.x}%`,
+                    top: `${100 - p.y}%`,
+                    width: MARKS_DOT,
+                    height: MARKS_DOT,
+                    ml: `${-MARKS_DOT / 2}px`,
+                    mt: `${-MARKS_DOT / 2}px`,
+                    borderRadius: "50%",
+                    bgcolor: k.colour,
+                    boxShadow: `0 0 0 2.5px ${ring}`,
+                  }}
+                />
+              )),
+            )}
+          </Box>
+        </Stack>
+
+        {/* The date axis, on the same two columns as the plot so the labels
+            land under the points they belong to. */}
+        <Stack direction="row" spacing="10px" sx={{ mt: "8px" }}>
+          <Box sx={{ width: MARKS_Y_W, flexShrink: 0 }} />
+          <Box sx={{ flex: 1, minWidth: 0, position: "relative", height: 17 }}>
+            {dates.map((d, i) => {
+              const last = i === dates.length - 1;
+              if (i % MARKS_LABEL_EVERY !== 0 && !last) return null;
+              return (
+                <Typography
+                  key={d}
+                  sx={{
+                    position: "absolute",
+                    left: `${xAt(i)}%`,
+                    transform: i === 0 ? "none" : last ? "translateX(-100%)" : "translateX(-50%)",
+                    fontSize: 15,
+                    lineHeight: 1,
+                    color: s.muted,
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {markAxisLabel(d)}
+                </Typography>
+              );
+            })}
+          </Box>
+        </Stack>
       </Stack>
     </AdPanel>
   );
 }
 
 // ---------------------------------------------------------------------
-// Screen 3. The exam paper, mid attempt.
+// Screen 3. A practice test, mid attempt.
 //
-// This row was a five-question multiple-choice runner, which undersold the
-// thing it was standing for. The practice module ships an "exam" format that
-// is a different object from a quiz, and all of it is verifiable:
+// WHAT IS DEPICTED, and how the framing was settled. This row has been three
+// things: a five-question quiz, then an exam paper with a written answer and
+// a memo, and now a timed multiple-choice practice test. The last move was
+// forced by an honest conflict rather than by taste.
 //
-//   PracticeTestGenerator, case "exam"     a full paper in sections A, B
-//                                          and C, with its own duration.
-//   FrontendQuestionDto.Marks              what each question is out of,
-//                                          served BEFORE submit precisely so
-//                                          the student can budget the hour.
-//   PracticeService.MarkWrittenAnswersAsync  written answers go to a marker
-//                                          told to work "strictly against the
-//                                          memo and award part marks the way
-//                                          a real marker does", with the
-//                                          memo injected per question.
-//   FrontendScoreSummaryDto.MarksAwarded / MarksTotal, and
-//   FrontendMarkedAnswerDto.MarksAwarded / MarksAvailable
-//                                          marks per question and per paper.
-//   PracticeRunner InstructionsView        timed, one attempt, tutor off,
-//                                          leaving the tab is recorded.
+// The exam format really does open with multiple choice. GenerateExamAsync
+// sets the paper out for the model as "Section A: multiple-choice, 1 mark
+// each, roughly 30% of the total", "Section B: short answers", "Section C:
+// one or two extended questions", and "mc questions: exactly four options,
+// exactly one correct". So a four-option question inside an exam paper is
+// real. But PracticeRunner draws an exam question with a SECTION chip and a
+// MARKS chip and deliberately no topic, and draws a drill question with a
+// TOPIC chip and neither of the others:
 //
-// So: a countdown, the paper position in marks rather than in questions, one
-// long-form written question with what it is out of, and a free-text field
-// tall enough that nobody mistakes it for a text input. No options, because
-// options are the thing this row exists to stop promising.
+//   q.section != null  ->  <Chip "Section A"> <Chip "1 mark">
+//   otherwise          ->  q.topic && <Chip "Stoichiometry">
 //
-// The line about memo marking and part marks lives in the copy column rather
-// than as a footnote inside the window. At 346px the row cannot hold both,
-// and of the two places, the copy column is where a reader is already
-// reading sentences.
+// with a comment explaining why: a topic printed over an exam question is
+// the answer to half of it. The screen therefore cannot show a topic and a
+// section at once, and the question that had to go on this row is a seeded
+// Chemistry I item whose topic is Stoichiometry. A generated multiple-choice
+// test is what that question actually belongs to, so that is what is drawn,
+// and the copy column says practice test rather than exam paper.
+//
+// WHAT IS STILL TRUE OF IT, checked rather than assumed:
+//   Timed. PracticeRunner takes `timed = durationMin > 0`, and
+//   PracticeTestGenerator sets DurationMinutes on every format, an exam off
+//   its marks and everything else off EstimateDuration. A twelve-question
+//   multiple-choice test is a quarter of an hour, which is what the
+//   countdown shows.
+//   One attempt. PracticeService.StartAttemptAsync looks for any submitted
+//   attempt on the test and hands that one back instead of opening a second,
+//   with no branch on format. The rail pill is true for every generated
+//   test, not only for a paper.
+//   Generated for a course the student takes, at their year.
+//   PracticeTestGenerator resolves the course off the practice key, reads
+//   the student's own StudentCourse.Level and passes it as `levelHint`.
+//   Never adaptive: `ai_practice.adaptive` is a seeder string with nothing
+//   behind it, and the copy does not go near it.
+//
+// THE PROGRESS FIGURES ARE ARITHMETIC THAT HOLDS. The row used to read "Q3
+// of 12 · 18/100 marks", which cannot be right in any paper: eighteen marks
+// banked on question three means six marks a question, and a six-mark
+// multiple choice does not exist. Twelve questions at one mark each is a
+// twelve-mark test, and the readout is the runner's own pair, the question
+// position and the answered count.
+//
+// THE COUNTDOWN IS THE LOUDEST THING IN THE WINDOW, at roughly twice the
+// question size, in its own tinted panel with a stopwatch icon. That is not
+// decoration: a countdown is the one element on this screen that is urgent,
+// and it is the only thing on the artboard that carries the warm colour,
+// which is a theme token rather than a hex.
 // ---------------------------------------------------------------------
 
-function ExamScreen({ scheme }: { scheme: AdScheme }) {
+/**
+ * Seeded content, not written for the advert: this is one of the
+ * stoichiometry multiple-choice items on the Chemistry I practice test in
+ * the database, topic "Stoichiometry", four options with exactly one
+ * correct. The equation is set as LaTeX so the subscripts and the reaction
+ * arrow render the way the runner renders them, rather than as flat ASCII.
+ *
+ * Chemistry is the course the chart row above shows falling, 65 in March to
+ * 48 in April to 51 in June. Drilling the module that is dropping is the
+ * whole point of the order these rows are in.
+ */
+const PRACTICE_TOPIC = "Stoichiometry";
+const PRACTICE_QUESTION =
+  "In $2\\mathrm{H}_2 + \\mathrm{O}_2 \\rightarrow 2\\mathrm{H}_2\\mathrm{O}$, how many moles of " +
+  "$\\mathrm{O}_2$ are needed for 4 mol of $\\mathrm{H}_2$?";
+const PRACTICE_OPTIONS = ["1 mol", "2 mol", "4 mol", "8 mol"];
+/**
+ * Which option is showing as chosen. Nothing on this screen says whether a
+ * chosen answer is right: the paper has not been submitted, so the product
+ * does not know either.
+ */
+const PRACTICE_PICKED = 1;
+
+function PracticeScreen({ scheme }: { scheme: AdScheme }) {
   const t = useTheme();
   const s = adSurfaces(scheme);
   // The one warm colour on the artboard, and it is a theme token rather than
@@ -825,6 +817,8 @@ function ExamScreen({ scheme }: { scheme: AdScheme }) {
       traffic
       dotSize={16}
       urlSize={RAIL_URL}
+      railPad={RAIL_PAD}
+      pad={PANEL_PAD}
       flex={1}
       badge={
         // The negative inset pulls the kit's standard pill padding in by
@@ -842,39 +836,49 @@ function ExamScreen({ scheme }: { scheme: AdScheme }) {
         </Stack>
       }
     >
-      <ScreenBody gap={10}>
-        {/* The clock. Its own panel, because on a real paper the clock is not
-            a chip in a corner, it is the thing you keep looking back at. */}
+      <ScreenBody gap={12}>
+        {/* The clock. Its own panel, because on a real test the clock is not
+            a chip in a corner, it is the thing you keep looking back at, and
+            it is the loudest object in this window on purpose: the countdown
+            sets at roughly twice the question. Left is the time, right is the
+            runner's own progress pair, the question position and the answered
+            count. Both are strings the screen prints; neither is a marks
+            total, because the runner does not show one mid-attempt. */}
         <Stack
           direction="row"
           alignItems="flex-end"
           spacing="16px"
           sx={{
             px: "16px",
-            py: "9px",
-            borderRadius: "12px",
+            py: "11px",
+            borderRadius: "14px",
             border: `2px solid ${alpha(alarm, 0.5)}`,
             bgcolor: alpha(alarm, 0.09),
           }}
         >
           <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Stack direction="row" spacing="9px" alignItems="center">
+              <Box sx={{ display: "flex", color: alarm, flexShrink: 0 }}>
+                <Clock size={17} />
+              </Box>
+              <Typography
+                sx={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  lineHeight: 1,
+                  color: s.muted,
+                }}
+              >
+                Time remaining
+              </Typography>
+            </Stack>
             <Typography
               sx={{
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                lineHeight: 1,
-                color: s.muted,
-              }}
-            >
-              Time remaining
-            </Typography>
-            <Typography
-              sx={{
-                mt: "5px",
+                mt: "7px",
                 fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-                fontSize: 30,
+                fontSize: 38,
                 fontWeight: 700,
                 lineHeight: 1,
                 letterSpacing: "-0.02em",
@@ -882,7 +886,7 @@ function ExamScreen({ scheme }: { scheme: AdScheme }) {
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              01:23:45
+              00:14:26
             </Typography>
           </Box>
           <Box sx={{ textAlign: "right", flexShrink: 0 }}>
@@ -900,36 +904,41 @@ function ExamScreen({ scheme }: { scheme: AdScheme }) {
             </Typography>
             <Typography
               sx={{
-                mt: "6px",
-                fontSize: 18,
-                fontWeight: 600,
+                mt: "7px",
+                fontSize: 17,
+                fontWeight: 700,
                 lineHeight: 1,
                 color: s.ink,
                 fontVariantNumeric: "tabular-nums",
+                whiteSpace: "nowrap",
               }}
             >
-              Q3 of 12 · 18/100 marks
+              Q3 of 12 · 2/12 answered
             </Typography>
           </Box>
         </Stack>
 
-        {/* The question. A left rule rather than a box: the row has no spare
-            vertical for a second set of paddings, and the rule still binds
-            the label, the mark badge and the question into one object. */}
+        {/* The question. A left rule rather than a box: a second set of
+            paddings inside a panel that already has some is weight without
+            information, and the rule still binds the topic chip, the mark
+            value and the question into one object.
+
+            THE ONE LIBERTY ON THIS SCREEN. The runner shows the topic chip on
+            a drill and the section-and-marks chips on an exam paper, and
+            never both at once, because a topic printed over an exam question
+            gives away half of it. They are drawn together here because both
+            values are real on this question, the seeded Chemistry I
+            stoichiometry item carries Marks 1, and because a mark value is
+            the detail that stops the picture reading as invented: an
+            eight-mark multiple choice does not exist on any real paper, and a
+            question that says nothing at all invites the reader to assume
+            one. Twelve one-mark questions is a paper whose arithmetic
+            holds. */}
         <Box sx={{ borderLeft: `3px solid ${s.hair}`, pl: "16px" }}>
-          <Stack direction="row" alignItems="center" spacing="12px" sx={{ mb: "8px" }}>
-            <Typography
-              sx={{
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                lineHeight: 1,
-                color: s.muted,
-              }}
-            >
-              Question 3
-            </Typography>
+          <Stack direction="row" alignItems="center" spacing="12px" sx={{ mb: "10px" }}>
+            <AdChip scheme={scheme} size={15}>
+              {PRACTICE_TOPIC}
+            </AdChip>
             <Box sx={{ flex: 1 }} />
             <Box
               sx={{
@@ -944,60 +953,112 @@ function ExamScreen({ scheme }: { scheme: AdScheme }) {
                 whiteSpace: "nowrap",
               }}
             >
-              8 marks
+              1 mark
             </Box>
           </Stack>
-          <Typography sx={{ fontSize: 18, lineHeight: 1.32, color: s.ink }}>
-            Determine the equation of the tangent to the curve f(x) = x³ - 3x² + 2 at the point
-            where x = 2.
+          <Typography component="div" sx={{ fontSize: 17, lineHeight: 1.3, color: s.ink }}>
+            <MathText text={PRACTICE_QUESTION} />
           </Typography>
         </Box>
 
-        {/* Empty, and tall. An eight-mark question answered in a two-line box
-            tells the student to write two lines. */}
-        <Box
-          sx={{
-            height: 48,
-            borderRadius: "10px",
-            border: `2px solid ${s.hair}`,
-            bgcolor: alpha(s.ink, 0.03),
-            px: "14px",
-            pt: "9px",
-          }}
-        >
-          <Typography sx={{ fontSize: 17, lineHeight: 1, color: s.muted }}>
-            Write your full answer…
-          </Typography>
-        </Box>
+        {/* The four options, one picked, drawn the way PracticeRunner draws
+            them: a bordered row per option with a radio in front of the
+            label, the chosen one carrying a heavier border and a wash.
+
+            The runner tints the chosen row with the theme's secondary, which
+            in this theme is citron. Here it is ink instead. Citron on this
+            artboard is spent once, on row one, and a selected answer three
+            rows down is not the thing an ad should be pointing at. Weight and
+            a wash say "chosen" perfectly well without it. */}
+        <Stack spacing="9px">
+          {PRACTICE_OPTIONS.map((opt, i) => {
+            const picked = i === PRACTICE_PICKED;
+            return (
+              <Stack
+                key={opt}
+                direction="row"
+                spacing="11px"
+                alignItems="center"
+                sx={{
+                  px: "16px",
+                  py: "9px",
+                  borderRadius: "13px",
+                  border: `${picked ? 3 : 2}px solid ${picked ? s.ink : s.hair}`,
+                  bgcolor: picked ? alpha(s.ink, 0.1) : "transparent",
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 21,
+                    height: 21,
+                    borderRadius: "50%",
+                    border: `${picked ? 3 : 2}px solid ${picked ? s.ink : s.muted}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {picked && (
+                    <Box sx={{ width: 9, height: 9, borderRadius: "50%", bgcolor: s.ink }} />
+                  )}
+                </Box>
+                <Typography
+                  component="div"
+                  sx={{
+                    fontSize: 18,
+                    lineHeight: 1.2,
+                    fontWeight: picked ? 700 : 500,
+                    color: s.ink,
+                  }}
+                >
+                  <MathText text={opt} />
+                </Typography>
+              </Stack>
+            );
+          })}
+        </Stack>
       </ScreenBody>
     </AdPanel>
   );
 }
 
 // ---------------------------------------------------------------------
-// Copy. Written once and shared by all three cuts.
+// Copy. Written once and shared by every cut, and named for the screen it
+// belongs to rather than for a row number, because the running order has
+// changed once already and row numbers do not survive that.
 // ---------------------------------------------------------------------
 
-const ROW1 = {
+/** The hook. Leads on every cut. */
+const MARKS_COPY = {
+  eyebrow: "Your marks, over time",
+  heading: "Every mark, per course, across the semester.",
+  body: "Each course keeps its own line on the same 0 to 100 scale, so the shape of a semester shows up in the marks already logged.",
+};
+
+const PRACTICE_COPY = {
+  eyebrow: "Practice test",
+  heading: "One test. One attempt. The clock running.",
+  body: "Questions written for a course you are taking and pitched at your year, with the correct answer and the working once you submit.",
+};
+
+/**
+ * The closer, and the row that carries the citron.
+ *
+ * The two bullets this copy used to run under it are folded into the body.
+ * They were affordable when this was the opening row and the tallest one;
+ * as the closer it is the shortest row on the artboard, and a bulleted list
+ * at the bottom of a page reads as a specification sheet rather than as the
+ * warm note the order is trying to end on. Nothing true was dropped: that
+ * the tutor explains and then sets one to try is still stated.
+ */
+const TUTOR_COPY = {
   eyebrow: "Study assistant",
-  body: "Your level, your courses, your marks and what is due next go into every reply.",
-  bullets: ["Explains it, then sets you one to try", "Original questions, with the working shown"],
+  body: "Your level, your courses and what is due next go into every reply. It explains it, then sets you one to try.",
 };
 
-const ROW2 = {
-  eyebrow: "Projection",
-  heading: "Six courses, and where each one is heading.",
-  body: "Every course plotted from the mark it is on now to the mark projected for next semester, out of the graded work already logged.",
-};
-
-const ROW3 = {
-  eyebrow: "Exam simulator",
-  heading: "One paper. One attempt. The clock running.",
-  body: "Written answers, not four options, marked against the memo at submission with part marks per question.",
-};
-
-/** Row one's heading, the only citron on the artboard. */
-function Row1Heading({ size }: { size: number }) {
+/** The tutor heading, and the only citron on the artboard. */
+function TutorHeading({ size }: { size: number }) {
   return (
     <>
       Ask it anything.{" "}
@@ -1037,70 +1098,73 @@ function CardFooter({ scheme, size = 28 }: { scheme: AdScheme; size?: number }) 
 function CardsPortrait() {
   const scheme: AdScheme = "dark";
   return (
-    <Artboard width={1080} height={1350} scheme={scheme} pad={40}>
+    <Artboard width={1080} height={1350} scheme={scheme} pad={32}>
       <AdEyebrow scheme={scheme} size={20}>
         For students
       </AdEyebrow>
-      <Box sx={{ height: 26 }} />
-      {/* 408 + 350 + 342 and 24px gutters is the 1148 the three rows have
-          between the eyebrow and the footer. The exam paper is the row that
-          grew first: a timer panel, a marked question and a written-answer
-          field do not fit in the 300 the multiple-choice runner used. The
-          projection row grew second, and this is the cut that forced it: six
-          plotted rows, a caption and an axis need about 350 of row here, and
-          at 328 the axis labels were sliding under the panel's bottom
-          corner. Rows 1 and 3 gave up five and four pixels for it. The
-          hierarchy is intact, row one is still the tallest and still the only
-          44px heading.
+      <Box sx={{ height: 10 }} />
+      {/* 376 + 512 + 294 with 16px gutters is the 1194 the three rows have
+          between the eyebrow and the footer. This is the tightest cut in the
+          set and every number in it is one row asking for height and the
+          other two answering.
 
-          The pad came down from 48 to 40, and the 16px that freed went to the
-          screens rather than the copy: the copy column is set to a comfortable
-          measure already, and the plot is the element on this artboard that
-          was actually short of room. */}
-      <Stack spacing="24px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
+          Where the height came from. The chart leads now, so it takes the
+          most: 424 gives its plot about 300px of panel and roughly 210 of
+          actual 0-100 domain, against the 138 it had as the middle row, and
+          that is the difference between three lines you can follow and three
+          lines you can see. The exam paper is second at 404 because four
+          option rows, a section label, a mark badge and a countdown do not
+          fit in the 342 a single written-answer field needed. The tutor pays
+          for both: it is the closer, its bullets are folded into its body,
+          and 330 is what the two chat bubbles actually occupy. The two
+          spacers around the rows also came down from 26 to 18 and the
+          gutters from 24 to 18.
+
+          The pad stays at 40. It came down from 48 once already, and the
+          16px that freed went to the screens rather than the copy. */}
+      <Stack spacing="16px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
+        <Row
+          scheme={scheme}
+          copySide="right"
+          height={376}
+          copyWidth={362}
+          screenWidth={610}
+          eyebrow={MARKS_COPY.eyebrow}
+          heading={MARKS_COPY.heading}
+          headingSize={44}
+          body={MARKS_COPY.body}
+          screen={() => <MarksScreen scheme={scheme} />}
+        />
         <Row
           scheme={scheme}
           copySide="left"
-          height={408}
-          copyWidth={392}
-          screenWidth={564}
-          eyebrow={ROW1.eyebrow}
-          heading={<Row1Heading size={44} />}
-          headingSize={44}
-          body={ROW1.body}
-          bullets={ROW1.bullets}
-          glow
-          screen={() => <TutorScreen scheme={scheme} />}
+          height={512}
+          copyWidth={368}
+          screenWidth={604}
+          eyebrow={PRACTICE_COPY.eyebrow}
+          heading={PRACTICE_COPY.heading}
+          headingSize={36}
+          body={PRACTICE_COPY.body}
+          bodySize={21}
+          screen={() => <PracticeScreen scheme={scheme} />}
         />
         <Row
           scheme={scheme}
           copySide="right"
-          height={350}
-          copyWidth={368}
-          screenWidth={588}
-          eyebrow={ROW2.eyebrow}
-          heading={ROW2.heading}
+          height={294}
+          copyWidth={402}
+          screenWidth={570}
+          eyebrow={TUTOR_COPY.eyebrow}
+          heading={<TutorHeading size={36} />}
           headingSize={36}
-          body={ROW2.body}
+          body={TUTOR_COPY.body}
           bodySize={21}
-          screen={() => <ProjectionScreen scheme={scheme} />}
-        />
-        <Row
-          scheme={scheme}
-          copySide="left"
-          height={342}
-          copyWidth={392}
-          screenWidth={564}
-          eyebrow={ROW3.eyebrow}
-          heading={ROW3.heading}
-          headingSize={36}
-          body={ROW3.body}
-          bodySize={21}
-          screen={() => <ExamScreen scheme={scheme} />}
+          glow
+          screen={() => <TutorScreen scheme={scheme} />}
         />
       </Stack>
-      <Box sx={{ height: 26 }} />
-      <CardFooter scheme={scheme} />
+      <Box sx={{ height: 10 }} />
+      <CardFooter scheme={scheme} size={26} />
     </Artboard>
   );
 }
@@ -1110,12 +1174,18 @@ function CardsPortrait() {
 //
 // TWO rows, not three. A square is 270px shorter than the portrait, which
 // is most of a row, and three rows in it would mean 250px bands with the
-// copy squeezed to a line each. What goes is the exam paper, because the
-// alternating rhythm needs at least one swap to exist at all and the first
-// swap is the tutor into the projection. The paper keeps its own full-size
-// row in the portrait and story cuts, and it is the row that least
-// tolerates being squeezed: a written-answer field that is not tall is a
-// written-answer field nobody believes.
+// copy squeezed to a line each.
+//
+// What goes is the exam paper, and the reasoning changed with the running
+// order. It used to be dropped because the alternating rhythm needs at least
+// one swap and the first swap was the tutor into the chart. Now the two rows
+// that have to survive are the first and the last: the chart because it is
+// the hook the whole order is built around, and the tutor because it carries
+// the only citron on the artboard, and a cut with no accent at all is not
+// the same design. The paper keeps its own full-size row on the portrait,
+// story and wide cuts, and it is the row that least tolerates being
+// squeezed: four options and a countdown in 250px is four strips and a
+// number.
 // ---------------------------------------------------------------------
 
 function CardsSquare() {
@@ -1126,33 +1196,31 @@ function CardsSquare() {
         For students
       </AdEyebrow>
       <Box sx={{ height: 24 }} />
-      <Stack spacing="44px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
-        <Row
-          scheme={scheme}
-          copySide="left"
-          height={452}
-          copyWidth={398}
-          screenWidth={558}
-          eyebrow={ROW1.eyebrow}
-          heading={<Row1Heading size={46} />}
-          headingSize={46}
-          body={ROW1.body}
-          bullets={ROW1.bullets}
-          glow
-          screen={() => <TutorScreen scheme={scheme} />}
-        />
+      <Stack spacing="70px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
         <Row
           scheme={scheme}
           copySide="right"
-          height={372}
-          copyWidth={370}
-          screenWidth={586}
-          eyebrow={ROW2.eyebrow}
-          heading={ROW2.heading}
-          headingSize={38}
-          body={ROW2.body}
-          bodySize={21}
-          screen={() => <ProjectionScreen scheme={scheme} />}
+          height={440}
+          copyWidth={354}
+          screenWidth={602}
+          eyebrow={MARKS_COPY.eyebrow}
+          heading={MARKS_COPY.heading}
+          headingSize={46}
+          body={MARKS_COPY.body}
+          screen={() => <MarksScreen scheme={scheme} />}
+        />
+        <Row
+          scheme={scheme}
+          copySide="left"
+          height={344}
+          copyWidth={396}
+          screenWidth={560}
+          eyebrow={TUTOR_COPY.eyebrow}
+          heading={<TutorHeading size={40} />}
+          headingSize={40}
+          body={TUTOR_COPY.body}
+          glow
+          screen={() => <TutorScreen scheme={scheme} />}
         />
       </Stack>
       <Box sx={{ height: 24 }} />
@@ -1182,47 +1250,46 @@ function CardsStory() {
       {/* Pad 36 rather than 48. The story is the cut with the most vertical
           air and the least horizontal, so it is the one where the side
           margins were costing the most: the 24px freed goes straight into the
-          screens, and the projection row gets almost all of it. The top and
+          screens, and the chart row gets almost all of it. The top and
           bottom edges are unaffected in practice because the platform-safe
           spacers above and below are absolute, not derived from the pad. */}
-      <Stack spacing="60px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
+      <Stack spacing="77px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
+        <Row
+          scheme={scheme}
+          copySide="right"
+          height={450}
+          copyWidth={352}
+          screenWidth={612}
+          eyebrow={MARKS_COPY.eyebrow}
+          heading={MARKS_COPY.heading}
+          headingSize={46}
+          body={MARKS_COPY.body}
+          screen={() => <MarksScreen scheme={scheme} />}
+        />
         <Row
           scheme={scheme}
           copySide="left"
-          height={490}
-          copyWidth={396}
-          screenWidth={568}
-          eyebrow={ROW1.eyebrow}
-          heading={<Row1Heading size={46} />}
-          headingSize={46}
-          body={ROW1.body}
-          bullets={ROW1.bullets}
-          glow
-          screen={() => <TutorScreen scheme={scheme} />}
+          height={517}
+          copyWidth={370}
+          screenWidth={594}
+          eyebrow={PRACTICE_COPY.eyebrow}
+          heading={PRACTICE_COPY.heading}
+          headingSize={38}
+          body={PRACTICE_COPY.body}
+          screen={() => <PracticeScreen scheme={scheme} />}
         />
         <Row
           scheme={scheme}
           copySide="right"
-          height={410}
-          copyWidth={370}
-          screenWidth={594}
-          eyebrow={ROW2.eyebrow}
-          heading={ROW2.heading}
+          height={320}
+          copyWidth={404}
+          screenWidth={560}
+          eyebrow={TUTOR_COPY.eyebrow}
+          heading={<TutorHeading size={38} />}
           headingSize={38}
-          body={ROW2.body}
-          screen={() => <ProjectionScreen scheme={scheme} />}
-        />
-        <Row
-          scheme={scheme}
-          copySide="left"
-          height={380}
-          copyWidth={396}
-          screenWidth={568}
-          eyebrow={ROW3.eyebrow}
-          heading={ROW3.heading}
-          headingSize={38}
-          body={ROW3.body}
-          screen={() => <ExamScreen scheme={scheme} />}
+          body={TUTOR_COPY.body}
+          glow
+          screen={() => <TutorScreen scheme={scheme} />}
         />
       </Stack>
       <Box sx={{ height: 34 }} />
@@ -1270,47 +1337,46 @@ function CardsWide() {
         For students
       </AdEyebrow>
       <Box sx={{ height: 34 }} />
-      <Stack spacing="64px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
+      <Stack spacing="98px" sx={{ flex: 1, minHeight: 0, justifyContent: "center" }}>
+        <Row
+          scheme={scheme}
+          copySide="right"
+          height={610}
+          copyWidth={442}
+          screenWidth={776}
+          eyebrow={MARKS_COPY.eyebrow}
+          heading={MARKS_COPY.heading}
+          headingSize={52}
+          body={MARKS_COPY.body}
+          bodySize={24}
+          screen={() => <MarksScreen scheme={scheme} />}
+        />
         <Row
           scheme={scheme}
           copySide="left"
-          height={560}
-          copyWidth={470}
-          screenWidth={748}
-          eyebrow={ROW1.eyebrow}
-          heading={<Row1Heading size={52} />}
-          headingSize={52}
-          body={ROW1.body}
-          bodySize={24}
-          bullets={ROW1.bullets}
-          glow
-          screen={() => <TutorScreen scheme={scheme} />}
+          height={500}
+          copyWidth={462}
+          screenWidth={756}
+          eyebrow={PRACTICE_COPY.eyebrow}
+          heading={PRACTICE_COPY.heading}
+          headingSize={42}
+          body={PRACTICE_COPY.body}
+          bodySize={23}
+          screen={() => <PracticeScreen scheme={scheme} />}
         />
         <Row
           scheme={scheme}
           copySide="right"
-          height={470}
-          copyWidth={442}
-          screenWidth={776}
-          eyebrow={ROW2.eyebrow}
-          heading={ROW2.heading}
+          height={390}
+          copyWidth={496}
+          screenWidth={722}
+          eyebrow={TUTOR_COPY.eyebrow}
+          heading={<TutorHeading size={42} />}
           headingSize={42}
-          body={ROW2.body}
+          body={TUTOR_COPY.body}
           bodySize={23}
-          screen={() => <ProjectionScreen scheme={scheme} />}
-        />
-        <Row
-          scheme={scheme}
-          copySide="left"
-          height={440}
-          copyWidth={470}
-          screenWidth={748}
-          eyebrow={ROW3.eyebrow}
-          heading={ROW3.heading}
-          headingSize={42}
-          body={ROW3.body}
-          bodySize={23}
-          screen={() => <ExamScreen scheme={scheme} />}
+          glow
+          screen={() => <TutorScreen scheme={scheme} />}
         />
       </Stack>
       <Box sx={{ height: 38 }} />

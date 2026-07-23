@@ -87,6 +87,85 @@ export const AERO_COURSES: CourseRow[] = [
   { name: "Chemistry", current: 51, predicted: 46 },
 ];
 
+// ---------------------------------------------------------------------
+// MARKS OVER THE SEMESTER, the other real series on this account.
+//
+// This is what /dashboard/analytics plots in MarksByCourse: every graded
+// mark already logged, on a shared date axis, one line per course, y pinned
+// to 0-100. It is not a projection and it is not adjacent to one. Nothing
+// here is computed, smoothed or extended: each point is a mark with the due
+// date of the assessment it came from, read off the seeded first-year
+// Aeronautical Engineering account for the 2026 first semester.
+//
+// THREE COURSES, NOT SIX. The account carries six, and six lines on one
+// date axis at social size is spaghetti: Electrical (75, 70, 68) tracks two
+// or three marks under Engineering Drawing for the whole semester, Physics
+// (74, 61, 70, 58) crosses Mathematics three times, and Mechanics (60, 58,
+// 55) is a flat line in the gap between Mathematics and Chemistry. Any of
+// those three makes the picture denser without making it say more.
+//
+// What is left is the set that separates: one course high and steady until
+// it slips, one wandering in the middle, one low with a hard April drop and
+// a partial recovery. The three occupy three distinct horizontal bands and
+// never cross, which is what "individually followable" means on an image
+// somebody sees for two seconds.
+//
+// Dates are ISO so the sort is a plain string sort, the same way the real
+// screen sorts them before building the axis.
+export type MarkPoint = {
+  /** ISO date of the assessment the mark came from. */
+  date: string;
+  mark: number;
+};
+
+export type CourseMarks = {
+  name: string;
+  marks: MarkPoint[];
+};
+
+export const AERO_MARKS: CourseMarks[] = [
+  {
+    name: "Engineering Drawing",
+    marks: [
+      { date: "2026-03-20", mark: 78 },
+      { date: "2026-04-24", mark: 80 },
+      { date: "2026-05-22", mark: 82 },
+      { date: "2026-06-19", mark: 74 },
+    ],
+  },
+  {
+    name: "Mathematics",
+    marks: [
+      { date: "2026-03-06", mark: 72 },
+      { date: "2026-04-02", mark: 68 },
+      { date: "2026-05-14", mark: 61 },
+      { date: "2026-06-08", mark: 65 },
+    ],
+  },
+  {
+    name: "Chemistry",
+    marks: [
+      { date: "2026-03-10", mark: 65 },
+      { date: "2026-04-23", mark: 48 },
+      { date: "2026-06-15", mark: 51 },
+    ],
+  },
+];
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * "DD MMM", which is what the real axis prints via dayjs. Done by hand off
+ * the ISO string rather than through a date library, because parsing a bare
+ * date into a Date object makes the label depend on the machine's timezone,
+ * and an export that renders "19 Jun" here and "18 Jun" in CI is worse than
+ * no label at all.
+ */
+export function markAxisLabel(date: string): string {
+  const [, month, day] = date.split("-");
+  return `${day} ${MONTHS[Number(month) - 1]}`;
+}
+
 type Scale = {
   /** Course name size. */
   name: number;

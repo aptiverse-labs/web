@@ -364,6 +364,8 @@ export function AdPanel({
   traffic,
   dotSize = 12,
   urlSize = 21,
+  railPad = 18,
+  pad = 30,
 }: {
   scheme: AdScheme;
   url: string;
@@ -380,6 +382,18 @@ export function AdPanel({
   dotSize?: number;
   /** Rail URL size. Drops where a badge shares the rail with a long path. */
   urlSize?: number;
+  /**
+   * Vertical padding on the URL rail, and the inset around the panel body.
+   *
+   * Both exist because chrome is the cheapest height on a crowded artboard.
+   * A unit carrying three windows spends roughly 130px per window on rail
+   * padding and body inset before any product is drawn, and on the 1080x1350
+   * cut that is most of a row. Trimming chrome costs nothing a reader wants;
+   * trimming the product inside it costs everything. Defaults are the
+   * original values, so every unit that does not pass these is unchanged.
+   */
+  railPad?: number;
+  pad?: number;
 }) {
   const s = adSurfaces(scheme);
   // The panel always lifts off the artboard: paper on a light unit, a raised
@@ -406,7 +420,12 @@ export function AdPanel({
         direction="row"
         alignItems="center"
         spacing={2}
-        sx={{ px: "26px", py: "18px", bgcolor: railBg, borderBottom: `2px solid ${s.hair}` }}
+        sx={{
+          px: "26px",
+          py: `${railPad}px`,
+          bgcolor: railBg,
+          borderBottom: `2px solid ${s.hair}`,
+        }}
       >
         {/* Spacing stays at the original 8px for the default 12px dot, so the
             units that already ship are pixel-identical after this change. */}
@@ -454,7 +473,7 @@ export function AdPanel({
           </Box>
         )}
       </Stack>
-      <Box sx={{ p: "30px", flex: 1, minWidth: 0 }}>{children}</Box>
+      <Box sx={{ p: `${pad}px`, flex: 1, minWidth: 0 }}>{children}</Box>
     </Box>
   );
 }
@@ -465,11 +484,14 @@ export function AdChip({
   scheme,
   icon,
   tone,
+  size = 19,
 }: {
   children: React.ReactNode;
   scheme: AdScheme;
   icon?: React.ReactNode;
   tone?: string;
+  /** Label size. Drops where two chips have to share one line. */
+  size?: number;
 }) {
   const s = adSurfaces(scheme);
   const colour = tone ?? s.muted;
@@ -479,12 +501,12 @@ export function AdChip({
       spacing={1}
       alignItems="center"
       sx={{
-        px: "14px",
-        py: "7px",
+        px: `${size * 0.74}px`,
+        py: `${size * 0.37}px`,
         borderRadius: 999,
         border: `2px solid ${tone ? alpha(tone, 0.4) : s.hair}`,
         bgcolor: tone ? alpha(tone, 0.14) : "transparent",
-        fontSize: 19,
+        fontSize: size,
         fontWeight: 600,
         color: colour,
         whiteSpace: "nowrap",
