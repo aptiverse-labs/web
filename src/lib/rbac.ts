@@ -2,20 +2,26 @@ import type { Role } from "@/providers/RoleProvider";
 
 // Permissions are dot-notation strings: <resource>.<action>
 // Resources: users, schools, classes, students, tutors,
-//           subscriptions, payments, content, audit, flags, system
-// Actions:   read, write, manage (full), delete, refund, impersonate
+//           subscriptions, payments, audit, system, billing
+// Actions:   read, write, manage (full), delete, refund
+//
+// Mirrors PermissionResolver.cs on the API; the two must stay in step.
+//
+// content.* and flags.* are gone, and so is users.impersonate. They gated a
+// moderation queue with no content-report pipeline, a feature-flag screen no
+// flag consumer reads, and an impersonation form with no endpoint behind it.
+// A permission whose only job is to reveal a control that does nothing is part
+// of the same claim as the control.
 
 export type Permission =
-  | "users.read" | "users.write" | "users.manage" | "users.delete" | "users.impersonate"
+  | "users.read" | "users.write" | "users.manage" | "users.delete"
   | "schools.read" | "schools.write" | "schools.manage"
   | "classes.read" | "classes.write" | "classes.manage"
   | "students.read" | "students.write" | "students.manage"
   | "tutors.read" | "tutors.write" | "tutors.manage" | "tutors.verify"
   | "subscriptions.read" | "subscriptions.write" | "subscriptions.manage"
   | "payments.read" | "payments.refund" | "payments.manage"
-  | "content.read" | "content.moderate"
   | "audit.read"
-  | "flags.read" | "flags.write"
   | "system.read" | "system.manage"
   | "billing.read" | "billing.write" | "billing.manage";
 
@@ -54,15 +60,13 @@ const ADMIN: Permission[] = [
   "subscriptions.read", "subscriptions.write", "subscriptions.manage",
   "payments.read", "payments.refund", "payments.manage",
   "billing.read", "billing.write", "billing.manage",
-  "content.read", "content.moderate",
   "audit.read",
-  "flags.read", "flags.write",
   "system.read",
 ];
 
 const SUPER_ADMIN: Permission[] = [
   ...ADMIN,
-  "users.delete", "users.impersonate",
+  "users.delete",
   "system.manage",
 ];
 
@@ -90,6 +94,17 @@ export function canAny(role: RbacRole, perms: Permission[]): boolean {
 
 export function canAll(role: RbacRole, perms: Permission[]): boolean {
   return perms.every((p) => can(role, p));
+}
+
+// Identity's role names ("SchoolAdmin", "Superuser") are what the API stores
+// and returns; the UI speaks snake_case. One place to cross that boundary.
+export function normaliseIdentityRole(identityRole: string): RbacRole {
+  if (identityRole === "Superuser") return "super_admin";
+  return identityRole.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase() as RbacRole;
+}
+
+export function identityRoleLabel(identityRole: string): string {
+  return ROLE_LABEL[normaliseIdentityRole(identityRole)] ?? identityRole;
 }
 
 export const ROLE_LABEL: Record<RbacRole, string> = {

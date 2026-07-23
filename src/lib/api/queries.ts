@@ -88,32 +88,39 @@ export type Milestone = {
   rewardPoints: number;
 };
 
+// Mirrors api/Modules/Audit/.../FrontendDtos.cs. One row of the append-only
+// trail in audit.audit_logs.
 export type AuditLog = {
   id: string;
   ts: string;
+  actorId: string;
   actor: string;
+  actorEmail: string;
+  actorRole: string;
   action: string;
+  category: string;
+  severity: string;
+  entityType: string;
+  entityId: string;
   resource: string;
+  oldValues: string | null;
+  newValues: string | null;
   ip: string;
-  severity: string;
+  service: string;
+  correlationId: string;
 };
 
-export type ModerationFlag = {
-  id: string;
-  reason: string;
-  target: string;
-  reporter: string;
-  excerpt: string;
-  severity: string;
-  createdAt: string;
+export type AuditLogPage = {
+  items: AuditLog[];
+  total: number;
+  skip: number;
+  take: number;
 };
 
-export type FeatureFlag = {
-  key: string;
-  description: string;
-  enabled: boolean;
-  rollout: number;
-  env: string;
+export type AuditAction = {
+  name: string;
+  category: string;
+  severity: string;
 };
 
 export type SchoolEnquiry = {
@@ -180,8 +187,14 @@ export const queryKeys = {
   verifications: () => ["verifications"] as const,
   goalMilestones: (goalId: string) => ["goal-milestones", goalId] as const,
   auditLogs: () => ["audit-logs"] as const,
-  moderationQueue: () => ["moderation-queue"] as const,
-  featureFlags: () => ["feature-flags"] as const,
+  auditActions: () => ["audit-actions"] as const,
+  adminOverview: () => ["admin", "overview"] as const,
+  adminUsers: () => ["admin", "users"] as const,
+  adminUser: (id: string) => ["admin", "user", id] as const,
+  adminRoles: () => ["admin", "roles"] as const,
+  adminSubscriptions: () => ["admin", "subscriptions"] as const,
+  adminTutors: () => ["admin", "tutors"] as const,
+  adminSystem: () => ["admin", "system"] as const,
   curricula: () => ["curricula"] as const,
   curriculumSubjects: (curriculumId: string) => ["curriculum-subjects", curriculumId] as const,
   academicProfile: () => ["academic-profile"] as const,
@@ -492,13 +505,17 @@ export const useSchoolEnquiries = (contacted?: boolean) =>
     },
   });
 
-export const useMarkEnquiryContacted = () => {
+// Contacted is a toggle, not a one-way door: a mis-click used to bury a live
+// lead in the Contacted tab with no way back.
+export const useSetEnquiryContacted = () => {
   const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.post<void>(`/api/sales/school-enquiries/${id}/mark-contacted`),
+  return useMutation<void, ApiError, { id: string; contacted: boolean }>({
+    mutationFn: ({ id, contacted }) =>
+      apiClient.put<void>(`/api/sales/school-enquiries/${id}/contacted`, { contacted }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["school-enquiries"] });
+      void qc.invalidateQueries({ queryKey: ["audit-logs"] });
+      void qc.invalidateQueries({ queryKey: ["admin", "overview"] });
     },
   });
 };
@@ -2269,22 +2286,290 @@ export const useGoalMilestones = (goalId: string) =>
 export const reorderGoalMilestones = (goalId: string, milestoneIds: string[]) =>
   apiClient.patch(`/api/goals/${goalId}/milestones/order`, { milestoneIds });
 
-export const useAuditLogs = (take = 60) =>
-  useQuery<AuditLog[]>({
-    queryKey: [...queryKeys.auditLogs(), take],
-    queryFn: () => apiClient.get<AuditLog[]>(`/api/audit/logs?take=${take}`),
+// --- Admin: audit trail -------------------------------------------------
+//
+// GET /api/audit/logs is a real, filtered read over audit.audit_logs. It
+// returned a hardcoded empty array until the writer (Services/Audit) and this
+// endpoint landed together, so an admin page that rendered "no audit events
+// yet" was telling them nothing about the platform.
+
+export type AuditLogFilters = {
+  userId?: string;
+  action?: string;
+  entityType?: string;
+  severity?: string;
+  q?: string;
+  from?: string;
+  to?: string;
+  take?: number;
+  skip?: number;
+};
+
+const auditQueryString = (f: AuditLogFilters) => {
+  const params = new URLSearchParams();
+  if (f.userId) params.set("userId", f.userId);
+  if (f.action) params.set("action", f.action);
+  if (f.entityType) params.set("entityType", f.entityType);
+  if (f.severity) params.set("severity", f.severity);
+  if (f.q) params.set("q", f.q);
+  if (f.from) params.set("from", f.from);
+  if (f.to) params.set("to", f.to);
+  params.set("take", String(f.take ?? 50));
+  params.set("skip", String(f.skip ?? 0));
+  return params.toString();
+};
+
+export const useAuditLogs = (filters: AuditLogFilters = {}) =>
+  useQuery<AuditLogPage>({
+    queryKey: [...queryKeys.auditLogs(), filters],
+    queryFn: () => apiClient.get<AuditLogPage>(`/api/audit/logs?${auditQueryString(filters)}`),
   });
 
-export const useModerationQueue = () =>
-  useQuery<ModerationFlag[]>({
-    queryKey: queryKeys.moderationQueue(),
-    queryFn: () => apiClient.get<ModerationFlag[]>("/api/moderation/queue"),
+export const useAuditActions = () =>
+  useQuery<AuditAction[]>({
+    queryKey: queryKeys.auditActions(),
+    queryFn: () => apiClient.get<AuditAction[]>("/api/audit/actions"),
   });
 
-export const useFeatureFlags = () =>
-  useQuery<FeatureFlag[]>({
-    queryKey: queryKeys.featureFlags(),
-    queryFn: () => apiClient.get<FeatureFlag[]>("/api/feature-flags/flags"),
+// --- Admin: back office -------------------------------------------------
+// Mirrors api/Controllers/AdminController.cs.
+
+export type AdminOverview = {
+  users: number;
+  usersByRole: Record<string, number>;
+  subscriptionsLive: number;
+  subscriptionsPastDue: number;
+  subscriptionsCancelled: number;
+  monthlyRecurringRevenueZar: number;
+  schoolEnquiries: number;
+  schoolEnquiriesUncontacted: number;
+  outboxPending: number;
+  auditEventsLast24h: number;
+  tutors: number;
+  tutorsUnverified: number;
+};
+
+export type AdminUserRow = {
+  id: string;
+  name: string;
+  email: string;
+  emailConfirmed: boolean;
+  phoneNumber: string | null;
+  school: string | null;
+  grade: number | null;
+  educationLevel: string;
+  roles: string[];
+  role: string;
+  planCodes: string[];
+  createdAt: string;
+  lockedOut: boolean;
+};
+
+export type AdminUserPage = {
+  items: AdminUserRow[];
+  total: number;
+  skip: number;
+  take: number;
+};
+
+export type AdminSubscription = {
+  id: string;
+  planCode: string;
+  planName: string;
+  name: string | null;
+  ownerUserId: string;
+  ownerName: string;
+  ownerEmail: string;
+  status: string;
+  billing: string;
+  memberCount: number | null;
+  startedAt: string;
+  validUntil: string | null;
+  cancelledAt: string | null;
+  lastChargeAt: string | null;
+  renewalFailureCount: number;
+  pendingPlanCode: string | null;
+  cardBrand: string | null;
+  cardLast4: string | null;
+  billingEmail: string | null;
+  paid: boolean;
+};
+
+export type AdminMembership = {
+  subscriptionId: string;
+  planCode: string;
+  planName: string;
+  status: string;
+  role: string;
+  joinedAt: string;
+  isOwner: boolean;
+};
+
+export type AdminUserAudit = {
+  id: string;
+  action: string;
+  resource: string;
+  ts: string;
+};
+
+export type AdminUserDetail = {
+  id: string;
+  name: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  emailConfirmed: boolean;
+  phoneNumber: string | null;
+  school: string | null;
+  grade: number | null;
+  curriculumId: string | null;
+  educationLevel: string;
+  institutionId: string | null;
+  roles: string[];
+  role: string;
+  createdAt: string;
+  updatedAt: string | null;
+  lockedOut: boolean;
+  subscriptions: AdminSubscription[];
+  memberships: AdminMembership[];
+  recentAudit: AdminUserAudit[];
+};
+
+export type AdminRole = {
+  name: string;
+  label: string;
+  privileged: boolean;
+};
+
+export type AdminTutor = {
+  userId: string;
+  name: string;
+  email: string;
+  qualification: string;
+  subjects: string[];
+  rating: number;
+  reviewCount: number;
+  yearsOfExperience: number;
+  verified: boolean;
+  acceptingStudents: boolean;
+  tutorKind: string;
+  institution: string;
+  createdAt: string;
+};
+
+export type AdminSystem = {
+  databaseOk: boolean;
+  databaseLatencyMs: number;
+  outboxPending: number;
+  outboxProcessed: number;
+  oldestPendingOccurredAt: string | null;
+  environment: string;
+  serverTimeUtc: string;
+  uptimeSeconds: number;
+  dotnetVersion: string;
+};
+
+export const useAdminOverview = () =>
+  useQuery<AdminOverview>({
+    queryKey: queryKeys.adminOverview(),
+    queryFn: () => apiClient.get<AdminOverview>("/api/admin/overview"),
+  });
+
+export const useAdminUsers = (opts: { q?: string; role?: string; take?: number; skip?: number } = {}) =>
+  useQuery<AdminUserPage>({
+    queryKey: [...queryKeys.adminUsers(), opts],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (opts.q) params.set("q", opts.q);
+      if (opts.role) params.set("role", opts.role);
+      params.set("take", String(opts.take ?? 100));
+      params.set("skip", String(opts.skip ?? 0));
+      return apiClient.get<AdminUserPage>(`/api/admin/users?${params.toString()}`);
+    },
+  });
+
+export const useAdminUser = (id: string | null) =>
+  useQuery<AdminUserDetail>({
+    queryKey: queryKeys.adminUser(id ?? ""),
+    queryFn: () => apiClient.get<AdminUserDetail>(`/api/admin/users/${id}`),
+    enabled: !!id,
+  });
+
+export const useAdminRoles = () =>
+  useQuery<AdminRole[]>({
+    queryKey: queryKeys.adminRoles(),
+    queryFn: () => apiClient.get<AdminRole[]>("/api/admin/roles"),
+    staleTime: 10 * 60_000,
+  });
+
+export const useSetUserRoles = () => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, { id: string; roles: string[] }>({
+    mutationFn: ({ id, roles }) => apiClient.put<void>(`/api/admin/users/${id}/roles`, { roles }),
+    onSuccess: (_data, { id }) => {
+      void qc.invalidateQueries({ queryKey: queryKeys.adminUsers() });
+      void qc.invalidateQueries({ queryKey: queryKeys.adminUser(id) });
+      void qc.invalidateQueries({ queryKey: queryKeys.auditLogs() });
+      void qc.invalidateQueries({ queryKey: queryKeys.adminOverview() });
+    },
+  });
+};
+
+export const useAdminSubscriptions = (opts: { status?: string; planCode?: string } = {}) =>
+  useQuery<AdminSubscription[]>({
+    queryKey: [...queryKeys.adminSubscriptions(), opts],
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (opts.status) params.set("status", opts.status);
+      if (opts.planCode) params.set("planCode", opts.planCode);
+      const qs = params.toString();
+      return apiClient.get<AdminSubscription[]>(`/api/admin/subscriptions${qs ? `?${qs}` : ""}`);
+    },
+  });
+
+export const useAdminTutors = () =>
+  useQuery<AdminTutor[]>({
+    queryKey: queryKeys.adminTutors(),
+    queryFn: () => apiClient.get<AdminTutor[]>("/api/admin/tutors"),
+  });
+
+export const useSetTutorVerification = () => {
+  const qc = useQueryClient();
+  return useMutation<void, ApiError, { userId: string; verified: boolean }>({
+    mutationFn: ({ userId, verified }) =>
+      apiClient.post<void>(`/api/admin/tutors/${userId}/verification`, { verified }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: queryKeys.adminTutors() });
+      void qc.invalidateQueries({ queryKey: queryKeys.tutors() });
+      void qc.invalidateQueries({ queryKey: queryKeys.auditLogs() });
+      void qc.invalidateQueries({ queryKey: queryKeys.adminOverview() });
+    },
+  });
+};
+
+export const useAdminSystem = () =>
+  useQuery<AdminSystem>({
+    queryKey: queryKeys.adminSystem(),
+    queryFn: () => apiClient.get<AdminSystem>("/api/admin/system"),
+    // Health is only useful if it is current. Cheap query, short window.
+    refetchInterval: 15_000,
+  });
+
+// Recent rows from the transactional outbox. Real messages written by the
+// modules via IEventPublisher and drained by the OutboxDispatcher.
+export type OutboxMessage = {
+  id: string;
+  type: string;
+  payload: string;
+  occurredAt: string;
+  processedAt: string | null;
+};
+
+export const useOutboxMessages = (pendingOnly = false) =>
+  useQuery<OutboxMessage[]>({
+    queryKey: ["admin", "outbox", pendingOnly],
+    queryFn: () =>
+      apiClient.get<OutboxMessage[]>(`/api/events/outbox?pendingOnly=${pendingOnly}`),
   });
 
 // --- Entitlements catalog (public) --------------------------------------

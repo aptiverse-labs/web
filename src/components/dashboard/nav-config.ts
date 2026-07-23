@@ -30,12 +30,17 @@ import LocalLibraryIcon from "@mui/icons-material/LocalLibraryOutlined";
 import CelebrationIcon from "@mui/icons-material/CelebrationOutlined";
 import WorkspacesIcon from "@mui/icons-material/WorkspacesOutlined";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import SwapHorizIconNav from "@mui/icons-material/SwapHorizOutlined";
-import ForumIconNav from "@mui/icons-material/Forum";
 import ExploreIcon from "@mui/icons-material/ExploreOutlined";
 import DescriptionIcon from "@mui/icons-material/DescriptionOutlined";
 import CampaignIcon from "@mui/icons-material/CampaignOutlined";
+import { Gift as GiftLucide, HandCoins as HandCoinsLucide } from "lucide-react";
+import { navIcon } from "./lucide-nav-icon";
 import type { Role } from "@/providers/RoleProvider";
+
+// New entries use Lucide via the adapter. The MUI imports above are the
+// existing set and are being replaced separately; nothing here adds to them.
+const ReferIcon = navIcon(GiftLucide);
+const AffiliateAdminIcon = navIcon(HandCoinsLucide);
 
 export type NavItem = {
   label: string;
@@ -98,6 +103,7 @@ export const STUDENT_NAV: NavSection[] = [
     items: [
       { label: "Calendar", href: "/dashboard/calendar", icon: CalendarMonthIcon },
       { label: "Notifications", href: "/dashboard/notifications", icon: NotificationsIcon },
+      { label: "Refer and earn", href: "/refer", icon: ReferIcon },
       { label: "Billing", href: "/dashboard/billing", icon: PaymentsIcon },
       { label: "Settings", href: "/dashboard/settings", icon: SettingsIcon },
       { label: "Help", href: "/dashboard/help", icon: HelpOutlineIcon },
@@ -153,6 +159,7 @@ export const PARENT_NAV: NavSection[] = [
   {
     heading: "Account",
     items: [
+      { label: "Refer and earn", href: "/refer", icon: ReferIcon },
       { label: "Billing", href: "/parent/billing", icon: PaymentsIcon },
       { label: "Settings", href: "/parent/settings", icon: SettingsIcon },
     ],
@@ -205,6 +212,7 @@ export const TUTOR_NAV: NavSection[] = [
     heading: "Account",
     items: [
       { label: "Public profile", href: "/tutor/profile", icon: BadgeIcon },
+      { label: "Refer and earn", href: "/refer", icon: ReferIcon },
       { label: "Billing", href: "/tutor/billing", icon: PaymentsIcon },
       { label: "Settings", href: "/tutor/settings", icon: SettingsIcon },
     ],
@@ -220,35 +228,24 @@ export const ADMIN_NAV: NavSection[] = [
       { label: "Audit log", href: "/admin/audit", icon: VerifiedIcon },
     ],
   },
+  // Kept in step with NavigationController.AdminNav on the API, which is what
+  // actually drives the sidebar for a signed-in admin. Schools, Impersonate,
+  // Moderation, Payments & refunds, Invoices, Feature flags and platform
+  // Settings are gone along with the pages behind them: each was a facade over
+  // data the platform does not hold.
   {
-    heading: "Users & schools",
+    heading: "People",
     items: [
       { label: "Users", href: "/admin/users", icon: GroupsIcon },
-      { label: "Schools", href: "/admin/schools", icon: SchoolIcon },
       { label: "School enquiries", href: "/admin/school-enquiries", icon: VolunteerActivismIcon },
       { label: "Tutors", href: "/admin/tutors", icon: GroupsIcon },
-      { label: "Impersonate", href: "/admin/impersonate", icon: SwapHorizIconNav },
-    ],
-  },
-  {
-    heading: "Content",
-    items: [
-      { label: "Moderation queue", href: "/admin/moderation", icon: ForumIconNav },
     ],
   },
   {
     heading: "Money",
     items: [
       { label: "Subscriptions", href: "/admin/subscriptions", icon: PaymentsIcon },
-      { label: "Payments & refunds", href: "/admin/payments", icon: PaymentsIcon },
-      { label: "Invoices", href: "/admin/invoices", icon: AssignmentIcon },
-    ],
-  },
-  {
-    heading: "Platform",
-    items: [
-      { label: "Feature flags", href: "/admin/flags", icon: TuneIcon },
-      { label: "Settings", href: "/admin/settings", icon: SettingsIcon },
+      { label: "Referral programme", href: "/admin/affiliates", icon: AffiliateAdminIcon },
     ],
   },
 ];
