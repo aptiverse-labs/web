@@ -7,7 +7,7 @@ import { humanizeApiError } from "@/lib/api/errors";
 import { getAccessToken } from "@/lib/api/token";
 import { newEventId, track } from "@/lib/analytics/events";
 import { getConsentState } from "@/lib/analytics/consent";
-import { getAttribution } from "@/lib/analytics/attribution";
+import { getAttribution, getReferralCode } from "@/lib/analytics/attribution";
 import { getFbc, getFbp } from "@/lib/analytics/meta";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5100";
@@ -71,6 +71,11 @@ export type CheckoutAttribution = {
   utmMedium?: string;
   utmCampaign?: string;
   utmContent?: string;
+  // The affiliate referral code this buyer arrived on. Sent whether or not
+  // marketing consent was granted, because it is not measurement: somebody is
+  // owed 20% of this payment and dropping the code would mean not paying them.
+  // See lib/analytics/attribution.ts for the full reasoning.
+  referralCode?: string;
 };
 
 async function authHeaders(): Promise<HeadersInit> {
@@ -174,10 +179,18 @@ export const api = {
 
 function buildCheckoutAttribution(): CheckoutAttribution {
   const marketingConsent = getConsentState().marketingAllowed;
-  const base: CheckoutAttribution = { marketingConsent, eventId: newEventId() };
-  // Nothing beyond the consent flag and the dedup id leaves the browser
-  // without consent. The id is not personal data and the server needs the flag
-  // precisely so it can decide to do nothing.
+  const base: CheckoutAttribution = {
+    marketingConsent,
+    eventId: newEventId(),
+    // Deliberately outside the consent gate below. This is a commercial term,
+    // not ad measurement, and it is the fallback that catches somebody who
+    // arrives on a referral link and pays in the same session before any
+    // authenticated page had a chance to record the referral.
+    referralCode: getReferralCode(),
+  };
+  // Nothing beyond the consent flag, the dedup id and the referral code leaves
+  // the browser without consent. The id is not personal data and the server
+  // needs the flag precisely so it can decide to do nothing.
   if (!marketingConsent) return base;
   const a = getAttribution();
   return {

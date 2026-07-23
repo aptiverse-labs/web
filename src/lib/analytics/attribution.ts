@@ -29,6 +29,27 @@
 
 export const ATTRIBUTION_STORAGE_KEY = "aptiverse.attribution.v1";
 
+// The affiliate referral code gets its own key, and unlike the campaign record
+// above it is written whether or not marketing consent was granted.
+//
+// That difference is deliberate and it is not a loophole. A UTM parameter is
+// measurement: it exists so we can learn something about the visitor, which is
+// precisely what consent governs. A referral code is a term of a commercial
+// arrangement with a third party. Somebody handed out a link and is owed 20%
+// of the first three payments if it converts. Dropping the code because the
+// visitor declined analytics would not protect the visitor from anything; it
+// would quietly not pay a student who did the work of recommending us.
+//
+// It is a short opaque code the affiliate chose to publish, it says nothing
+// about the person holding it, and it is sent to exactly one place: our own
+// API, so it can be attached to the account they create.
+export const REFERRAL_STORAGE_KEY = "aptiverse.referral.v1";
+
+// A random per-browser id, used as one weak self-referral signal among
+// several. Never leaves for anywhere except our own API, and the server hashes
+// it before storing, because all it ever asks is whether two of them match.
+export const DEVICE_STORAGE_KEY = "aptiverse.device.v1";
+
 // 30 days. Long enough for a student to think about a subscription over a
 // month, short enough that a stale record does not haunt a later campaign.
 const TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -48,6 +69,10 @@ export type Attribution = {
   landingPath?: string;
   referrer?: string;
   firstTouchAt: string;
+  // An affiliate referral code from `?ref=`. Carried alongside the campaign
+  // fields because it arrives the same way, but persisted separately: see
+  // REFERRAL_STORAGE_KEY.
+  ref?: string;
 };
 
 // Values are truncated before they are stored or sent. A query parameter is
@@ -99,6 +124,14 @@ export function captureAttribution(search: string, pathname: string): Attributio
   }
 
   const params = new URLSearchParams(search);
+
+  // The referral code is captured from ANY route, not only the home page.
+  // Links get shortened, forwarded and re-shared, so one will land on
+  // /pricing?ref=X or /for-students?ref=X sooner or later and it should count
+  // exactly the same. Run before the campaign logic below so a referral is
+  // captured even on a purely organic arrival with no UTMs at all.
+  captureReferralCode(params.get("ref"), pathname);
+
   const candidate: Attribution = {
     utmSource: clean(params.get("utm_source")),
     utmMedium: clean(params.get("utm_medium")),
@@ -155,6 +188,108 @@ export function forgetAttribution(): void {
 
 export function getAttribution(): Attribution | null {
   return memory;
+}
+
+// ---------------------------------------------------------------------------
+// Affiliate referral code
+// ---------------------------------------------------------------------------
+
+export type StoredReferral = {
+  code: string;
+  landingPath?: string;
+  capturedAt: string;
+};
+
+let referralMemory: StoredReferral | null = null;
+let referralHydrated = false;
+
+// Codes are eight characters from an unambiguous alphabet. Anything that is
+// not that shape is a typo or someone poking at the query string, and the
+// right response to both is to ignore it silently. A person must never see an
+// error, or any difference at all, because a referral code was bad.
+const REFERRAL_CODE_PATTERN = /^[A-Z0-9]{4,16}$/;
+
+function normaliseCode(raw: string | null): string | undefined {
+  if (!raw) return undefined;
+  // Link shorteners and chat clients lowercase URLs, and copy-paste brings
+  // whitespace. Normalise here and again on the API, which never trusts the
+  // client's casing.
+  const cleaned = raw.trim().toUpperCase().slice(0, 16);
+  return REFERRAL_CODE_PATTERN.test(cleaned) ? cleaned : undefined;
+}
+
+function hydrateReferral(): void {
+  if (referralHydrated) return;
+  referralHydrated = true;
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(REFERRAL_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as StoredReferral;
+    if (typeof parsed?.code === "string") referralMemory = parsed;
+  } catch {
+    // Storage unavailable or the value is junk. Carry on with nothing.
+  }
+}
+
+// First touch wins, permanently. Attribution is lifetime by design, so a code
+// captured in March is still the one that counts when the person upgrades in
+// September, and a second code arriving later never overwrites the first.
+export function captureReferralCode(raw: string | null, landingPath?: string): string | undefined {
+  const code = normaliseCode(raw);
+  hydrateReferral();
+  if (!code) return referralMemory?.code;
+  if (referralMemory) return referralMemory.code;
+
+  referralMemory = { code, landingPath, capturedAt: new Date().toISOString() };
+  try {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(REFERRAL_STORAGE_KEY, JSON.stringify(referralMemory));
+    }
+  } catch {
+    // Refused. The in-memory copy still carries this tab through signup, which
+    // is the common path anyway.
+  }
+  return code;
+}
+
+export function getReferralCode(): string | undefined {
+  hydrateReferral();
+  return referralMemory?.code;
+}
+
+export function getStoredReferral(): StoredReferral | null {
+  hydrateReferral();
+  return referralMemory;
+}
+
+// Called once the API has confirmed it recorded the referral, or told us it
+// will never record this one. Keeping a spent code around would mean retrying
+// a claim on every page load forever.
+export function clearReferralCode(): void {
+  referralMemory = null;
+  referralHydrated = true;
+  try {
+    if (typeof window !== "undefined") window.localStorage.removeItem(REFERRAL_STORAGE_KEY);
+  } catch {
+    /* nothing to do */
+  }
+}
+
+// A stable per-browser id. Not fingerprinting: it is a random value this
+// browser generated about itself, readable only by us, and its single use is
+// noticing that a referrer and their referral signed up on the same device.
+export function getDeviceId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const existing = window.localStorage.getItem(DEVICE_STORAGE_KEY);
+    if (existing) return existing;
+    const fresh = crypto.randomUUID();
+    window.localStorage.setItem(DEVICE_STORAGE_KEY, fresh);
+    return fresh;
+  } catch {
+    return undefined;
+  }
 }
 
 // Flattened, string-only shape. This is what gets handed to the API at
