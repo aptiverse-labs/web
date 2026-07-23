@@ -180,6 +180,16 @@ export const authOptions: AuthOptions = {
               password: credentials.password,
             }),
           });
+          // The API answers 403 EmailNotConfirmed when the password was right
+          // but the address was never verified. Returning null here would
+          // render that as "Invalid email or password" and leave someone
+          // retyping a password that was correct. Throwing puts the code in
+          // `res.error` for the sign-in page to act on.
+          if (res.status === 403) {
+            const body = await res.json().catch(() => null);
+            if (body?.type === "EmailNotConfirmed") throw new Error("EmailNotConfirmed");
+            return null;
+          }
           if (!res.ok) return null;
           const data = await res.json();
           // Shape returned by AuthService.LoginUserAsync — TokenDto<UserDto>.
@@ -198,7 +208,10 @@ export const authOptions: AuthOptions = {
             aptiverseRefreshToken: data.refreshToken,
             aptiverseUser: u,
           } as never;
-        } catch {
+        } catch (err) {
+          // Let the unverified signal through. Everything else (network fault,
+          // bad JSON) stays a plain failed sign-in.
+          if (err instanceof Error && err.message === "EmailNotConfirmed") throw err;
           return null;
         }
       },

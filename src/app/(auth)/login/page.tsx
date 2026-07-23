@@ -101,6 +101,10 @@ function LoginInner() {
   const rawCallback = params.get("callbackUrl");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set when sign-in was refused only because the address is unverified. Holds
+  // the address so the resend goes to the one they actually typed.
+  const [unverified, setUnverified] = useState<string | null>(null);
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent">("idle");
   const oauthError = authErrorMessage(params.get("error"));
   const { data: session, status } = useSession();
   const hydrated = useHydrated();
@@ -136,6 +140,27 @@ function LoginInner() {
     defaultValues: { email: "", password: "", remember: true },
   });
 
+  // Plain fetch rather than the shared client: this is an anonymous call, and
+  // the client bounces 401s to sign-in, which is where we already are.
+  async function onResend() {
+    if (!unverified) return;
+    setResendState("sending");
+    try {
+      await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5100"}/api/auth/resend-verification`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: unverified }),
+        },
+      );
+    } catch {
+      // The endpoint answers the same way whether or not the address exists,
+      // so there is nothing useful to report on failure beyond "we tried".
+    }
+    setResendState("sent");
+  }
+
   async function onSubmit(values: LoginValues) {
     setSubmitting(true);
     setError(null);
@@ -149,6 +174,14 @@ function LoginInner() {
     // which a second click fires a second sign-in.
     if (!res || res.error) {
       setSubmitting(false);
+      // The password was right; the address was never verified. Saying
+      // "invalid email or password" here would send someone off resetting a
+      // password that works.
+      if (res?.error === "EmailNotConfirmed") {
+        setUnverified(values.email);
+        setError(null);
+        return;
+      }
       setError("Invalid email or password");
       return;
     }
@@ -186,6 +219,28 @@ function LoginInner() {
       </Box>
 
       <OAuthButtons callbackUrl={rawCallback ?? "/dashboard"} />
+
+      {unverified && (
+        <Alert
+          severity="warning"
+          action={
+            resendState === "sent" ? undefined : (
+              <Button
+                size="small"
+                color="inherit"
+                disabled={resendState === "sending"}
+                onClick={onResend}
+              >
+                {resendState === "sending" ? "Sending…" : "Resend"}
+              </Button>
+            )
+          }
+        >
+          {resendState === "sent"
+            ? `Sent. Check ${unverified} for the confirmation link.`
+            : "Confirm your email address before signing in. Check your inbox for the link we sent when you registered."}
+        </Alert>
+      )}
 
       {(error ?? oauthError) && <Alert severity="error">{error ?? oauthError}</Alert>}
 
