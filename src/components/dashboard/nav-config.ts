@@ -225,9 +225,13 @@ export const TUTOR_NAV: NavSection[] = [
 // no billing of their own, nothing to study. Deliberately small.
 export const AFFILIATE_NAV: NavSection[] = [
   {
-    heading: "Affiliate",
+    heading: "Earn",
     items: [
-      { label: "Earnings", href: "/refer", icon: WalletIcon },
+      { label: "Referrals", href: "/refer", icon: GroupsIcon },
+      { label: "Earnings", href: "/refer/earnings", icon: WalletIcon },
+      { label: "Payments", href: "/refer/payments", icon: PaymentsIcon },
+      { label: "Get paid", href: "/refer/get-paid", icon: VerifiedIcon },
+      { label: "Tax statement", href: "/refer/tax", icon: AssignmentIcon },
     ],
   },
 ];
