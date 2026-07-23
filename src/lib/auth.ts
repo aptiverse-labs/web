@@ -24,7 +24,25 @@ type AptiverseUser = {
 
 export const authOptions: AuthOptions = {
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  // `error` matters as much as `signIn`. Without it, next-auth falls back to
+  // its own built-in /api/auth/error, which is an unstyled framework page with
+  // none of the product on it. A user who left a tab open overnight met that
+  // page rather than a sign-in form, which reads as the app being broken
+  // rather than as a session having ended.
+  //
+  // Sending errors to /login means the recovery is always the thing they
+  // needed anyway. The login page reads the ?error= parameter and says what
+  // happened.
+  //
+  // This is the visible half of the fix. The underlying cause is that
+  // POST /api/auth/refresh-token is [Authorize], so refreshing requires the
+  // access token it is replacing: once that 4 hour token lapses, refresh 401s
+  // and there is no way back without signing in. Renewal only ever works while
+  // a tab is awake to run the 60 second poll, and browsers throttle timers in
+  // background tabs, which is why this shows up as "logged in too long".
+  // Fixing that properly needs either a real refresh token or a refresh path
+  // that validates an expired token's signature while skipping its lifetime.
+  pages: { signIn: "/login", error: "/login" },
   secret: process.env.NEXTAUTH_SECRET,
 
   providers: [

@@ -60,9 +60,14 @@ function tokenStillValid(token: string | undefined): boolean {
   }
 }
 
-// Friendly copy for the ?error= codes NextAuth (and our Google signIn
-// callback) redirect back with. OAuthNoAccount is our invite-only rejection.
-function oauthErrorMessage(code: string | null): string | null {
+// Friendly copy for the ?error= codes next-auth and our Google signIn callback
+// redirect back with. OAuthNoAccount is our invite-only rejection.
+//
+// Every ?error= next-auth can send here, not only the OAuth ones. Errors now
+// route to /login rather than next-auth's built-in page, so this is the only
+// thing standing between a code in the query string and a person wondering
+// what just happened.
+function authErrorMessage(code: string | null): string | null {
   switch (code) {
     case "OAuthNoAccount":
       return "No Aptiverse account is linked to that Google email. Create an account first, then you can sign in with Google.";
@@ -71,8 +76,22 @@ function oauthErrorMessage(code: string | null): string | null {
     case "OAuthAccountNotLinked":
     case "AccessDenied":
       return "We couldn't sign you in with Google. Please try again.";
-    default:
+    // The long-tab case. The access token lasts four hours and renews itself
+    // only while a tab is awake to poll, so a session left open overnight
+    // lapses. Say that plainly: nothing has gone wrong with their account and
+    // signing in again is the whole fix.
+    case "SessionRequired":
+      return "Your session ended. Sign in again to pick up where you left off.";
+    case "Verification":
+      return "That link has expired. Request a new one and try again.";
+    case null:
+    case "":
       return null;
+    // Anything unrecognised still says something. Landing on a sign-in form
+    // with no explanation reads as the app having broken, which is worse than
+    // a plain sentence.
+    default:
+      return "Your session ended. Sign in again to continue.";
   }
 }
 
@@ -82,7 +101,7 @@ function LoginInner() {
   const rawCallback = params.get("callbackUrl");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const oauthError = oauthErrorMessage(params.get("error"));
+  const oauthError = authErrorMessage(params.get("error"));
   const { data: session, status } = useSession();
   const hydrated = useHydrated();
 
