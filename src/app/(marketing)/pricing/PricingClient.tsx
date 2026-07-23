@@ -111,9 +111,10 @@ const PLAN_COPY: Record<string, PlanCopy> = {
   //   against MarkingMemo per question and clamps to 0..q.Marks.
   // - Marks + percent: SubmitAttemptAsync :606-622 scores an exam from marks.
   //
-  // The other two Student Max keys (audio.explanations, study_plan.ai) are
-  // still seeder rows with no implementation on either side. They stay off the
-  // card until they are real, on the same rule that got them removed.
+  // study_plan.ai is still a seeder row with no implementation on either side,
+  // so it stays off the card until it is real. audio.explanations was in the
+  // same state and has now been removed from the catalogue entirely, rather
+  // than left as an entitlement that grants nothing.
   "student.max": {
     audience: "students",
     audienceLabel: "For one student",

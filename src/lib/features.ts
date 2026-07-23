@@ -47,7 +47,6 @@ export type FeatureKey =
 
   // -------- Student Max (exam-finals tier) --------
   | "exam.simulator"
-  | "audio.explanations"
   | "study_plan.ai"
   | "ai_debrief.weekly"
 
@@ -166,7 +165,6 @@ export const FEATURE_MIN_PLAN: Record<FeatureKey, PlanCode> = {
 
   // Student Max
   "exam.simulator": "student.max",
-  "audio.explanations": "student.max",
   "study_plan.ai": "student.max",
   "ai_debrief.weekly": "student.max",
 
