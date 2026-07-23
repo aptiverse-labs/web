@@ -99,7 +99,7 @@ export default function AffiliateJoinPage() {
               Start earning with Aptiverse.
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, maxWidth: 460 }}>
-              Create a free affiliate account. You get a referral link straight away and earn 20% of
+              Create a free affiliate account. You get a referral link straight away and earn 40% of
               every payment your referrals make, for their first three months.
             </Typography>
             <Stack spacing={1.25} sx={{ pt: 0.5 }}>

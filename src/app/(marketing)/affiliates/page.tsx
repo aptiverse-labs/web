@@ -56,9 +56,9 @@ const STEPS = [
 const TERMS = [
   {
     icon: <Wallet size={20} />,
-    title: "20% of what they pay",
+    title: "40% of what they pay",
     description:
-      "You earn a fifth of each subscription payment we actually receive, not of a list price. If someone pays for two months and stops, you earned on two months.",
+      "You earn 40% of each subscription payment we actually receive, not of a list price. If someone pays for two months and stops, you earned on two months.",
   },
   {
     icon: <CreditCard size={20} />,
@@ -140,7 +140,7 @@ const FAQ = [
   },
   {
     q: "Is there a limit on how much I can earn?",
-    a: "There is no cap on the number of people you can refer. Each of them earns you the same 20% on their first three payments.",
+    a: "There is no cap on the number of people you can refer. Each of them earns you the same 40% on their first three payments.",
   },
 ];
 
@@ -163,11 +163,11 @@ export default function AffiliatesPage() {
                 }}
               />
               <Typography variant="h1" component="h1">
-                Share Aptiverse. Take a fifth.
+                Share Aptiverse. Earn 40%.
               </Typography>
               <Typography variant="h6" color="text.secondary" sx={{ fontWeight: 400, maxWidth: 540 }}>
                 Every account comes with a referral link. When someone who used yours pays for a
-                plan, you earn 20% of each of their first three payments. No application, no
+                plan, you earn 40% of each of their first three payments. No application, no
                 interview, no minimum following.
               </Typography>
               <Stack direction="row" spacing={1.5} sx={{ pt: 1 }} flexWrap="wrap" useFlexGap>
@@ -373,7 +373,7 @@ function StepCard({
 // real states an entry moves through in the ledger.
 function HowItPaysCard() {
   const rows = [
-    { label: "They pay for a plan", value: "You earn 20%" },
+    { label: "They pay for a plan", value: "You earn 40%" },
     { label: "Held for 30 days", value: "Refund window" },
     { label: "Becomes payable", value: "Paid by EFT" },
   ];
