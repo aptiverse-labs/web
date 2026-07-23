@@ -146,6 +146,11 @@ const NAV_ITEMS: NavItem[] = [
     ],
   },
   { key: "pricing", label: "Pricing", href: "/pricing" },
+  // Top level on purpose. The affiliate programme was reachable only from the
+  // footer and one dropdown, which is invisible to the exact person it is for:
+  // someone who wants to earn and would never think to open "Who it's for".
+  // "Earn" reads to that audience where "Affiliates" would not.
+  { key: "earn", label: "Earn", href: "/affiliates" },
 ];
 
 const PANEL_ID = "top-nav-mega-panel";
