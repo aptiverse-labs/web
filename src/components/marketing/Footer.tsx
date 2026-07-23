@@ -41,6 +41,10 @@ const COLUMNS: Column[] = [
     links: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
+      // Deliberately here rather than under "Who it's for". Someone looking to
+      // earn is not choosing which product tier suits them, and the footer is
+      // where people go looking for a programme they were told about.
+      { label: "Affiliate programme", href: "/affiliates" },
     ],
   },
   {

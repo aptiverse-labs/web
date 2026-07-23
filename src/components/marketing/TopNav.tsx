@@ -139,6 +139,7 @@ const NAV_ITEMS: NavItem[] = [
     ],
     discover: [
       { label: "About Aptiverse", href: "/about" },
+      { label: "Affiliate programme", href: "/affiliates" },
       { label: "Contact us", href: "/contact" },
       { label: "Create a free account", href: "/register" },
       { label: "Sign in", href: "/login" },
