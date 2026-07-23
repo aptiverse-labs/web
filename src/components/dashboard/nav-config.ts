@@ -220,6 +220,18 @@ export const TUTOR_NAV: NavSection[] = [
   },
 ];
 
+// Affiliate-only accounts. Their whole world is the referral dashboard: the
+// link, what they have earned, and where the money should go. No student app,
+// no billing of their own, nothing to study. Deliberately small.
+export const AFFILIATE_NAV: NavSection[] = [
+  {
+    heading: "Affiliate",
+    items: [
+      { label: "Earnings", href: "/refer", icon: WalletIcon },
+    ],
+  },
+];
+
 export const ADMIN_NAV: NavSection[] = [
   {
     heading: "Overview",
@@ -264,6 +276,8 @@ export function navForRole(role: Role): NavSection[] {
       return SCHOOL_ADMIN_NAV;
     case "tutor":
       return TUTOR_NAV;
+    case "affiliate":
+      return AFFILIATE_NAV;
     case "admin":
     case "super_admin":
       return ADMIN_NAV;

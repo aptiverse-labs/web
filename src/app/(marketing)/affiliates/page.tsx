@@ -173,14 +173,14 @@ export default function AffiliatesPage() {
               <Stack direction="row" spacing={1.5} sx={{ pt: 1 }} flexWrap="wrap" useFlexGap>
                 <Button
                   component={Link}
-                  href="/register?callbackUrl=/refer"
+                  href="/affiliates/join"
                   variant="contained"
                   color="secondary"
                   size="large"
                 >
                   Get my link
                 </Button>
-                <Button component={Link} href="/refer" variant="outlined" size="large">
+                <Button component={Link} href="/login" variant="outlined" size="large">
                   I already have an account
                 </Button>
               </Stack>
@@ -311,7 +311,7 @@ export default function AffiliatesPage() {
           </Typography>
           <Button
             component={Link}
-            href="/register?callbackUrl=/refer"
+            href="/affiliates/join"
             variant="contained"
             color="secondary"
             size="large"

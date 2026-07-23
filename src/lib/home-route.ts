@@ -18,6 +18,8 @@ export function homeRouteForRole(role: string | null | undefined): string {
       return "/parent";
     case "tutor":
       return "/tutor";
+    case "affiliate":
+      return "/refer";
     case "school_admin":
     case "schooladmin":
       return "/school-admin";

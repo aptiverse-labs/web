@@ -51,6 +51,11 @@ const TUTOR: Permission[] = [
   "students.read", "billing.read",
 ];
 
+// An affiliate holds no RBAC permissions. Their pages (the referral dashboard,
+// payout details) are gated by authentication and scope to their own account,
+// not by a permission. Mirrors PermissionResolver's empty affiliate set.
+const AFFILIATE: Permission[] = [];
+
 const ADMIN: Permission[] = [
   "users.read", "users.write", "users.manage",
   "schools.read", "schools.write", "schools.manage",
@@ -76,6 +81,7 @@ const ROLE_PERMISSIONS: Record<RbacRole, readonly Permission[]> = {
   teacher: TEACHER,
   school_admin: SCHOOL_ADMIN,
   tutor: TUTOR,
+  affiliate: AFFILIATE,
   admin: ADMIN,
   super_admin: SUPER_ADMIN,
 };
@@ -113,6 +119,7 @@ export const ROLE_LABEL: Record<RbacRole, string> = {
   teacher: "Teacher",
   school_admin: "School Admin",
   tutor: "Tutor",
+  affiliate: "Affiliate",
   admin: "Admin",
   super_admin: "Super Admin",
 };
