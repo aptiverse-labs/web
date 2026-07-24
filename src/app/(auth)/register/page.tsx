@@ -107,9 +107,6 @@ function RegisterForm() {
   // free, which earns their referrer nothing. Seeded from ?plan= when present.
   const [selectedPlan, setSelectedPlan] = useState<string | null>(urlInitialPlan);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">(billing);
-  // Parents and tutors are the exception: their plans are a separate track, so
-  // step 0 offers an escape to the old role picker for them.
-  const [showRolePicker, setShowRolePicker] = useState(false);
 
   // Only a plan we actually charge for routes through checkout.
   const paidPlan = selectedPlan && PAID_PLANS.has(selectedPlan) ? selectedPlan : null;
@@ -232,9 +229,7 @@ function RegisterForm() {
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           {step === 0
-            ? showRolePicker
-              ? "Which best describes you?"
-              : "Pick your plan. You can change or cancel anytime."
+            ? "Pick your plan. You can change or cancel anytime."
             : paidPlan
               ? "A few details, then a secure checkout."
               : "A few details and you are in."}
@@ -259,81 +254,23 @@ function RegisterForm() {
 
       {step === 0 && (
         <>
-          {showRolePicker ? (
-            <Stack spacing={1.5}>
-              {ROLE_OPTIONS.map((r) => {
-                const selected = role === r.value;
-                return (
-                  <Card
-                    key={r.value}
-                    sx={{
-                      borderColor: selected ? "primary.main" : "divider",
-                      boxShadow: selected ? (t) => `0 0 0 2px ${alpha(t.palette.primary.main, 0.16)}` : "none",
-                      transition:
-                        "border-color 180ms cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 180ms cubic-bezier(0.165, 0.84, 0.44, 1)",
-                    }}
-                  >
-                    <CardActionArea
-                      onClick={() => {
-                        // Student goes back to the plan picker (the default);
-                        // parent/tutor are a separate track and go to details.
-                        if (r.value === "student") {
-                          setShowRolePicker(false);
-                          return;
-                        }
-                        setRole(r.value);
-                        setSelectedPlan(null);
-                        setStep(1);
-                      }}
-                      aria-pressed={selected}
-                    >
-                      <CardContent>
-                        <Stack direction="row" spacing={1.75} alignItems="center">
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 1.5,
-                              display: "grid",
-                              placeItems: "center",
-                              bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
-                              color: "primary.main",
-                              flexShrink: 0,
-                            }}
-                          >
-                            {r.icon}
-                          </Box>
-                          <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                              {r.label}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              {r.description}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ color: "text.disabled", display: "flex" }}>
-                            <ChevronRight size={18} />
-                          </Box>
-                        </Stack>
-                      </CardContent>
-                    </CardActionArea>
-                  </Card>
-                );
-              })}
-            </Stack>
-          ) : (
-            <StudentPlanPicker
-              billingCycle={billingCycle}
-              onBillingChange={setBillingCycle}
-              selected={selectedPlan}
-              onSelect={(code) => {
-                setRole("student");
-                setSelectedPlan(code);
-                setStep(1);
-              }}
-              onEscape={() => setShowRolePicker(true)}
-            />
-          )}
+          <StudentPlanPicker
+            billingCycle={billingCycle}
+            onBillingChange={setBillingCycle}
+            selected={selectedPlan}
+            onSelect={(code) => {
+              setRole("student");
+              setSelectedPlan(code);
+              setStep(1);
+            }}
+            onSelectRole={(r) => {
+              // Parent / tutor: a separate track with no student plan. Straight
+              // to the details step.
+              setRole(r);
+              setSelectedPlan(null);
+              setStep(1);
+            }}
+          />
           <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center" }}>
             Already on Aptiverse?{" "}
             <MuiLink component={Link} href="/login" color="text.primary" underline="hover" sx={{ fontWeight: 600 }}>
@@ -518,13 +455,13 @@ function StudentPlanPicker({
   onBillingChange,
   selected,
   onSelect,
-  onEscape,
+  onSelectRole,
 }: {
   billingCycle: "monthly" | "annual";
   onBillingChange: (c: "monthly" | "annual") => void;
   selected: string | null;
   onSelect: (code: string | null) => void;
-  onEscape: () => void;
+  onSelectRole: (role: Role) => void;
 }) {
   const plans = usePlans();
   const byCode = (code: string) => plans.data?.find((p) => p.code === code);
@@ -625,12 +562,35 @@ function StudentPlanPicker({
         </Typography>
       )}
 
-      <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", pt: 0.5 }}>
-        Signing up as a parent or tutor?{" "}
-        <MuiLink component="button" type="button" onClick={onEscape} sx={{ fontWeight: 600 }}>
-          Choose your account type
-        </MuiLink>
-      </Typography>
+      {/* Parents and tutors are a separate track, so they get their own clear
+          way in rather than being buried in a link. */}
+      <Box sx={{ pt: 0.5 }}>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+          <Box sx={{ flex: 1, height: "1px", bgcolor: "divider" }} />
+          <Typography variant="caption" color="text.secondary">
+            Not a student?
+          </Typography>
+          <Box sx={{ flex: 1, height: "1px", bgcolor: "divider" }} />
+        </Stack>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<Users size={18} />}
+            onClick={() => onSelectRole("parent")}
+          >
+            I&apos;m a parent
+          </Button>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<Presentation size={18} />}
+            onClick={() => onSelectRole("tutor")}
+          >
+            I&apos;m a tutor
+          </Button>
+        </Stack>
+      </Box>
     </Stack>
   );
 }
