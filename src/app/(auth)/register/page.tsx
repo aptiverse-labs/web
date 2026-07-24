@@ -21,7 +21,7 @@ import FormHelperText from "@mui/material/FormHelperText";
 import { alpha } from "@mui/material/styles";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { GraduationCap, Users, Presentation, ChevronRight, Lock } from "lucide-react";
+import { GraduationCap, Users, Presentation, ChevronRight, Lock, Gift } from "lucide-react";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
 import { PasswordField } from "@/components/auth/PasswordField";
 import { useRoleStore, type Role } from "@/providers/RoleProvider";
@@ -30,7 +30,7 @@ import { homeRouteForRole } from "@/lib/home-route";
 import { api } from "@/lib/api/client";
 import { useHydrated } from "@/lib/hooks/useHydrated";
 import { track } from "@/lib/analytics/events";
-import { captureReferralCode, getReferralCode } from "@/lib/analytics/attribution";
+import { captureReferralCode, getReferralCode, clearReferralCode } from "@/lib/analytics/attribution";
 import { usePlans } from "@/lib/api/queries";
 import ToggleButton from "@mui/material/ToggleButton";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
@@ -155,10 +155,23 @@ function RegisterForm() {
   // is handed to captureReferralCode on submit, which is first-touch-wins, so a
   // real link is never overwritten by what is typed.
   const [referral, setReferral] = useState("");
+  // True when the code came from a stored ?ref= link rather than being typed.
+  // Those get a clear "you were referred" notice with a remove control, because
+  // a code the person never typed appearing in a field is confusing.
+  const [referralFromLink, setReferralFromLink] = useState(false);
   useEffect(() => {
     const fromLink = getReferralCode();
-    if (fromLink) setReferral(fromLink);
+    if (fromLink) {
+      setReferral(fromLink);
+      setReferralFromLink(true);
+    }
   }, []);
+
+  const removeReferral = () => {
+    setReferral("");
+    setReferralFromLink(false);
+    clearReferralCode();
+  };
 
   const mutation = useMutation({
     mutationFn: async (v: RegisterValues) => {
@@ -356,14 +369,29 @@ function RegisterForm() {
                     error={!!errors.password}
                     helperText={errors.password?.message ?? "At least 8 chars, one uppercase, one number"}
                   />
-                  <TextField
-                    fullWidth
-                    label="Referral code (optional)"
-                    value={referral}
-                    onChange={(e) => setReferral(e.target.value.toUpperCase())}
-                    inputProps={{ style: { textTransform: "uppercase" }, autoCapitalize: "characters" }}
-                    helperText="Got a code from someone? Enter it so they get credit."
-                  />
+                  {referralFromLink ? (
+                    <Alert
+                      severity="info"
+                      icon={<Gift size={18} />}
+                      action={
+                        <Button color="inherit" size="small" onClick={removeReferral}>
+                          Remove
+                        </Button>
+                      }
+                    >
+                      You were referred by a friend. Code <strong>{referral}</strong> is applied, so
+                      they get credit. Not you? Remove it.
+                    </Alert>
+                  ) : (
+                    <TextField
+                      fullWidth
+                      label="Referral code (optional)"
+                      value={referral}
+                      onChange={(e) => setReferral(e.target.value.toUpperCase())}
+                      inputProps={{ style: { textTransform: "uppercase" }, autoCapitalize: "characters" }}
+                      helperText="Got a code from someone? Enter it so they get credit."
+                    />
+                  )}
                   {isStudent && (
                     <Typography variant="body2" color="text.secondary">
                       Next, we&apos;ll ask a couple of quick details to tailor your subjects and
