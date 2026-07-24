@@ -13,6 +13,8 @@ import Alert from "@mui/material/Alert";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Box from "@mui/material/Box";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
 import MuiLink from "@mui/material/Link";
 import Link from "next/link";
 import { OAuthButtons } from "@/components/auth/OAuthButtons";
@@ -118,13 +120,16 @@ function LoginInner() {
   // send them where they were headed, or to their role's dashboard.
   useEffect(() => {
     if (status !== "authenticated") return;
+    // An in-flight submit owns the navigation (a hard load). Bailing here keeps
+    // this soft redirect from racing it the instant the session flips.
+    if (submitting) return;
     const token = (session as { accessToken?: string } | null)?.accessToken;
     if (!tokenStillValid(token)) return;
     const role = (session?.user as { role?: string } | undefined)?.role;
     router.replace(
       !rawCallback || rawCallback === "/dashboard" ? homeRouteForRole(role) : rawCallback,
     );
-  }, [status, session, rawCallback, router]);
+  }, [status, session, rawCallback, router, submitting]);
 
   const {
     register,
@@ -167,12 +172,31 @@ function LoginInner() {
     const role = (session?.user as { role?: string } | undefined)?.role;
     const dest =
       !rawCallback || rawCallback === "/dashboard" ? homeRouteForRole(role) : rawCallback;
-    router.push(dest);
-    router.refresh();
+
+    // Hard navigation, deliberately NOT router.push. A soft client-side
+    // navigation can win the race against NextAuth writing its session cookie:
+    // the destination's guard then reads no session yet and bounces back here,
+    // and the form sits stuck on "Signing in…" until a manual reload. That is
+    // the intermittent "stuck on login" bug. A full load guarantees the cookie
+    // is sent with the request and the app boots authenticated. `submitting`
+    // stays true so the overlay shows until the browser leaves this page.
+    window.location.assign(dest);
   }
 
   return (
     <Stack spacing={3}>
+      {/* Full-screen "signing you in" state. It stays up from a successful
+          submit until the browser leaves for the destination, so the moment
+          between clicking Sign in and the app appearing is never a frozen
+          form — which is what the stuck-looking login was. */}
+      <Backdrop
+        open={submitting}
+        sx={{ zIndex: (t) => t.zIndex.modal + 1, color: "#fff", flexDirection: "column", gap: 2 }}
+      >
+        <CircularProgress color="inherit" />
+        <Typography variant="body1">Signing you in…</Typography>
+      </Backdrop>
+
       <Box>
         <Typography variant="overline" color="primary.main">
           Welcome back
