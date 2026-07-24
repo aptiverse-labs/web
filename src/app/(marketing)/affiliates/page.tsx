@@ -64,7 +64,7 @@ const TERMS = [
     icon: <CreditCard size={20} />,
     title: "Their first three payments",
     description:
-      "The three payments are counted from their first paid one, not from the day they signed up. A refunded month frees its place rather than burning it.",
+      "Counted from their first paid one, not from the day they signed up, and a refunded month frees its place. On an annual plan, where a year is paid at once, it is the first annual payment.",
   },
   {
     icon: <InfinityIcon size={20} />,
@@ -139,8 +139,12 @@ const FAQ = [
     a: "The commission on that payment is reversed. If it had already been paid to you, the amount is carried against your next payout rather than invoiced back to you.",
   },
   {
+    q: "What if they pay annually instead of monthly?",
+    a: "You earn 40% of their first annual payment. A year is paid in one charge, so that single payment already earns you 40% of a full year, more than three monthly payments would. Annual therefore counts as one commissionable payment rather than three.",
+  },
+  {
     q: "Is there a limit on how much I can earn?",
-    a: "There is no cap on the number of people you can refer. Each of them earns you the same 40% on their first three payments.",
+    a: "There is no cap on the number of people you can refer. Each of them earns you 40% on their first three monthly payments, or on their first annual payment.",
   },
 ];
 
