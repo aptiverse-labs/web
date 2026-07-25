@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useMutation } from "@tanstack/react-query";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
@@ -141,6 +141,14 @@ function ConfirmResult({
 }
 
 function ResendInbox() {
+  // The soft gate parks a signed-in-but-unverified user here. For them a link
+  // to /login is a dead loop: they are already authenticated, so /login sends
+  // them home and the verification gate bounces them straight back here. Offer
+  // Sign out instead, which actually lets them leave (or switch accounts).
+  // Only someone verifying from a link on another device (not signed in here)
+  // gets the plain "Back to sign in".
+  const { status } = useSession();
+  const signedIn = status === "authenticated";
   return (
     <Stack spacing={3} alignItems="center" sx={{ textAlign: "center" }}>
       <Box sx={{ width: 72, height: 72, borderRadius: "50%", bgcolor: "brandSurface.main", color: "brandSurface.contrastText", display: "grid", placeItems: "center" }}>
@@ -155,9 +163,15 @@ function ResendInbox() {
         </Typography>
       </Box>
       <ResendBlock />
-      <Button component={Link} href="/login" variant="text" size="small">
-        Back to sign in
-      </Button>
+      {signedIn ? (
+        <Button variant="text" size="small" onClick={() => signOut({ callbackUrl: "/login" })}>
+          Sign out
+        </Button>
+      ) : (
+        <Button component={Link} href="/login" variant="text" size="small">
+          Back to sign in
+        </Button>
+      )}
     </Stack>
   );
 }
