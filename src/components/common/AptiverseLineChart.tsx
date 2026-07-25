@@ -1,52 +1,28 @@
 "use client";
 
-import { useTheme } from "@mui/material/styles";
-import { LineChart, type LineChartProps } from "@mui/x-charts/LineChart";
+import dynamic from "next/dynamic";
+import Box from "@mui/material/Box";
+import Skeleton from "@mui/material/Skeleton";
+import type { LineChartProps } from "@mui/x-charts/LineChart";
 
-// LineChart with stripped axis chrome and curved series by default.
-// Drop-in replacement for MUI's LineChart.
+// @mui/x-charts is one of the heaviest client dependencies in the app. It is
+// never needed for a route's first paint, so the real chart lives in a separate
+// chunk that only downloads on the client once this component mounts. The
+// wrapper is a few bytes; the chart chunk streams in behind a height-reserved
+// skeleton so nothing shifts when it lands.
+const LazyLineChart = dynamic(
+  () => import("./AptiverseLineChart.impl").then((m) => m.AptiverseLineChart),
+  {
+    ssr: false,
+    loading: () => <Skeleton variant="rounded" height="100%" sx={{ minHeight: 120 }} />,
+  },
+);
+
 export function AptiverseLineChart(props: LineChartProps) {
-  const theme = useTheme();
-
-  // A legend appears as soon as there is more than one series, and not before.
-  //
-  // This used to be a flat `hideLegend`, which meant no caller ever got one:
-  // every multi-series chart in the app shipped with two or three coloured
-  // lines and nothing anywhere saying which was which. Colour was carrying
-  // identity on its own, which is unreadable for anyone who cannot separate the
-  // hues and merely annoying for everyone else.
-  //
-  // Still suppressed for a single series, where the card title already names
-  // the line and a legend would just repeat it.
-  const seriesCount = props.series?.length ?? 0;
-  const hideLegend = props.hideLegend ?? seriesCount < 2;
-
+  const reserved = typeof props.height === "number" ? props.height : undefined;
   return (
-    <LineChart
-      {...props}
-      hideLegend={hideLegend}
-      xAxis={(props.xAxis ?? []).map((a) => ({
-        ...a,
-        disableLine: true,
-        disableTicks: true,
-      }))}
-      yAxis={(props.yAxis ?? [{}]).map((a) => ({
-        ...a,
-        disableLine: true,
-        disableTicks: true,
-      }))}
-      series={(props.series ?? []).map((s) => ({
-        curve: "monotoneX" as const,
-        ...s,
-      }))}
-      grid={{ horizontal: true, ...(props.grid ?? {}) }}
-      sx={{
-        "& .MuiChartsAxis-tickLabel": { fill: theme.palette.text.secondary },
-        "& .MuiChartsAxis-line, & .MuiChartsAxis-tick": { stroke: "transparent" },
-        "& .MuiLineElement-root": { strokeWidth: 2.5 },
-        "& .MuiAreaElement-root": { fillOpacity: 0.15 },
-        ...(props.sx ?? {}),
-      }}
-    />
+    <Box sx={reserved ? { height: reserved } : undefined}>
+      <LazyLineChart {...props} />
+    </Box>
   );
 }

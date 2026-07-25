@@ -4,9 +4,17 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
+import Skeleton from "@mui/material/Skeleton";
+import dynamic from "next/dynamic";
 import { AptiverseLineChart as LineChart } from "@/components/common/AptiverseLineChart";
 import { AptiverseBarChart as BarChart } from "@/components/common/AptiverseBarChart";
-import { PieChart } from "@mui/x-charts/PieChart";
+// The Bar/Line wrappers already lazy-load @mui/x-charts, but this page also
+// pulls PieChart directly, which would drag the whole charts bundle back into
+// the first-load JS. Defer it the same way, behind a height-reserved skeleton.
+const PieChart = dynamic(() => import("@mui/x-charts/PieChart").then((m) => m.PieChart), {
+  ssr: false,
+  loading: () => <Skeleton variant="rounded" height={260} />,
+});
 import { PieChartArcLabel } from "@/components/common/PieChartArcLabel";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useChartSeriesColors } from "@/components/common/chartPalette";

@@ -11,11 +11,24 @@ import Skeleton from "@mui/material/Skeleton";
 import Button from "@mui/material/Button";
 import { alpha, useTheme, type Theme } from "@mui/material/styles";
 import Link from "next/link";
-import { RadarChart } from "@mui/x-charts/RadarChart";
-import { ScatterChart } from "@mui/x-charts/ScatterChart";
-import { LineChart } from "@mui/x-charts/LineChart";
-import { ChartsReferenceLine } from "@mui/x-charts/ChartsReferenceLine";
+import dynamic from "next/dynamic";
 import { TrendingUp, Target } from "lucide-react";
+
+// @mui/x-charts is heavy and never needed for this page's first paint. The
+// three chart views live in a sibling client module and load as one shared
+// lazy chunk, each behind a height-reserved skeleton so nothing shifts.
+const CoverageRadar = dynamic(
+  () => import("./MasteryCharts").then((m) => m.CoverageRadar),
+  { ssr: false, loading: () => <Skeleton variant="rounded" height={320} /> },
+);
+const MomentumScatter = dynamic(
+  () => import("./MasteryCharts").then((m) => m.MomentumScatter),
+  { ssr: false, loading: () => <Skeleton variant="rounded" height={340} /> },
+);
+const ProjectionLine = dynamic(
+  () => import("./MasteryCharts").then((m) => m.ProjectionLine),
+  { ssr: false, loading: () => <Skeleton variant="rounded" height={320} /> },
+);
 import { PageHeader } from "@/components/common/PageHeader";
 import { ProgressRing } from "@/components/common/ProgressRing";
 import { GroupedList } from "@/components/common/GroupedList";
@@ -275,23 +288,10 @@ function MasteryView({
                     Mastery by {unitNoun}
                   </Typography>
                   <Box sx={{ width: "100%", mx: "auto", maxWidth: 480 }}>
-                    <RadarChart
-                      height={320}
-                      hideLegend
-                      radar={{
-                        max: 100,
-                        metrics: bySubject.map((s) => s.name),
-                        labelFormatter: (name) =>
-                          name.length > 14 ? `${name.slice(0, 13)}…` : name,
-                      }}
-                      series={[
-                        {
-                          label: "Mastery",
-                          data: bySubject.map((s) => s.avg),
-                          fillArea: true,
-                          color: theme.palette.secondary.main,
-                        },
-                      ]}
+                    <CoverageRadar
+                      metrics={bySubject.map((s) => s.name)}
+                      values={bySubject.map((s) => s.avg)}
+                      color={theme.palette.secondary.main}
                     />
                   </Box>
                 </CardContent>
@@ -441,22 +441,7 @@ function MomentumCard({ topics }: { topics: TopicMastery[] }) {
         <Typography variant="h6" sx={{ mb: 0.5 }}>
           What's rising, what needs attention
         </Typography>
-        <ScatterChart
-          height={340}
-          grid={{ horizontal: true, vertical: true }}
-          xAxis={[{ min: 0, max: 100, label: "Mastery %" }]}
-          yAxis={[{ min: -trendMax, max: trendMax, label: "Recent change" }]}
-          series={series}
-        >
-          <ChartsReferenceLine
-            x={50}
-            lineStyle={{ stroke: theme.palette.divider, strokeDasharray: "4 4" }}
-          />
-          <ChartsReferenceLine
-            y={0}
-            lineStyle={{ stroke: theme.palette.divider, strokeDasharray: "4 4" }}
-          />
-        </ScatterChart>
+        <MomentumScatter series={series} trendMax={trendMax} />
         <Typography variant="caption" color="text.secondary">
           Each dot is a topic: further right is stronger, higher is improving faster. Aim to move
           the lower-left dots up and to the right.
@@ -474,26 +459,17 @@ function ProjectionSlope({
   labelFor: (subjectId: string) => string;
 }) {
   const theme = useTheme();
-  return (
-    <LineChart
-      height={320}
-      xAxis={[{ data: ["Current", "Predicted"], scaleType: "point" }]}
-      yAxis={[{ min: 0, max: 100 }]}
-      series={predictions.map((p) => {
-        const rising = p.predictedNextTerm >= p.currentTerm;
-        return {
-          label: labelFor(p.subjectId),
-          data: [p.currentTerm, p.predictedNextTerm],
-          color: rising ? theme.palette.success.main : theme.palette.warning.main,
-          curve: "linear" as const,
-          showMark: true,
-        };
-      })}
-      margin={{ top: 20, right: 24, bottom: 28, left: 40 }}
-      grid={{ horizontal: true }}
-      hideLegend={predictions.length > 6}
-    />
-  );
+  const series = predictions.map((p) => {
+    const rising = p.predictedNextTerm >= p.currentTerm;
+    return {
+      label: labelFor(p.subjectId),
+      data: [p.currentTerm, p.predictedNextTerm],
+      color: rising ? theme.palette.success.main : theme.palette.warning.main,
+      curve: "linear" as const,
+      showMark: true,
+    };
+  });
+  return <ProjectionLine series={series} hideLegend={predictions.length > 6} />;
 }
 
 function MiniStat({ value, label, tint }: { value: number; label: string; tint?: string }) {
