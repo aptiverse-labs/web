@@ -235,6 +235,7 @@ export const useCurricula = () =>
   useQuery<Curriculum[]>({
     queryKey: queryKeys.curricula(),
     queryFn: () => apiClient.get<Curriculum[]>("/api/academic-planning/curricula"),
+    staleTime: 1000 * 60 * 60, // curriculum catalog is static within a session
   });
 
 export const useCurriculumSubjects = (curriculumId: string | null | undefined) =>
@@ -243,6 +244,7 @@ export const useCurriculumSubjects = (curriculumId: string | null | undefined) =
     queryFn: () =>
       apiClient.get<CatalogSubject[]>(`/api/academic-planning/curricula/${curriculumId}/subjects`),
     enabled: !!curriculumId,
+    staleTime: 1000 * 60 * 60, // catalog subjects are static within a session
   });
 
 export const useAcademicProfile = () =>
@@ -1730,6 +1732,7 @@ export const useCareers = () =>
   useQuery<Career[]>({
     queryKey: queryKeys.careers(),
     queryFn: () => apiClient.get<Career[]>("/api/careers"),
+    staleTime: 1000 * 60 * 60, // careers catalog is static within a session
   });
 
 export const useChildren = () =>
@@ -2334,6 +2337,7 @@ export const useAuditActions = () =>
   useQuery<AuditAction[]>({
     queryKey: queryKeys.auditActions(),
     queryFn: () => apiClient.get<AuditAction[]>("/api/audit/actions"),
+    staleTime: 1000 * 60 * 60, // audit action reference list is static within a session
   });
 
 // --- Admin: back office -------------------------------------------------
